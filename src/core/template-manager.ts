@@ -1,4 +1,4 @@
-import { join } from 'path';
+import { join, basename } from 'path';
 import {
   Template,
   TemplateMetadata,
@@ -135,7 +135,7 @@ export class TemplateManager {
     const readmePath = join(path, 'README.md');
     const metadataPath = join(path, '.template.json');
 
-    const name = path.split('/').pop() || '';
+    const name = basename(path);
 
     let metadata: TemplateMetadata | undefined;
     if (await fileExists(metadataPath)) {

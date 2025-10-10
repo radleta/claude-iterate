@@ -9,11 +9,15 @@ const execAsync = promisify(exec);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+const isWindows = process.platform === 'win32';
+
 /**
  * Integration tests for process cleanup
  * Uses mock-claude.sh script to simulate Claude CLI behavior
+ *
+ * Note: These tests are skipped on Windows as they rely on shell scripts
  */
-describe('ClaudeClient - Process Cleanup Integration', () => {
+describe.skipIf(isWindows)('ClaudeClient - Process Cleanup Integration', () => {
   let client: ClaudeClient;
   const mockClaudePath = join(__dirname, '../helpers/mock-claude.sh');
 
