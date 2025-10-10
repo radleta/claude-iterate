@@ -76,14 +76,19 @@ export function runCommand(): Command {
           logger.line();
 
           // Create Claude client (use mock if --dry-run)
-          const claudeCommand = options.dryRun
-            ? `${process.cwd()}/mock-claude.sh`
-            : runtimeConfig.claudeCommand;
-          const client = new ClaudeClient(
-            claudeCommand,
-            runtimeConfig.claudeArgs,
-            logger
-          );
+          let claudeCommand = runtimeConfig.claudeCommand;
+          let claudeArgs = runtimeConfig.claudeArgs;
+
+          if (options.dryRun) {
+            // Use Node.js mock (cross-platform)
+            claudeCommand = 'node';
+            claudeArgs = [
+              `${process.cwd()}/mock-claude.js`,
+              ...runtimeConfig.claudeArgs,
+            ];
+          }
+
+          const client = new ClaudeClient(claudeCommand, claudeArgs, logger);
 
           // Setup graceful shutdown on signals
           let isShuttingDown = false;

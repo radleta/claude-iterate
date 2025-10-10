@@ -9,21 +9,17 @@ const execAsync = promisify(exec);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const isWindows = process.platform === 'win32';
-
 /**
  * Integration tests for process cleanup
- * Uses mock-claude.sh script to simulate Claude CLI behavior
- *
- * Note: These tests are skipped on Windows as they rely on shell scripts
+ * Uses mock-claude.js Node.js script to simulate Claude CLI behavior (cross-platform)
  */
-describe.skipIf(isWindows)('ClaudeClient - Process Cleanup Integration', () => {
+describe('ClaudeClient - Process Cleanup Integration', () => {
   let client: ClaudeClient;
-  const mockClaudePath = join(__dirname, '../helpers/mock-claude.sh');
+  const mockClaudePath = join(__dirname, '../helpers/mock-claude.js');
 
   beforeEach(() => {
-    // Use mock-claude.sh script that accepts --print flag like real claude
-    client = new ClaudeClient(mockClaudePath, []);
+    // Use Node.js mock that accepts --print flag like real claude
+    client = new ClaudeClient('node', [mockClaudePath]);
   });
 
   afterEach(async () => {
@@ -106,7 +102,10 @@ describe.skipIf(isWindows)('ClaudeClient - Process Cleanup Integration', () => {
   });
 
   describe('Zombie prevention', () => {
-    it('should not leave zombie processes after shutdown', async () => {
+    // Skip on Windows since 'ps' command is Unix-specific
+    const isWindows = process.platform === 'win32';
+
+    it.skipIf(isWindows)('should not leave zombie processes after shutdown', async () => {
       // Get initial zombie count for our mock script
       const { stdout: before } = await execAsync('ps aux | grep "[d]efunct" | grep "mock-claude" | wc -l');
       const zombiesBefore = parseInt(before.trim());

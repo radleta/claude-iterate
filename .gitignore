@@ -37,3 +37,6 @@ tests/**/*.js
 tests/**/*.d.ts
 tests/**/*.js.map
 tests/**/*.d.ts.map
+
+# Exception: Keep mock scripts as source files
+!tests/helpers/mock-claude.js
