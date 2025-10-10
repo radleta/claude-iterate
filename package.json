@@ -1,0 +1,60 @@
+{
+  "name": "claude-iterate",
+  "version": "1.0.0",
+  "description": "Task iteration system with Claude Code - workspace management, templates, and autonomous execution",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "claude-iterate": "dist/src/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest run",
+    "test:unit": "vitest run tests/unit",
+    "test:integration": "vitest run tests/integration",
+    "test:smoke": "./tests/smoke-test.sh",
+    "test:cleanup": "vitest run tests/unit/claude-client.test.ts tests/integration/process-cleanup.test.ts",
+    "test:quick": "vitest run tests/unit/claude-client.test.ts",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src tests --ext .ts",
+    "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "keywords": [
+    "claude",
+    "ai",
+    "cli",
+    "automation",
+    "task-management",
+    "workspace",
+    "templates",
+    "iteration"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "zod": "^3.24.1",
+    "chalk": "^5.4.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "@typescript-eslint/eslint-plugin": "^8.20.0",
+    "@typescript-eslint/parser": "^8.20.0",
+    "@vitest/coverage-v8": "^2.1.8",
+    "eslint": "^9.18.0",
+    "prettier": "^3.4.2",
+    "typescript": "^5.8.3",
+    "vitest": "^2.1.8"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ]
+}

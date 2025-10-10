@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# Pre-commit hook to prevent committing workspace files
+# These directories contain temporary iteration state and should not be in version control
+
+# Colors for output
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# Check if any workspace files are staged
+if git diff --cached --name-only | grep -E '^(scratch/|claude-iterate/workspaces/)' > /dev/null; then
+    echo -e "${RED}Error: Attempting to commit workspace files${NC}"
+    echo -e "${YELLOW}The following workspace files are staged:${NC}"
+    git diff --cached --name-only | grep -E '^(scratch/|claude-iterate/workspaces/)'
+    echo ""
+    echo -e "${YELLOW}Workspace files should not be committed.${NC}"
+    echo "These directories contain temporary iteration state."
+    echo ""
+    echo "To unstage these files, run:"
+    echo "  git reset HEAD scratch/ claude-iterate/workspaces/"
+    echo ""
+    echo "To bypass this hook (not recommended), use:"
+    echo "  git commit --no-verify"
+    exit 1
+fi
+
+exit 0
