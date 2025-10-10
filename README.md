@@ -2,7 +2,7 @@
 
 A professional CLI tool for managing automated task iterations with Claude Code. Provides workspace management, instruction crafting, templates, and autonomous iteration loops—all with comprehensive TypeScript types and testing.
 
-[![Tests](https://img.shields.io/badge/tests-70%2B%20passing-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-105%20passing-brightgreen)]()
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue)]()
 [![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)]()
 
@@ -702,7 +702,7 @@ claude-iterate/
 │   ├── setup.ts                    # Global test setup
 │   ├── mocks/
 │   │   └── claude-client.mock.ts   # Mock Claude client
-│   └── unit/                       # Unit tests (70+ tests)
+│   └── unit/                       # Unit tests (105 tests)
 │       ├── metadata.test.ts
 │       ├── workspace.test.ts
 │       ├── completion.test.ts
@@ -743,7 +743,7 @@ MIT
 ✅ **Complete and tested:**
 - Core implementation (Workspace, Metadata, Completion, Template, Archive, Config)
 - All CLI commands (init, setup, edit, validate, run, list, show, clean, reset, template, archive)
-- Comprehensive test suite (70+ passing tests)
+- Comprehensive test suite (105 passing tests)
 - TypeScript build and ESLint checks
 
 ## Support

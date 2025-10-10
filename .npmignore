@@ -1,0 +1,46 @@
+# Source and development files
+src/
+tests/
+scripts/
+*.sh
+tsconfig.json
+.eslintrc*
+.prettierrc*
+eslint.config.js
+vitest.config.ts
+
+# Documentation (development only)
+docs/
+scratch/
+
+# Git and CI
+.git/
+.github/
+.githooks/
+
+# Development artifacts
+node_modules/
+coverage/
+*.log
+.env*
+
+# IDE
+.vscode/
+.idea/
+.claude/
+
+# Build artifacts
+.tsbuildinfo
+*.map
+
+# Test files
+*.test.*
+*.spec.*
+
+# Mock scripts
+mock-claude.sh
+
+# Project-specific
+test-env.js
+test-mcp.js
+test-mcp.sh

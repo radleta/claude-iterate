@@ -2,19 +2,24 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { ClaudeClient } from '../../src/services/claude-client.js';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 
 const execAsync = promisify(exec);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 /**
  * Integration tests for process cleanup
- * Uses real child processes (sleep command) to verify cleanup behavior
+ * Uses mock-claude.sh script to simulate Claude CLI behavior
  */
 describe('ClaudeClient - Process Cleanup Integration', () => {
   let client: ClaudeClient;
+  const mockClaudePath = join(__dirname, '../helpers/mock-claude.sh');
 
   beforeEach(() => {
-    // Use 'sleep' command for testing (available on Linux/Mac)
-    client = new ClaudeClient('sleep', []);
+    // Use mock-claude.sh script that accepts --print flag like real claude
+    client = new ClaudeClient(mockClaudePath, []);
   });
 
   afterEach(async () => {
@@ -28,8 +33,10 @@ describe('ClaudeClient - Process Cleanup Integration', () => {
     it('should spawn and track a real child process', async () => {
       expect(client.hasRunningChild()).toBe(false);
 
-      // Start a 2-second sleep in background
-      void client.executeNonInteractive('2');
+      // Start a 2-second sleep in background (will be killed, so catch rejection)
+      void client.executeNonInteractive('2').catch(() => {
+        // Expected to be killed
+      });
 
       // Give it a moment to spawn
       await new Promise(resolve => setTimeout(resolve, 100));
@@ -55,7 +62,9 @@ describe('ClaudeClient - Process Cleanup Integration', () => {
     }, 2000);
 
     it('should gracefully shutdown with SIGTERM', async () => {
-      void client.executeNonInteractive('10');
+      void client.executeNonInteractive('10').catch(() => {
+        // Expected to be killed
+      });
 
       await new Promise(resolve => setTimeout(resolve, 100));
 
@@ -72,8 +81,10 @@ describe('ClaudeClient - Process Cleanup Integration', () => {
     }, 5000);
 
     it('should force kill after grace period', async () => {
-      // Use a long-running process
-      void client.executeNonInteractive('30');
+      // Use a long-running process (will be killed, so catch rejection)
+      void client.executeNonInteractive('30').catch(() => {
+        // Expected to be killed
+      });
 
       await new Promise(resolve => setTimeout(resolve, 100));
 
@@ -92,14 +103,17 @@ describe('ClaudeClient - Process Cleanup Integration', () => {
 
   describe('Zombie prevention', () => {
     it('should not leave zombie processes after shutdown', async () => {
-      // Get initial zombie count
-      const { stdout: before } = await execAsync('ps aux | grep "[d]efunct" | grep sleep | wc -l');
+      // Get initial zombie count for our mock script
+      const { stdout: before } = await execAsync('ps aux | grep "[d]efunct" | grep "mock-claude" | wc -l');
       const zombiesBefore = parseInt(before.trim());
 
-      // Start and kill a process
-      void client.executeNonInteractive('5');
+      // Start and kill a process (will be killed, so catch rejection)
+      void client.executeNonInteractive('5').catch(() => {
+        // Expected to be killed
+      });
       await new Promise(resolve => setTimeout(resolve, 100));
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const pid = (client as any).currentChild?.pid;
       expect(pid).toBeDefined();
 
@@ -115,12 +129,12 @@ describe('ClaudeClient - Process Cleanup Integration', () => {
 
         // Process should either be gone or not be a zombie
         expect(state === 'gone' || state !== 'Z').toBe(true);
-      } catch (error) {
+      } catch {
         // Process is gone - that's good!
       }
 
-      // Check overall sleep zombie count hasn't increased
-      const { stdout: after2 } = await execAsync('ps aux | grep "[d]efunct" | grep sleep | wc -l');
+      // Check overall zombie count for our mock script hasn't increased
+      const { stdout: after2 } = await execAsync('ps aux | grep "[d]efunct" | grep "mock-claude" | wc -l');
       const zombiesAfter = parseInt(after2.trim());
 
       expect(zombiesAfter).toBeLessThanOrEqual(zombiesBefore);

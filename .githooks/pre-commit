@@ -1,26 +1,43 @@
 #!/bin/bash
 
-# Pre-commit hook to prevent committing workspace files
-# These directories contain temporary iteration state and should not be in version control
+# Pre-commit hook to prevent committing temporary workspace directories
 
-# Colors for output
-RED='\033[0;31m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+# These directories are not .gitignored for AI agent compatibility,
+# but should not be committed. AI agents treat .gitignored content
+# differently, which can interfere with their operation.
 
-# Check if any workspace files are staged
-if git diff --cached --name-only | grep -E '^(scratch/|claude-iterate/workspaces/)' > /dev/null; then
-    echo -e "${RED}Error: Attempting to commit workspace files${NC}"
-    echo -e "${YELLOW}The following workspace files are staged:${NC}"
-    git diff --cached --name-only | grep -E '^(scratch/|claude-iterate/workspaces/)'
+BLOCKED_PATHS=(
+    "^scratch/"
+    "^claude-iterate/workspaces/"
+)
+
+FOUND_BLOCKED=false
+
+for pattern in "${BLOCKED_PATHS[@]}"; do
+    if git diff --cached --name-only | grep -q "$pattern"; then
+        if [ "$FOUND_BLOCKED" = false ]; then
+            echo "❌ Error: Cannot commit files from protected directories"
+            echo ""
+            FOUND_BLOCKED=true
+        fi
+
+        echo "Blocked path: $pattern"
+        git diff --cached --name-only | grep "$pattern" | sed 's/^/  /'
+        echo ""
+    fi
+done
+
+if [ "$FOUND_BLOCKED" = true ]; then
+    echo "These directories are for temporary work and should not be committed."
     echo ""
-    echo -e "${YELLOW}Workspace files should not be committed.${NC}"
-    echo "These directories contain temporary iteration state."
-    echo ""
-    echo "To unstage these files, run:"
+    echo "To fix this, unstage the files:"
     echo "  git reset HEAD scratch/ claude-iterate/workspaces/"
     echo ""
-    echo "To bypass this hook (not recommended), use:"
+    echo "For completed work:"
+    echo "  - Save as template: claude-iterate template save <workspace> <name>"
+    echo "  - Archive workspace: claude-iterate archive save <workspace>"
+    echo ""
+    echo "To bypass this hook (not recommended):"
     echo "  git commit --no-verify"
     exit 1
 fi

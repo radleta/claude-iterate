@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Release automation with GitHub Actions CI/CD
+- Automated CHANGELOG updates on version bump
+- Package optimization with .npmignore
+- New npm scripts for validation, release preparation, and size checking
+
+---
+
 ## [1.0.0] - 2025-10-09
 
 ### Added

@@ -8,6 +8,7 @@ vi.mock('child_process');
 
 describe('ClaudeClient - Process Cleanup', () => {
   let client: ClaudeClient;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockChild: any;
 
   beforeEach(() => {
@@ -25,6 +26,7 @@ describe('ClaudeClient - Process Cleanup', () => {
     mockChild.stderr = new EventEmitter();
 
     // Mock spawn to return our mock child
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(spawn).mockReturnValue(mockChild as any);
 
     client = new ClaudeClient('claude', ['--test']);
