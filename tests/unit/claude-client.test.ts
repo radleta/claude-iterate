@@ -41,8 +41,8 @@ describe('ClaudeClient - Process Cleanup', () => {
       // Start a process
       void client.executeNonInteractive('test');
 
-      // Give it a moment to register
-      await new Promise(resolve => setTimeout(resolve, 5));
+      // Give it a moment to register (increased for CI reliability)
+      await new Promise(resolve => setTimeout(resolve, 50));
 
       // Verify child is running
       expect(client.hasRunningChild()).toBe(true);
@@ -66,7 +66,8 @@ describe('ClaudeClient - Process Cleanup', () => {
         // Expected to fail with exit code 137
       });
 
-      await new Promise(resolve => setTimeout(resolve, 5));
+      // Wait for child to be registered (increased for CI reliability)
+      await new Promise(resolve => setTimeout(resolve, 50));
 
       // Mock child that doesn't respond to SIGTERM
       mockChild.kill = vi.fn().mockImplementation((signal?: NodeJS.Signals) => {
@@ -111,7 +112,8 @@ describe('ClaudeClient - Process Cleanup', () => {
       // Start a process
       void client.executeNonInteractive('test');
 
-      await new Promise(resolve => setTimeout(resolve, 5));
+      // Wait for child to be registered (increased for CI reliability)
+      await new Promise(resolve => setTimeout(resolve, 50));
 
       // Kill it
       const result = client.kill();
@@ -124,7 +126,8 @@ describe('ClaudeClient - Process Cleanup', () => {
       // Start a process
       void client.executeNonInteractive('test');
 
-      await new Promise(resolve => setTimeout(resolve, 5));
+      // Wait for child to be registered (increased for CI reliability)
+      await new Promise(resolve => setTimeout(resolve, 50));
 
       // Kill it with SIGKILL
       const result = client.kill('SIGKILL');
@@ -148,8 +151,8 @@ describe('ClaudeClient - Process Cleanup', () => {
       // Start a process (don't await - we want it running)
       void client.executeNonInteractive('test');
 
-      // Wait for spawn to complete
-      await new Promise(resolve => setTimeout(resolve, 20));
+      // Wait for spawn to complete (increased for CI reliability)
+      await new Promise(resolve => setTimeout(resolve, 50));
 
       // Check BEFORE emitting exit
       expect(client.hasRunningChild()).toBe(true);
@@ -163,7 +166,8 @@ describe('ClaudeClient - Process Cleanup', () => {
       // Start a process
       void client.executeNonInteractive('test');
 
-      await new Promise(resolve => setTimeout(resolve, 5));
+      // Wait for child to be registered (increased for CI reliability)
+      await new Promise(resolve => setTimeout(resolve, 50));
 
       // Emit exit
       mockChild.emit('exit', 0);
@@ -179,7 +183,8 @@ describe('ClaudeClient - Process Cleanup', () => {
       // Start a process
       const promise = client.executeNonInteractive('test');
 
-      await new Promise(resolve => setTimeout(resolve, 5));
+      // Wait for child to be registered (increased for CI reliability)
+      await new Promise(resolve => setTimeout(resolve, 50));
 
       // Simulate successful output and exit
       mockChild.stdout.emit('data', 'output');
@@ -195,7 +200,8 @@ describe('ClaudeClient - Process Cleanup', () => {
       // Start a process
       const promise = client.executeNonInteractive('test');
 
-      await new Promise(resolve => setTimeout(resolve, 5));
+      // Wait for child to be registered (increased for CI reliability)
+      await new Promise(resolve => setTimeout(resolve, 50));
 
       // Simulate error exit
       mockChild.stderr.emit('data', 'error');
@@ -211,7 +217,8 @@ describe('ClaudeClient - Process Cleanup', () => {
       // Start a process
       const promise = client.executeNonInteractive('test');
 
-      await new Promise(resolve => setTimeout(resolve, 5));
+      // Wait for child to be registered (increased for CI reliability)
+      await new Promise(resolve => setTimeout(resolve, 50));
 
       // Simulate spawn error
       mockChild.emit('error', new Error('spawn failed'));
