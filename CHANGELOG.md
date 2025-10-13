@@ -9,10 +9,82 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Execution Modes
+
+- **Mode System**: Two distinct execution modes for different workflows
+  - **Loop Mode** (default): Incremental iterations with explicit loop awareness
+    - Uses "Remaining: N" count tracking
+    - Completes one step at a time per iteration
+    - Default max iterations: 50
+    - Best for tasks with explicit progress tracking
+  - **Iterative Mode**: Autonomous work sessions completing as much as possible
+    - Uses checkbox format (- [ ] / - [x]) for TODO items
+    - Completes multiple TODO items per iteration
+    - Default max iterations: 20 (fewer needed per iteration)
+    - Best for complex multi-step tasks requiring sustained focus
+- **Mode Configuration**:
+  - `--mode <mode>` flag on `init` command
+  - `defaultMode` option in configuration files
+  - Mode stored in workspace `.metadata.json`
+- **Strategy Pattern**: Extensible architecture for adding new modes
+  - Mode-specific prompt generation
+  - Mode-specific completion detection
+  - Template-based prompts with token replacement
+- **Template System**:
+  - Prompts stored in markdown files with `{{token}}` replacement
+  - Separate template directories for each mode
+  - Easy to edit and add new modes
+- **Mode-Aware Commands**:
+  - Setup, edit, and validate use mode-specific prompts
+  - Run command displays current mode
+  - Show command displays workspace mode
+
+#### Infrastructure
+
 - Release automation with GitHub Actions CI/CD
 - Automated CHANGELOG updates on version bump
 - Package optimization with .npmignore
 - New npm scripts for validation, release preparation, and size checking
+
+### Changed
+
+- **Prompt System**: Converted from hardcoded strings to async template loading
+- **Completion Detection**: Now mode-aware (markers for loop, checkboxes for iterative)
+- **Test Suite**: Expanded from 105 to 133 tests (+28 tests, 27% increase)
+  - New tests for mode factory, loop mode strategy, iterative mode strategy
+  - Updated tests for mode-aware completion and workspace
+- **TypeScript Types**: Added `ExecutionMode` enum and `ModeDefinition` type
+
+### Technical Details
+
+**New Files:**
+- `src/types/mode.ts` - Execution mode types and definitions
+- `src/utils/template.ts` - Template loader with token replacement
+- `src/templates/modes/base-mode.ts` - Mode strategy interface
+- `src/templates/modes/loop-mode.ts` - Loop mode strategy
+- `src/templates/modes/iterative-mode.ts` - Iterative mode strategy
+- `src/templates/modes/mode-factory.ts` - Mode factory
+- `src/templates/prompts/workspace-system.md` - Workspace system prompt template
+- `src/templates/prompts/loop/*.md` - 6 loop mode prompt templates
+- `src/templates/prompts/iterative/*.md` - 6 iterative mode prompt templates
+- `tests/unit/mode-factory.test.ts` - Mode factory tests
+- `tests/unit/loop-mode.test.ts` - Loop mode strategy tests
+- `tests/unit/iterative-mode.test.ts` - Iterative mode strategy tests
+
+**Modified Files:**
+- `src/types/metadata.ts` - Added `mode` field
+- `src/types/config.ts` - Added `defaultMode` field
+- `src/templates/system-prompt.ts` - Converted to async template loading
+- `src/core/completion.ts` - Added mode-aware completion detection
+- `src/core/workspace.ts` - Added mode support to init and methods
+- `src/commands/init.ts` - Added `--mode` flag
+- `src/commands/setup.ts` - Use mode-specific prompts
+- `src/commands/edit.ts` - Use mode-specific prompts
+- `src/commands/validate.ts` - Use mode-specific prompts
+- `src/commands/run.ts` - Display mode, use mode-specific prompts
+- `src/commands/show.ts` - Display workspace mode
+- `tests/unit/completion.test.ts` - Added iterative mode tests
+- `tests/unit/workspace.test.ts` - Added mode-specific tests
 
 ---
 

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ExecutionMode } from './mode.js';
 
 /**
  * Metadata schema for workspace state tracking
@@ -8,6 +9,7 @@ export const MetadataSchema = z.object({
   created: z.string().datetime(),
   lastRun: z.string().datetime().optional(),
   status: z.enum(['in_progress', 'completed', 'error']).default('in_progress'),
+  mode: z.nativeEnum(ExecutionMode).default(ExecutionMode.LOOP),
   totalIterations: z.number().int().min(0).default(0),
   setupIterations: z.number().int().min(0).default(0),
   executionIterations: z.number().int().min(0).default(0),

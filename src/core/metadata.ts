@@ -1,5 +1,6 @@
 import { join } from 'path';
 import { Metadata, MetadataSchema } from '../types/metadata.js';
+import { ExecutionMode } from '../types/mode.js';
 import { readJson, writeJson, fileExists } from '../utils/fs.js';
 import { InvalidMetadataError } from '../utils/errors.js';
 
@@ -21,6 +22,7 @@ export class MetadataManager {
       name,
       created: new Date().toISOString(),
       status: 'in_progress',
+      mode: ExecutionMode.LOOP,
       totalIterations: 0,
       setupIterations: 0,
       executionIterations: 0,

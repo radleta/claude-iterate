@@ -36,6 +36,7 @@ export class Workspace {
     options?: {
       maxIterations?: number;
       delay?: number;
+      mode?: import('../types/mode.js').ExecutionMode;
       notifyUrl?: string;
       notifyEvents?: Array<'setup_complete' | 'execution_start' | 'iteration_milestone' | 'completion' | 'error' | 'all'>;
     }
@@ -55,6 +56,9 @@ export class Workspace {
     }
     if (options?.delay) {
       metadata.delay = options.delay;
+    }
+    if (options?.mode) {
+      metadata.mode = options.mode;
     }
     if (options?.notifyUrl) {
       metadata.notifyUrl = options.notifyUrl;
@@ -119,32 +123,35 @@ export class Workspace {
   }
 
   /**
-   * Check if workspace is complete
+   * Check if workspace is complete (mode-aware)
    */
   async isComplete(): Promise<boolean> {
     const metadata = await this.getMetadata();
     return await CompletionDetector.isComplete(
       this.path,
+      metadata.mode,
       metadata.completionMarkers
     );
   }
 
   /**
-   * Get completion status with details
+   * Get completion status with details (mode-aware)
    */
   async getCompletionStatus() {
     const metadata = await this.getMetadata();
     return await CompletionDetector.getStatus(
       this.path,
+      metadata.mode,
       metadata.completionMarkers
     );
   }
 
   /**
-   * Get remaining count from TODO.md
+   * Get remaining count from TODO.md (mode-aware)
    */
   async getRemainingCount(): Promise<number | null> {
-    return await CompletionDetector.getRemainingCount(this.path);
+    const metadata = await this.getMetadata();
+    return await CompletionDetector.getRemainingCount(this.path, metadata.mode);
   }
 
   /**

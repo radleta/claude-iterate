@@ -30,6 +30,7 @@ export function setupCommand(): Command {
 
         // Load workspace
         const workspace = await Workspace.load(name, workspacePath);
+        const metadata = await workspace.getMetadata();
 
         logger.header(`Setting up instructions: ${name}`);
         logger.info('Launching interactive Claude session...');
@@ -50,9 +51,9 @@ export function setupCommand(): Command {
           process.exit(1);
         }
 
-        // Generate prompts
-        const systemPrompt = getWorkspaceSystemPrompt(workspace.path);
-        const prompt = getSetupPrompt(name, workspace.path);
+        // Generate prompts (mode-aware)
+        const systemPrompt = await getWorkspaceSystemPrompt(workspace.path);
+        const prompt = await getSetupPrompt(name, workspace.path, metadata.mode);
 
         // Execute Claude interactively from project root with system context
         await client.executeInteractive(prompt, systemPrompt);
@@ -67,20 +68,20 @@ export function setupCommand(): Command {
           logger.success('Instructions created successfully!');
 
           // Send notification if configured
-          const metadata = await workspace.getMetadata();
+          const updatedMetadata = await workspace.getMetadata();
           const config = await ConfigManager.load(command.optsWithGlobals());
           const runtimeConfig = config.getConfig();
           const notificationService = new NotificationService(logger, runtimeConfig.verbose);
 
           if (
-            notificationService.isConfigured(metadata) &&
-            notificationService.shouldNotify('setup_complete', metadata) &&
-            metadata.notifyUrl
+            notificationService.isConfigured(updatedMetadata) &&
+            notificationService.shouldNotify('setup_complete', updatedMetadata) &&
+            updatedMetadata.notifyUrl
           ) {
             await notificationService.send(
               `WORKSPACE SETUP COMPLETE\n\nWorkspace: ${name}\nInstructions: Created and validated\nReady to execute with: claude-iterate run ${name}`,
               {
-                url: metadata.notifyUrl,
+                url: updatedMetadata.notifyUrl,
                 title: 'Setup Complete',
                 tags: ['claude-iterate', 'setup'],
               }

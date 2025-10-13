@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { join } from 'path';
 import { Workspace } from '../../src/core/workspace.js';
+import { ExecutionMode } from '../../src/types/mode.js';
 import { getTestDir, writeTestFile } from '../setup.js';
 
 describe('Workspace', () => {
@@ -234,5 +235,90 @@ describe('Workspace', () => {
 
     const instructionsPath = await workspace.getInstructionsPath();
     expect(instructionsPath).toBe(join(workspacePath, 'INSTRUCTIONS.md'));
+  });
+
+  // Mode-specific tests
+  it('should initialize with loop mode by default', async () => {
+    const testDir = getTestDir();
+    const workspacePath = join(testDir, 'workspaces', 'test-default-mode');
+
+    const workspace = await Workspace.init('test-default-mode', workspacePath);
+    const metadata = await workspace.getMetadata();
+
+    expect(metadata.mode).toBe(ExecutionMode.LOOP);
+  });
+
+  it('should initialize with iterative mode when specified', async () => {
+    const testDir = getTestDir();
+    const workspacePath = join(testDir, 'workspaces', 'test-iterative-mode');
+
+    const workspace = await Workspace.init('test-iterative-mode', workspacePath, {
+      mode: ExecutionMode.ITERATIVE,
+    });
+    const metadata = await workspace.getMetadata();
+
+    expect(metadata.mode).toBe(ExecutionMode.ITERATIVE);
+  });
+
+  it('should use mode-specific completion detection for loop mode', async () => {
+    const testDir = getTestDir();
+    const workspacePath = join(testDir, 'workspaces', 'test-loop-completion');
+
+    const workspace = await Workspace.init('test-loop-completion', workspacePath, {
+      mode: ExecutionMode.LOOP,
+    });
+
+    await writeTestFile(join(workspacePath, 'TODO.md'), 'Remaining: 0');
+
+    const isComplete = await workspace.isComplete();
+    expect(isComplete).toBe(true);
+  });
+
+  it('should use mode-specific completion detection for iterative mode', async () => {
+    const testDir = getTestDir();
+    const workspacePath = join(testDir, 'workspaces', 'test-iterative-completion');
+
+    const workspace = await Workspace.init('test-iterative-completion', workspacePath, {
+      mode: ExecutionMode.ITERATIVE,
+    });
+
+    await writeTestFile(
+      join(workspacePath, 'TODO.md'),
+      '- [x] Done\n- [x] Also done'
+    );
+
+    const isComplete = await workspace.isComplete();
+    expect(isComplete).toBe(true);
+  });
+
+  it('should get correct remaining count for loop mode', async () => {
+    const testDir = getTestDir();
+    const workspacePath = join(testDir, 'workspaces', 'test-loop-remaining');
+
+    const workspace = await Workspace.init('test-loop-remaining', workspacePath, {
+      mode: ExecutionMode.LOOP,
+    });
+
+    await writeTestFile(join(workspacePath, 'TODO.md'), 'Remaining: 5');
+
+    const count = await workspace.getRemainingCount();
+    expect(count).toBe(5);
+  });
+
+  it('should get correct remaining count for iterative mode', async () => {
+    const testDir = getTestDir();
+    const workspacePath = join(testDir, 'workspaces', 'test-iterative-remaining');
+
+    const workspace = await Workspace.init('test-iterative-remaining', workspacePath, {
+      mode: ExecutionMode.ITERATIVE,
+    });
+
+    await writeTestFile(
+      join(workspacePath, 'TODO.md'),
+      '- [x] Item 1\n- [ ] Item 2\n- [ ] Item 3'
+    );
+
+    const count = await workspace.getRemainingCount();
+    expect(count).toBe(2);
   });
 });

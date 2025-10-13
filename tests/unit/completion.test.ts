@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { join } from 'path';
 import { CompletionDetector } from '../../src/core/completion.js';
+import { ExecutionMode } from '../../src/types/mode.js';
 import { createTestWorkspace, writeTestFile } from '../setup.js';
 
 describe('CompletionDetector', () => {
@@ -16,7 +17,7 @@ describe('CompletionDetector', () => {
     `);
 
     const markers = ['Remaining: 0'];
-    const isComplete = await CompletionDetector.isComplete(workspacePath, markers);
+    const isComplete = await CompletionDetector.isComplete(workspacePath, ExecutionMode.LOOP, markers);
 
     expect(isComplete).toBe(true);
   });
@@ -32,7 +33,7 @@ describe('CompletionDetector', () => {
     `);
 
     const markers = ['**Remaining**: 0'];
-    const isComplete = await CompletionDetector.isComplete(workspacePath, markers);
+    const isComplete = await CompletionDetector.isComplete(workspacePath, ExecutionMode.LOOP, markers);
 
     expect(isComplete).toBe(true);
   });
@@ -50,7 +51,7 @@ All items processed successfully.
     `);
 
     const markers = ['TASK COMPLETE'];
-    const isComplete = await CompletionDetector.isComplete(workspacePath, markers);
+    const isComplete = await CompletionDetector.isComplete(workspacePath, ExecutionMode.LOOP, markers);
 
     expect(isComplete).toBe(true);
   });
@@ -68,7 +69,7 @@ Still working on it...
     `);
 
     const markers = ['Remaining: 0', 'TASK COMPLETE'];
-    const isComplete = await CompletionDetector.isComplete(workspacePath, markers);
+    const isComplete = await CompletionDetector.isComplete(workspacePath, ExecutionMode.LOOP, markers);
 
     expect(isComplete).toBe(false);
   });
@@ -77,7 +78,7 @@ Still working on it...
     const workspacePath = await createTestWorkspace('test-workspace');
 
     const markers = ['Remaining: 0'];
-    const isComplete = await CompletionDetector.isComplete(workspacePath, markers);
+    const isComplete = await CompletionDetector.isComplete(workspacePath, ExecutionMode.LOOP, markers);
 
     expect(isComplete).toBe(false);
   });
@@ -92,7 +93,7 @@ Still working on it...
 - Remaining: 42
     `);
 
-    const count = await CompletionDetector.getRemainingCount(workspacePath);
+    const count = await CompletionDetector.getRemainingCount(workspacePath, ExecutionMode.LOOP);
 
     expect(count).toBe(42);
   });
@@ -107,7 +108,7 @@ Still working on it...
 - **Remaining**: 15
     `);
 
-    const count = await CompletionDetector.getRemainingCount(workspacePath);
+    const count = await CompletionDetector.getRemainingCount(workspacePath, ExecutionMode.LOOP);
 
     expect(count).toBe(15);
   });
@@ -122,7 +123,7 @@ Still working on it...
 - remaining: 7
     `);
 
-    const count = await CompletionDetector.getRemainingCount(workspacePath);
+    const count = await CompletionDetector.getRemainingCount(workspacePath, ExecutionMode.LOOP);
 
     expect(count).toBe(7);
   });
@@ -137,7 +138,7 @@ Still working on it...
 Working on tasks...
     `);
 
-    const count = await CompletionDetector.getRemainingCount(workspacePath);
+    const count = await CompletionDetector.getRemainingCount(workspacePath, ExecutionMode.LOOP);
 
     expect(count).toBe(null);
   });
@@ -168,11 +169,110 @@ Working on tasks...
     await writeTestFile(join(workspacePath, 'TODO.md'), '- Remaining: 0');
     await writeTestFile(join(workspacePath, 'INSTRUCTIONS.md'), 'Instructions');
 
-    const status = await CompletionDetector.getStatus(workspacePath, ['Remaining: 0']);
+    const status = await CompletionDetector.getStatus(workspacePath, ExecutionMode.LOOP, ['Remaining: 0']);
 
     expect(status.isComplete).toBe(true);
     expect(status.hasTodo).toBe(true);
     expect(status.hasInstructions).toBe(true);
     expect(status.remainingCount).toBe(0);
+  });
+
+  // Iterative mode tests
+  it('should detect iterative mode completion with all checkboxes checked', async () => {
+    const workspacePath = await createTestWorkspace('test-workspace');
+    const todoPath = join(workspacePath, 'TODO.md');
+
+    await writeTestFile(todoPath, `
+# TODO
+
+- [x] Task 1
+- [x] Task 2
+- [x] Task 3
+    `);
+
+    const isComplete = await CompletionDetector.isComplete(
+      workspacePath,
+      ExecutionMode.ITERATIVE
+    );
+
+    expect(isComplete).toBe(true);
+  });
+
+  it('should not detect iterative mode completion with unchecked items', async () => {
+    const workspacePath = await createTestWorkspace('test-workspace');
+    const todoPath = join(workspacePath, 'TODO.md');
+
+    await writeTestFile(todoPath, `
+# TODO
+
+- [x] Task 1
+- [ ] Task 2
+- [ ] Task 3
+    `);
+
+    const isComplete = await CompletionDetector.isComplete(
+      workspacePath,
+      ExecutionMode.ITERATIVE
+    );
+
+    expect(isComplete).toBe(false);
+  });
+
+  it('should get remaining count for iterative mode', async () => {
+    const workspacePath = await createTestWorkspace('test-workspace');
+    const todoPath = join(workspacePath, 'TODO.md');
+
+    await writeTestFile(todoPath, `
+# TODO
+
+- [x] Task 1
+- [ ] Task 2
+- [ ] Task 3
+    `);
+
+    const count = await CompletionDetector.getRemainingCount(
+      workspacePath,
+      ExecutionMode.ITERATIVE
+    );
+
+    expect(count).toBe(2);
+  });
+
+  it('should return 0 remaining for iterative mode when all checked', async () => {
+    const workspacePath = await createTestWorkspace('test-workspace');
+    const todoPath = join(workspacePath, 'TODO.md');
+
+    await writeTestFile(todoPath, `
+# TODO
+
+- [x] Task 1
+- [x] Task 2
+    `);
+
+    const count = await CompletionDetector.getRemainingCount(
+      workspacePath,
+      ExecutionMode.ITERATIVE
+    );
+
+    expect(count).toBe(0);
+  });
+
+  it('should handle uppercase X in checkboxes', async () => {
+    const workspacePath = await createTestWorkspace('test-workspace');
+    const todoPath = join(workspacePath, 'TODO.md');
+
+    await writeTestFile(todoPath, `
+# TODO
+
+- [X] Task 1 (uppercase)
+- [x] Task 2 (lowercase)
+    `);
+
+    const isComplete = await CompletionDetector.isComplete(
+      workspacePath,
+      ExecutionMode.ITERATIVE
+    );
+
+    expect(isComplete).toBe(true);
   });
 });

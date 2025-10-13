@@ -61,6 +61,7 @@ export function showCommand(): Command {
 
         // Settings
         logger.log('⚙️  Settings:');
+        logger.log(`   Mode: ${metadata.mode}`);
         logger.log(`   Max iterations: ${metadata.maxIterations}`);
         logger.log(`   Delay: ${metadata.delay}s`);
         if (metadata.notifyUrl) {

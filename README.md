@@ -2,7 +2,7 @@
 
 A professional CLI tool for managing automated task iterations with Claude Code. Provides workspace management, instruction crafting, templates, and autonomous iteration loops—all with comprehensive TypeScript types and testing.
 
-[![Tests](https://img.shields.io/badge/tests-105%20passing-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-133%20passing-brightgreen)]()
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue)]()
 [![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)]()
 
@@ -11,6 +11,7 @@ A professional CLI tool for managing automated task iterations with Claude Code.
 - 🎯 **Workspace Management** - Isolated environments for complex multi-step tasks
 - 📝 **Guided Setup** - Interactive instruction crafting with validation
 - 🔄 **Automation** - Autonomous iteration loops with Claude Code
+- 🎭 **Execution Modes** - Choose between loop mode (incremental) and iterative mode (complete as much as possible)
 - 📦 **Templates** - Reusable task patterns for common workflows
 - 📁 **Archives** - Preserve completed work for reference
 - ✅ **Testing** - Comprehensive test coverage with mocked Claude calls
@@ -57,7 +58,43 @@ An isolated environment for a task with:
 - `.metadata.json` - Tracking data
 - `working/` - Scratch space for files
 
-### Iteration Loop
+### Execution Modes
+
+claude-iterate supports two distinct execution modes, each optimized for different workflows:
+
+#### Loop Mode (Default)
+
+Best for incremental tasks where progress should be tracked explicitly:
+
+- Claude knows it's part of an iteration loop
+- Uses "Remaining: N" count to track progress
+- Completes one step at a time per iteration
+- Updates count after each step: "Remaining: 5" → "Remaining: 4"
+- Stops when "Remaining: 0" is reached
+- Default max iterations: 50
+
+**When to use:**
+- Breaking down large tasks into explicit steps
+- Tracking granular progress
+- Tasks that benefit from explicit completion counting
+
+#### Iterative Mode
+
+Best for autonomous work sessions where Claude should complete as much as possible:
+
+- Claude doesn't know it's iterating (appears as a fresh session)
+- Uses checkbox format for TODO items (- [ ] / - [x])
+- Completes as many TODO items as possible per iteration
+- Focuses on doing work rather than stopping early
+- Stops when all checkboxes are marked complete
+- Default max iterations: 20 (fewer needed since more work per iteration)
+
+**When to use:**
+- Complex multi-step tasks requiring sustained focus
+- Tasks where stopping early would be inefficient
+- Autonomous work sessions with minimal iteration overhead
+
+### Iteration Loop (Loop Mode)
 
 1. Claude reads INSTRUCTIONS.md (what to do)
 2. Claude reads TODO.md (current state)
@@ -93,6 +130,7 @@ claude-iterate init my-task
 
 # With options
 claude-iterate init my-task \
+  --mode iterative \
   --max-iterations 100 \
   --delay 5 \
   --notify-url https://ntfy.sh/my-topic \
@@ -100,7 +138,8 @@ claude-iterate init my-task \
 ```
 
 **Options:**
-- `-m, --max-iterations <number>` - Maximum iterations (default: 50)
+- `--mode <mode>` - Execution mode: `loop` (default) or `iterative`
+- `-m, --max-iterations <number>` - Maximum iterations (default: mode-specific)
 - `-d, --delay <seconds>` - Delay between iterations (default: 2)
 - `--notify-url <url>` - Notification URL (ntfy.sh)
 - `--notify-events <events>` - Comma-separated events (default: completion,error)
@@ -514,6 +553,7 @@ Create `.claude-iterate.json` in your project root:
   "workspacesDir": "./claude-iterate/workspaces",
   "templatesDir": "./claude-iterate/templates",
   "archiveDir": "./claude-iterate/archive",
+  "defaultMode": "loop",
   "defaultMaxIterations": 50,
   "defaultDelay": 2,
   "notifyUrl": "https://ntfy.sh/my-project-topic",
@@ -528,6 +568,7 @@ Create `~/.config/claude-iterate/config.json`:
 ```json
 {
   "globalTemplatesDir": "~/.config/claude-iterate/templates",
+  "defaultMode": "loop",
   "defaultMaxIterations": 50,
   "defaultDelay": 2,
   "notifyUrl": "https://ntfy.sh/my-personal-topic",
@@ -603,6 +644,25 @@ claude-iterate template save monthly-report monthly-report --global
 claude-iterate template use monthly-report report-october-2025
 claude-iterate run report-october-2025
 ```
+
+### Example 4: Iterative Mode for Complex Refactoring
+
+```bash
+# Initialize with iterative mode
+claude-iterate init code-refactor --mode iterative
+
+# Set up instructions (will use iterative-friendly prompts)
+claude-iterate setup code-refactor
+
+# Run - Claude will complete as many TODO items as possible per iteration
+claude-iterate run code-refactor
+```
+
+**Iterative mode is ideal for:**
+- Large refactoring tasks
+- Multi-file migrations
+- Complex feature implementations
+- Tasks requiring sustained autonomous work
 
 ## Development
 
@@ -694,20 +754,35 @@ claude-iterate/
 │   │   ├── metadata.ts             # Metadata schema (Zod)
 │   │   ├── config.ts               # Config schema
 │   │   ├── template.ts             # Template schema
-│   │   └── archive.ts              # Archive schema
+│   │   ├── archive.ts              # Archive schema
+│   │   └── mode.ts                 # Execution mode types
+│   ├── utils/
+│   │   └── template.ts             # Template loader with token replacement
 │   └── templates/
+│       ├── modes/
+│       │   ├── base-mode.ts        # Mode strategy interface
+│       │   ├── loop-mode.ts        # Loop mode strategy
+│       │   ├── iterative-mode.ts   # Iterative mode strategy
+│       │   └── mode-factory.ts     # Mode factory
+│       ├── prompts/
+│       │   ├── workspace-system.md # Workspace system prompt
+│       │   ├── loop/               # Loop mode templates (6 files)
+│       │   └── iterative/          # Iterative mode templates (6 files)
 │       ├── system-prompt.ts        # Iteration prompts
 │       └── validation-criteria.ts  # Validation criteria
 ├── tests/
 │   ├── setup.ts                    # Global test setup
 │   ├── mocks/
 │   │   └── claude-client.mock.ts   # Mock Claude client
-│   └── unit/                       # Unit tests (105 tests)
+│   └── unit/                       # Unit tests (133 tests)
 │       ├── metadata.test.ts
 │       ├── workspace.test.ts
 │       ├── completion.test.ts
 │       ├── template-manager.test.ts
-│       └── archive-manager.test.ts
+│       ├── archive-manager.test.ts
+│       ├── mode-factory.test.ts
+│       ├── loop-mode.test.ts
+│       └── iterative-mode.test.ts
 └── dist/                           # Compiled output
 ```
 
@@ -743,7 +818,9 @@ MIT
 ✅ **Complete and tested:**
 - Core implementation (Workspace, Metadata, Completion, Template, Archive, Config)
 - All CLI commands (init, setup, edit, validate, run, list, show, clean, reset, template, archive)
-- Comprehensive test suite (105 passing tests)
+- Execution modes (loop and iterative) with strategy pattern
+- Template-based prompt system with token replacement
+- Comprehensive test suite (133 passing tests)
 - TypeScript build and ESLint checks
 
 ## Support

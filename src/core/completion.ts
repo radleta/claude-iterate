@@ -1,14 +1,33 @@
 import { join } from 'path';
 import { readText, fileExists } from '../utils/fs.js';
+import { ExecutionMode } from '../types/mode.js';
 
 /**
  * Completion detection service
  */
 export class CompletionDetector {
   /**
-   * Check if TODO.md contains completion markers
+   * Check if workspace is complete (mode-aware)
    */
   static async isComplete(
+    workspacePath: string,
+    mode: ExecutionMode,
+    markers?: string[]
+  ): Promise<boolean> {
+    switch (mode) {
+      case ExecutionMode.LOOP:
+        return this.isCompleteLoop(workspacePath, markers || []);
+      case ExecutionMode.ITERATIVE:
+        return this.isCompleteIterative(workspacePath);
+      default:
+        throw new Error(`Unknown execution mode: ${mode}`);
+    }
+  }
+
+  /**
+   * Loop mode completion: check for markers
+   */
+  private static async isCompleteLoop(
     workspacePath: string,
     markers: string[]
   ): Promise<boolean> {
@@ -31,10 +50,54 @@ export class CompletionDetector {
   }
 
   /**
-   * Extract remaining count from TODO.md
-   * Returns null if not found or not a valid number
+   * Iterative mode completion: check if all checkboxes are marked
    */
-  static async getRemainingCount(workspacePath: string): Promise<number | null> {
+  private static async isCompleteIterative(workspacePath: string): Promise<boolean> {
+    const todoPath = join(workspacePath, 'TODO.md');
+
+    if (!(await fileExists(todoPath))) {
+      return false;
+    }
+
+    const content = await readText(todoPath);
+
+    // Count unchecked items: - [ ]
+    const uncheckedPattern = /^[\s-]*\[\s\]/gm;
+    const uncheckedMatches = content.match(uncheckedPattern);
+
+    // Count checked items: - [x] or - [X]
+    const checkedPattern = /^[\s-]*\[[xX]\]/gm;
+    const checkedMatches = content.match(checkedPattern);
+
+    // Complete if we have checkboxes and none are unchecked
+    const hasCheckboxes = (checkedMatches?.length || 0) > 0;
+    const hasUnchecked = (uncheckedMatches?.length || 0) > 0;
+
+    return hasCheckboxes && !hasUnchecked;
+  }
+
+  /**
+   * Extract remaining count from TODO.md
+   * Returns null if not found or not applicable to mode
+   */
+  static async getRemainingCount(
+    workspacePath: string,
+    mode: ExecutionMode
+  ): Promise<number | null> {
+    switch (mode) {
+      case ExecutionMode.LOOP:
+        return this.getRemainingCountLoop(workspacePath);
+      case ExecutionMode.ITERATIVE:
+        return this.getRemainingCountIterative(workspacePath);
+      default:
+        return null;
+    }
+  }
+
+  /**
+   * Loop mode remaining: parse "Remaining: N"
+   */
+  private static async getRemainingCountLoop(workspacePath: string): Promise<number | null> {
     const todoPath = join(workspacePath, 'TODO.md');
 
     if (!(await fileExists(todoPath))) {
@@ -43,10 +106,6 @@ export class CompletionDetector {
 
     const content = await readText(todoPath);
 
-    // Match patterns like:
-    // - Remaining: 0
-    // - **Remaining**: 0
-    // - Remaining: 5
     const patterns = [
       /[*_]*Remaining[*_]*:\s*(\d+)/i,
       /[*_]*Items Remaining[*_]*:\s*(\d+)/i,
@@ -67,6 +126,25 @@ export class CompletionDetector {
   }
 
   /**
+   * Iterative mode remaining: count unchecked items
+   */
+  private static async getRemainingCountIterative(workspacePath: string): Promise<number | null> {
+    const todoPath = join(workspacePath, 'TODO.md');
+
+    if (!(await fileExists(todoPath))) {
+      return null;
+    }
+
+    const content = await readText(todoPath);
+
+    // Count unchecked items: - [ ]
+    const uncheckedPattern = /^[\s-]*\[\s\]/gm;
+    const uncheckedMatches = content.match(uncheckedPattern);
+
+    return uncheckedMatches?.length || 0;
+  }
+
+  /**
    * Check if workspace has TODO.md
    */
   static async hasTodo(workspacePath: string): Promise<boolean> {
@@ -83,10 +161,11 @@ export class CompletionDetector {
   }
 
   /**
-   * Get completion status with details
+   * Get completion status with details (mode-aware)
    */
   static async getStatus(
     workspacePath: string,
+    mode: ExecutionMode,
     markers: string[]
   ): Promise<{
     isComplete: boolean;
@@ -96,10 +175,10 @@ export class CompletionDetector {
   }> {
     const [isComplete, hasTodo, hasInstructions, remainingCount] =
       await Promise.all([
-        this.isComplete(workspacePath, markers),
+        this.isComplete(workspacePath, mode, markers),
         this.hasTodo(workspacePath),
         this.hasInstructions(workspacePath),
-        this.getRemainingCount(workspacePath),
+        this.getRemainingCount(workspacePath, mode),
       ]);
 
     return {

@@ -31,6 +31,7 @@ export function validateCommand(): Command {
 
         // Load workspace
         const workspace = await Workspace.load(name, workspacePath);
+        const metadata = await workspace.getMetadata();
 
         // Check if instructions exist
         if (!(await workspace.hasInstructions())) {
@@ -61,9 +62,9 @@ export function validateCommand(): Command {
         // Generate validation report path
         const reportPath = join(workspace.path, 'validation-report.md');
 
-        // Generate prompts
-        const systemPrompt = getWorkspaceSystemPrompt(workspace.path);
-        const prompt = getValidationPrompt(name, reportPath, workspace.path);
+        // Generate prompts (mode-aware)
+        const systemPrompt = await getWorkspaceSystemPrompt(workspace.path);
+        const prompt = await getValidationPrompt(name, reportPath, workspace.path, metadata.mode);
 
         // Execute Claude non-interactively from project root with system context
         await client.executeNonInteractive(prompt, systemPrompt);

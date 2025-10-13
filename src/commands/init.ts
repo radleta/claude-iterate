@@ -3,6 +3,7 @@ import { Workspace } from '../core/workspace.js';
 import { ConfigManager } from '../core/config-manager.js';
 import { Logger } from '../utils/logger.js';
 import { getWorkspacePath, isValidWorkspaceName } from '../utils/paths.js';
+import { ExecutionMode, MODE_DEFINITIONS } from '../types/mode.js';
 
 /**
  * Initialize a new workspace
@@ -13,11 +14,13 @@ export function initCommand(): Command {
     .argument('<name>', 'Workspace name')
     .option('-m, --max-iterations <number>', 'Maximum iterations', parseInt)
     .option('-d, --delay <seconds>', 'Delay between iterations (seconds)', parseInt)
+    .option('--mode <mode>', 'Execution mode (loop|iterative)', 'loop')
     .option('--notify-url <url>', 'Notification URL (ntfy.sh)')
     .option('--notify-events <events>', 'Comma-separated events: setup_complete,execution_start,iteration_milestone,completion,error,all')
     .action(async (name: string, options: {
       maxIterations?: number;
       delay?: number;
+      mode?: string;
       notifyUrl?: string;
       notifyEvents?: string;
     }, command: Command) => {
@@ -39,15 +42,28 @@ export function initCommand(): Command {
 
         logger.header(`Initializing workspace: ${name}`);
 
+        // Parse mode
+        const mode = options.mode?.toLowerCase() === 'iterative'
+          ? ExecutionMode.ITERATIVE
+          : ExecutionMode.LOOP;
+
         // Parse notify events if provided
         const notifyEvents = options.notifyEvents
           ? options.notifyEvents.split(',').map(e => e.trim())
           : runtimeConfig.notifyEvents;
 
+        // Determine max iterations with mode-aware defaults
+        // If CLI provides maxIterations, use it
+        // Otherwise, use mode-specific default (config would need explicit mode-specific values)
+        const maxIterations = options.maxIterations !== undefined
+          ? options.maxIterations
+          : MODE_DEFINITIONS[mode].defaultMaxIterations;
+
         // Create workspace
         const workspace = await Workspace.init(name, workspacePath, {
-          maxIterations: options.maxIterations || runtimeConfig.maxIterations,
+          maxIterations,
           delay: options.delay ?? runtimeConfig.delay,
+          mode,
           notifyUrl: options.notifyUrl || runtimeConfig.notifyUrl,
           notifyEvents: notifyEvents as Array<'setup_complete' | 'execution_start' | 'iteration_milestone' | 'completion' | 'error' | 'all'>,
         });
@@ -57,6 +73,7 @@ export function initCommand(): Command {
         logger.success(`Workspace created: ${name}`);
         logger.line();
         logger.log(`  📁 Path: ${workspace.path}`);
+        logger.log(`  🔧 Mode: ${metadata.mode}`);
         logger.log(`  📊 Max iterations: ${metadata.maxIterations}`);
         logger.log(`  ⏱️  Delay: ${metadata.delay}s`);
         logger.line();

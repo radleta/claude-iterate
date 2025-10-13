@@ -29,6 +29,7 @@ export function editCommand(): Command {
 
         // Load workspace
         const workspace = await Workspace.load(name, workspacePath);
+        const metadata = await workspace.getMetadata();
 
         // Check if instructions exist
         if (!(await workspace.hasInstructions())) {
@@ -56,9 +57,9 @@ export function editCommand(): Command {
           process.exit(1);
         }
 
-        // Generate prompts
-        const systemPrompt = getWorkspaceSystemPrompt(workspace.path);
-        const prompt = getEditPrompt(name, workspace.path);
+        // Generate prompts (mode-aware)
+        const systemPrompt = await getWorkspaceSystemPrompt(workspace.path);
+        const prompt = await getEditPrompt(name, workspace.path, metadata.mode);
 
         // Execute Claude interactively from project root with system context
         await client.executeInteractive(prompt, systemPrompt);

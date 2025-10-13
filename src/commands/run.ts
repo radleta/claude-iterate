@@ -68,6 +68,7 @@ export function runCommand(): Command {
             options.delay === false ? 0 : (options.delay ?? metadata.delay);
 
           logger.header(`Running iteration loop: ${name}`);
+          logger.log(`  🔧 Mode: ${metadata.mode}`);
           logger.log(`  📊 Max iterations: ${maxIterations}`);
           logger.log(`  ⏱️  Delay: ${delay}s`);
           if (options.dryRun) {
@@ -154,9 +155,9 @@ export function runCommand(): Command {
 
             logger.info(`Iteration ${iterationCount}/${maxIterations}`);
 
-            // Generate prompts
-            const systemPrompt = getIterationSystemPrompt(workspace.path);
-            const prompt = getIterationPrompt(instructions, iterationCount);
+            // Generate prompts (mode-aware)
+            const systemPrompt = await getIterationSystemPrompt(workspace.path, metadata.mode);
+            const prompt = await getIterationPrompt(instructions, iterationCount, metadata.mode);
 
             try {
               // Execute Claude non-interactively from project root with iteration context
