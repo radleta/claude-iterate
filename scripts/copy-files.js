@@ -13,33 +13,52 @@ import { dirname } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Files to copy from root to dist after build (if needed)
-const filesToCopy = [
-  // Add any files that need to be copied to dist here
-  // For example: 'templates/some-file.txt'
-];
-
 // Ensure dist directory exists
 const distDir = path.join(__dirname, '../dist');
 if (!fs.existsSync(distDir)) {
   fs.mkdirSync(distDir, { recursive: true });
 }
 
-// Copy files
-let copiedCount = 0;
-filesToCopy.forEach(file => {
-  const source = path.join(__dirname, '..', file);
-  const dest = path.join(distDir, path.basename(file));
+/**
+ * Recursively copy a directory
+ */
+function copyDirRecursive(src, dest) {
+  let copiedCount = 0;
 
-  if (fs.existsSync(source)) {
-    fs.copyFileSync(source, dest);
-    console.log(`Copied ${file} to dist/`);
-    copiedCount++;
+  if (!fs.existsSync(dest)) {
+    fs.mkdirSync(dest, { recursive: true });
   }
-});
 
-if (copiedCount === 0) {
+  const entries = fs.readdirSync(src, { withFileTypes: true });
+
+  for (const entry of entries) {
+    const srcPath = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
+
+    if (entry.isDirectory()) {
+      copiedCount += copyDirRecursive(srcPath, destPath);
+    } else {
+      fs.copyFileSync(srcPath, destPath);
+      copiedCount++;
+    }
+  }
+
+  return copiedCount;
+}
+
+// Copy template files to dist
+const templatesSource = path.join(__dirname, '../src/templates');
+const templatesDest = path.join(distDir, 'src/templates');
+
+let totalCopied = 0;
+if (fs.existsSync(templatesSource)) {
+  const copiedCount = copyDirRecursive(templatesSource, templatesDest);
+  console.log(`Copied ${copiedCount} template files to dist/src/templates/`);
+  totalCopied += copiedCount;
+}
+
+if (totalCopied === 0) {
   console.log('No additional files to copy (this is normal)');
 } else {
-  console.log(`Build files copied successfully (${copiedCount} files)`);
+  console.log(`Build files copied successfully (${totalCopied} files)`);
 }
