@@ -13,7 +13,6 @@ describe('MetadataManager', () => {
     expect(metadata.totalIterations).toBe(0);
     expect(metadata.setupIterations).toBe(0);
     expect(metadata.executionIterations).toBe(0);
-    expect(metadata.setupComplete).toBe(false);
     expect(metadata.maxIterations).toBe(50);
     expect(metadata.delay).toBe(2);
     expect(metadata.completionMarkers).toContain('Remaining: 0');
@@ -108,19 +107,6 @@ describe('MetadataManager', () => {
     const current = await manager.read();
 
     expect(current.status).toBe('error');
-  });
-
-  it('should mark setup as complete', async () => {
-    const workspacePath = await createTestWorkspace('test-workspace');
-    const manager = new MetadataManager(workspacePath);
-
-    const metadata = MetadataManager.create('test-workspace');
-    await manager.write(metadata);
-
-    await manager.markSetupComplete();
-    const current = await manager.read();
-
-    expect(current.setupComplete).toBe(true);
   });
 
   it('should reset iterations', async () => {

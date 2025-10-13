@@ -178,18 +178,6 @@ describe('Workspace', () => {
     expect(metadata.status).toBe('error');
   });
 
-  it('should mark setup as complete', async () => {
-    const testDir = getTestDir();
-    const workspacePath = join(testDir, 'workspaces', 'test-setup-complete');
-
-    const workspace = await Workspace.init('test-setup-complete', workspacePath);
-
-    await workspace.markSetupComplete();
-
-    const metadata = await workspace.getMetadata();
-    expect(metadata.setupComplete).toBe(true);
-  });
-
   it('should reset iterations', async () => {
     const testDir = getTestDir();
     const workspacePath = join(testDir, 'workspaces', 'test-reset');

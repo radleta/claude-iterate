@@ -26,7 +26,6 @@ export class MetadataManager {
       totalIterations: 0,
       setupIterations: 0,
       executionIterations: 0,
-      setupComplete: false,
       instructionsFile: 'INSTRUCTIONS.md',
       completionMarkers: [
         'Remaining: 0',
@@ -123,15 +122,6 @@ export class MetadataManager {
     return await this.update({
       status: 'error',
       lastRun: new Date().toISOString(),
-    });
-  }
-
-  /**
-   * Mark setup as complete
-   */
-  async markSetupComplete(): Promise<Metadata> {
-    return await this.update({
-      setupComplete: true,
     });
   }
 

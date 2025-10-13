@@ -227,13 +227,6 @@ export class Workspace {
   }
 
   /**
-   * Mark setup as complete
-   */
-  async markSetupComplete(): Promise<void> {
-    await this.metadataManager.markSetupComplete();
-  }
-
-  /**
    * Reset iteration counts
    */
   async resetIterations(): Promise<void> {
@@ -252,7 +245,6 @@ export class Workspace {
       path: this.path,
       status: metadata.status,
       totalIterations: metadata.totalIterations,
-      setupComplete: metadata.setupComplete,
       hasInstructions: status.hasInstructions,
       hasTodo: status.hasTodo,
       isComplete: status.isComplete,

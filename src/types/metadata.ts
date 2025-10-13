@@ -13,7 +13,6 @@ export const MetadataSchema = z.object({
   totalIterations: z.number().int().min(0).default(0),
   setupIterations: z.number().int().min(0).default(0),
   executionIterations: z.number().int().min(0).default(0),
-  setupComplete: z.boolean().default(false),
   instructionsFile: z.string().default('INSTRUCTIONS.md'),
   completionMarkers: z.array(z.string()).default([
     'Remaining: 0',

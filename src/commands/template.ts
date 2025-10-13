@@ -115,9 +115,6 @@ export function templateCommand(): Command {
         // Use template (copy INSTRUCTIONS.md)
         await templateManager.useTemplate(templateName, workspace.path);
 
-        // Mark setup as complete since instructions came from template
-        await workspace.markSetupComplete();
-
         logger.success(`Workspace created: ${workspaceName}`);
         logger.line();
         logger.info('Next steps:');

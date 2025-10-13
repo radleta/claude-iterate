@@ -63,7 +63,6 @@ export function setupCommand(): Command {
 
         // Check if instructions were created
         if (await workspace.hasInstructions()) {
-          await workspace.markSetupComplete();
           logger.line();
           logger.success('Instructions created successfully!');
 
