@@ -10,7 +10,6 @@ import { cleanCommand } from './commands/clean.js';
 import { resetCommand } from './commands/reset.js';
 import { templateCommand } from './commands/template.js';
 import { archiveCommand } from './commands/archive.js';
-import { configCommand } from './commands/config.js';
 
 const VERSION = '1.0.0';
 
@@ -45,7 +44,6 @@ export async function cli() {
   program.addCommand(resetCommand());
   program.addCommand(templateCommand());
   program.addCommand(archiveCommand());
-  program.addCommand(configCommand());
 
   await program.parseAsync(process.argv);
 }

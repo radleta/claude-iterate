@@ -13,7 +13,6 @@ export const MetadataSchema = z.object({
   totalIterations: z.number().int().min(0).default(0),
   setupIterations: z.number().int().min(0).default(0),
   executionIterations: z.number().int().min(0).default(0),
-  instructionsFile: z.string().default('INSTRUCTIONS.md'),
   completionMarkers: z.array(z.string()).default([
     'Remaining: 0',
     '**Remaining**: 0',
@@ -27,24 +26,3 @@ export const MetadataSchema = z.object({
 });
 
 export type Metadata = z.infer<typeof MetadataSchema>;
-
-/**
- * Workspace status enum
- */
-export enum WorkspaceStatus {
-  IN_PROGRESS = 'in_progress',
-  COMPLETED = 'completed',
-  ERROR = 'error',
-}
-
-/**
- * Notification event types
- */
-export enum NotifyEvent {
-  SETUP_COMPLETE = 'setup_complete',
-  EXECUTION_START = 'execution_start',
-  ITERATION_MILESTONE = 'iteration_milestone',
-  COMPLETION = 'completion',
-  ERROR = 'error',
-  ALL = 'all',
-}

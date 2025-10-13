@@ -101,8 +101,3 @@ export class Logger {
     console.table(data);
   }
 }
-
-/**
- * Global logger instance
- */
-export const logger = new Logger();

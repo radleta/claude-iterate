@@ -158,8 +158,7 @@ export class Workspace {
    * Check if instructions exist
    */
   async hasInstructions(): Promise<boolean> {
-    const metadata = await this.getMetadata();
-    const instructionsPath = join(this.path, metadata.instructionsFile);
+    const instructionsPath = join(this.path, 'INSTRUCTIONS.md');
     return await fileExists(instructionsPath);
   }
 
@@ -167,8 +166,7 @@ export class Workspace {
    * Get instructions content
    */
   async getInstructions(): Promise<string> {
-    const metadata = await this.getMetadata();
-    const instructionsPath = join(this.path, metadata.instructionsFile);
+    const instructionsPath = join(this.path, 'INSTRUCTIONS.md');
     return await readText(instructionsPath);
   }
 
@@ -176,8 +174,7 @@ export class Workspace {
    * Write instructions
    */
   async writeInstructions(content: string): Promise<void> {
-    const metadata = await this.getMetadata();
-    const instructionsPath = join(this.path, metadata.instructionsFile);
+    const instructionsPath = join(this.path, 'INSTRUCTIONS.md');
     await writeText(instructionsPath, content);
   }
 
@@ -191,9 +188,8 @@ export class Workspace {
   /**
    * Get INSTRUCTIONS.md path
    */
-  async getInstructionsPath(): Promise<string> {
-    const metadata = await this.getMetadata();
-    return join(this.path, metadata.instructionsFile);
+  getInstructionsPath(): string {
+    return join(this.path, 'INSTRUCTIONS.md');
   }
 
   /**
