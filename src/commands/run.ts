@@ -25,6 +25,7 @@ export function runCommand(): Command {
       parseInt
     )
     .option('--no-delay', 'Skip delay between iterations')
+    .option('--completion-markers <markers>', 'Override completion markers (comma-separated, loop mode only)')
     .option('--dry-run', 'Use mock Claude for testing (logs to /tmp/mock-claude.log)')
     .action(
       async (
@@ -32,6 +33,7 @@ export function runCommand(): Command {
         options: {
           maxIterations?: number;
           delay?: number | false;
+          completionMarkers?: string;
           dryRun?: boolean;
         },
         command: Command
@@ -66,6 +68,13 @@ export function runCommand(): Command {
           const maxIterations = options.maxIterations ?? metadata.maxIterations;
           const delay =
             options.delay === false ? 0 : (options.delay ?? metadata.delay);
+
+          // Override completion markers if provided via CLI
+          if (options.completionMarkers) {
+            metadata.completionMarkers = options.completionMarkers
+              .split(',')
+              .map(m => m.trim());
+          }
 
           logger.header(`Running iteration loop: ${name}`);
           logger.log(`  🔧 Mode: ${metadata.mode}`);

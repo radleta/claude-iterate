@@ -15,12 +15,14 @@ export function initCommand(): Command {
     .option('-m, --max-iterations <number>', 'Maximum iterations', parseInt)
     .option('-d, --delay <seconds>', 'Delay between iterations (seconds)', parseInt)
     .option('--mode <mode>', 'Execution mode (loop|iterative)', 'loop')
+    .option('--completion-markers <markers>', 'Comma-separated completion markers (loop mode only)')
     .option('--notify-url <url>', 'Notification URL (ntfy.sh)')
     .option('--notify-events <events>', 'Comma-separated events: setup_complete,execution_start,iteration_milestone,completion,error,all')
     .action(async (name: string, options: {
       maxIterations?: number;
       delay?: number;
       mode?: string;
+      completionMarkers?: string;
       notifyUrl?: string;
       notifyEvents?: string;
     }, command: Command) => {
@@ -52,6 +54,11 @@ export function initCommand(): Command {
           ? options.notifyEvents.split(',').map(e => e.trim())
           : runtimeConfig.notifyEvents;
 
+        // Parse completion markers if provided
+        const completionMarkers = options.completionMarkers
+          ? options.completionMarkers.split(',').map(m => m.trim())
+          : runtimeConfig.completionMarkers;
+
         // Determine max iterations with mode-aware defaults
         // If CLI provides maxIterations, use it
         // Otherwise, use mode-specific default (config would need explicit mode-specific values)
@@ -64,6 +71,7 @@ export function initCommand(): Command {
           maxIterations,
           delay: options.delay ?? runtimeConfig.delay,
           mode,
+          completionMarkers,
           notifyUrl: options.notifyUrl || runtimeConfig.notifyUrl,
           notifyEvents: notifyEvents as Array<'setup_complete' | 'execution_start' | 'iteration_milestone' | 'completion' | 'error' | 'all'>,
         });

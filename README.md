@@ -103,6 +103,39 @@ Best for autonomous work sessions where Claude should complete as much as possib
 5. Claude updates "Remaining: N" count
 6. Repeat until "Remaining: 0"
 
+### Completion Markers (Loop Mode)
+
+Completion markers are strings that claude-iterate looks for in TODO.md to determine when a task is complete. They're fully customizable through a three-tier hierarchy:
+
+**Default Markers:**
+- `Remaining: 0`
+- `**Remaining**: 0`
+- `TASK COMPLETE`
+- `✅ TASK COMPLETE`
+
+**Customization Priority (highest to lowest):**
+1. **Runtime Override** - `run` command `--completion-markers` flag
+2. **Workspace-Specific** - `init` command `--completion-markers` flag
+3. **Config File** - Project or user configuration file
+4. **Built-in Defaults** - Fallback values
+
+**Examples:**
+
+```bash
+# Set custom markers during init
+claude-iterate init my-task --completion-markers "DONE,FINISHED,COMPLETE"
+
+# Override markers for a single run
+claude-iterate run my-task --completion-markers "ALL DONE"
+
+# Or configure globally in ~/.config/claude-iterate/config.json
+{
+  "completionMarkers": ["Task Done", "100% Complete"]
+}
+```
+
+**Note:** Completion markers only apply to loop mode. Iterative mode uses checkbox completion (- [ ] / - [x]).
+
 ### Templates
 
 Save successful workspace instructions as reusable templates:
@@ -141,6 +174,7 @@ claude-iterate init my-task \
 - `--mode <mode>` - Execution mode: `loop` (default) or `iterative`
 - `-m, --max-iterations <number>` - Maximum iterations (default: mode-specific)
 - `-d, --delay <seconds>` - Delay between iterations (default: 2)
+- `--completion-markers <markers>` - Comma-separated completion markers (loop mode only)
 - `--notify-url <url>` - Notification URL (ntfy.sh)
 - `--notify-events <events>` - Comma-separated events (default: completion,error)
 
@@ -258,6 +292,7 @@ claude-iterate run my-task --no-delay
 - `-m, --max-iterations <number>` - Override max iterations
 - `-d, --delay <seconds>` - Override delay
 - `--no-delay` - Skip delay between iterations
+- `--completion-markers <markers>` - Override completion markers (comma-separated, loop mode only)
 
 **How it works:**
 1. Reads INSTRUCTIONS.md
@@ -553,9 +588,9 @@ Create `.claude-iterate.json` in your project root:
   "workspacesDir": "./claude-iterate/workspaces",
   "templatesDir": "./claude-iterate/templates",
   "archiveDir": "./claude-iterate/archive",
-  "defaultMode": "loop",
   "defaultMaxIterations": 50,
   "defaultDelay": 2,
+  "completionMarkers": ["Remaining: 0", "**Remaining**: 0", "TASK COMPLETE", "✅ TASK COMPLETE"],
   "notifyUrl": "https://ntfy.sh/my-project-topic",
   "notifyEvents": ["completion", "error"]
 }
@@ -568,9 +603,9 @@ Create `~/.config/claude-iterate/config.json`:
 ```json
 {
   "globalTemplatesDir": "~/.config/claude-iterate/templates",
-  "defaultMode": "loop",
   "defaultMaxIterations": 50,
   "defaultDelay": 2,
+  "completionMarkers": ["Remaining: 0", "**Remaining**: 0", "TASK COMPLETE", "✅ TASK COMPLETE"],
   "notifyUrl": "https://ntfy.sh/my-personal-topic",
   "claude": {
     "command": "claude",

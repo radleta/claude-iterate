@@ -9,6 +9,12 @@ export const ProjectConfigSchema = z.object({
   archiveDir: z.string().default('./claude-iterate/archive'),
   defaultMaxIterations: z.number().int().min(1).default(50),
   defaultDelay: z.number().int().min(0).default(2),
+  completionMarkers: z.array(z.string()).default([
+    'Remaining: 0',
+    '**Remaining**: 0',
+    'TASK COMPLETE',
+    '✅ TASK COMPLETE',
+  ]),
   notifyUrl: z.string().url().optional(),
   notifyEvents: z
     .array(z.enum(['completion', 'error', 'iteration']))
@@ -26,6 +32,12 @@ export const UserConfigSchema = z.object({
     .default('~/.config/claude-iterate/templates'),
   defaultMaxIterations: z.number().int().min(1).default(50),
   defaultDelay: z.number().int().min(0).default(2),
+  completionMarkers: z.array(z.string()).default([
+    'Remaining: 0',
+    '**Remaining**: 0',
+    'TASK COMPLETE',
+    '✅ TASK COMPLETE',
+  ]),
   notifyUrl: z.string().url().optional(),
   claude: z
     .object({
@@ -49,6 +61,7 @@ export interface RuntimeConfig {
   globalTemplatesDir: string;
   maxIterations: number;
   delay: number;
+  completionMarkers: string[];
   notifyUrl?: string;
   notifyEvents?: string[];
   claudeCommand: string;
@@ -67,6 +80,12 @@ export const DEFAULT_CONFIG: RuntimeConfig = {
   globalTemplatesDir: '~/.config/claude-iterate/templates',
   maxIterations: 50,
   delay: 2,
+  completionMarkers: [
+    'Remaining: 0',
+    '**Remaining**: 0',
+    'TASK COMPLETE',
+    '✅ TASK COMPLETE',
+  ],
   claudeCommand: 'claude',
   claudeArgs: ['--dangerously-skip-permissions'],
   colors: true,

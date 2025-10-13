@@ -37,6 +37,7 @@ export class Workspace {
       maxIterations?: number;
       delay?: number;
       mode?: import('../types/mode.js').ExecutionMode;
+      completionMarkers?: string[];
       notifyUrl?: string;
       notifyEvents?: Array<'setup_complete' | 'execution_start' | 'iteration_milestone' | 'completion' | 'error' | 'all'>;
     }
@@ -59,6 +60,9 @@ export class Workspace {
     }
     if (options?.mode) {
       metadata.mode = options.mode;
+    }
+    if (options?.completionMarkers) {
+      metadata.completionMarkers = options.completionMarkers;
     }
     if (options?.notifyUrl) {
       metadata.notifyUrl = options.notifyUrl;

@@ -119,6 +119,7 @@ export class ConfigManager {
       globalTemplatesDir: userConfig.globalTemplatesDir,
       maxIterations: userConfig.defaultMaxIterations,
       delay: userConfig.defaultDelay,
+      completionMarkers: userConfig.completionMarkers,
       notifyUrl: userConfig.notifyUrl,
       claudeCommand: userConfig.claude.command,
       claudeArgs: userConfig.claude.args,
@@ -141,6 +142,7 @@ export class ConfigManager {
       archiveDir: projectConfig.archiveDir,
       maxIterations: projectConfig.defaultMaxIterations,
       delay: projectConfig.defaultDelay,
+      completionMarkers: projectConfig.completionMarkers,
       notifyUrl: projectConfig.notifyUrl,
       notifyEvents: projectConfig.notifyEvents,
     };
