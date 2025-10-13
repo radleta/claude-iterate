@@ -23,5 +23,3 @@ When ready, create an INSTRUCTIONS.md file in the workspace directory with:
 3. TODO.md format (use checkboxes: - [ ] Item / - [x] Completed)
 4. Completion criteria (all checkboxes checked)
 5. Quality standards and error handling
-
-Let's begin - what task would you like to accomplish?

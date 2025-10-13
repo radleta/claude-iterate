@@ -17,5 +17,3 @@ Read the current INSTRUCTIONS.md from: {{workspacePath}}/INSTRUCTIONS.md
 Review the current INSTRUCTIONS.md and have a conversation with me about what needs to change. Ask questions to understand my concerns or desired improvements. Don't force a rigid format - let the conversation flow naturally.
 
 When we agree on changes, update the INSTRUCTIONS.md file in the workspace directory.
-
-What would you like to improve?

@@ -2,7 +2,7 @@
 
 When creating or reviewing instructions, aim for these qualities:
 
-1. **Autonomous Execution**: Can Claude follow them without human help during iterations?
+1. **Autonomous Execution**: Can you follow them without human help during iterations?
 2. **State Awareness**: Does it check if TODO.md exists and decide whether to initialize or resume?
 3. **Re-runnable**: Are counts calculated from source (not hardcoded)? Can TODO.md be deleted and recreated?
 4. **Clear TODO.md Format**: Is there an explicit template showing exactly what to track?
