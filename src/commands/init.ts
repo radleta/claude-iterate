@@ -90,6 +90,24 @@ export function initCommand(): Command {
         logger.log(`  2. Run the task: claude-iterate run ${name}`);
         logger.line();
 
+        // Show security guidance about Claude permissions
+        if (runtimeConfig.claudeArgs.length === 0 ||
+            !runtimeConfig.claudeArgs.includes('--dangerously-skip-permissions')) {
+          logger.info('⚠️  Claude Permission Model:');
+          logger.log('');
+          logger.log('Claude Code will prompt for permissions during execution.');
+          logger.log('This is the SAFE default, but may interrupt autonomous iteration.');
+          logger.log('');
+          logger.log('To skip permission prompts (use with caution):');
+          logger.log('  • Per-run: claude-iterate run ' + name + ' --dangerously-skip-permissions');
+          logger.log('  • Per-project: claude-iterate config claude.args --add --dangerously-skip-permissions');
+          logger.log('  • Globally: claude-iterate config --global claude.args --add --dangerously-skip-permissions');
+          logger.log('');
+          logger.log('Learn more about the security implications:');
+          logger.log('  https://docs.anthropic.com/en/docs/agents/agent-security-model#disabling-permission-prompts');
+          logger.line();
+        }
+
       } catch (error) {
         logger.error('Failed to initialize workspace', error as Error);
         process.exit(1);

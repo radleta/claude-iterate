@@ -26,6 +26,7 @@ export function runCommand(): Command {
     )
     .option('--no-delay', 'Skip delay between iterations')
     .option('--completion-markers <markers>', 'Override completion markers (comma-separated, loop mode only)')
+    .option('--dangerously-skip-permissions', 'Skip permission prompts (runtime only, not saved to config)')
     .option('--dry-run', 'Use mock Claude for testing (logs to /tmp/mock-claude.log)')
     .action(
       async (
@@ -34,6 +35,7 @@ export function runCommand(): Command {
           maxIterations?: number;
           delay?: number | false;
           completionMarkers?: string;
+          dangerouslySkipPermissions?: boolean;
           dryRun?: boolean;
         },
         command: Command
@@ -88,14 +90,22 @@ export function runCommand(): Command {
 
           // Create Claude client (use mock if --dry-run)
           let claudeCommand = runtimeConfig.claudeCommand;
-          let claudeArgs = runtimeConfig.claudeArgs;
+          let claudeArgs = [...runtimeConfig.claudeArgs]; // Clone to avoid mutation
+
+          // Runtime override: Add --dangerously-skip-permissions if specified (NOT saved to config)
+          if (options.dangerouslySkipPermissions) {
+            if (!claudeArgs.includes('--dangerously-skip-permissions')) {
+              claudeArgs.push('--dangerously-skip-permissions');
+              logger.warn('⚠️  Using --dangerously-skip-permissions (runtime override)');
+            }
+          }
 
           if (options.dryRun) {
             // Use Node.js mock (cross-platform)
             claudeCommand = 'node';
             claudeArgs = [
               `${process.cwd()}/mock-claude.js`,
-              ...runtimeConfig.claudeArgs,
+              ...claudeArgs,
             ];
           }
 

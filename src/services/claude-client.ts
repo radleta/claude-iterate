@@ -11,7 +11,7 @@ export class ClaudeClient {
 
   constructor(
     private command: string = 'claude',
-    private args: string[] = ['--dangerously-skip-permissions'],
+    private args: string[] = [],
     private logger: Logger = new Logger()
   ) {}
 

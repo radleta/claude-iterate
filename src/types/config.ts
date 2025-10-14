@@ -19,6 +19,12 @@ export const ProjectConfigSchema = z.object({
   notifyEvents: z
     .array(z.enum(['completion', 'error', 'iteration']))
     .optional(),
+  claude: z
+    .object({
+      command: z.string().default('claude'),
+      args: z.array(z.string()).default([]),
+    })
+    .optional(),
 });
 
 export type ProjectConfig = z.infer<typeof ProjectConfigSchema>;
@@ -42,7 +48,7 @@ export const UserConfigSchema = z.object({
   claude: z
     .object({
       command: z.string().default('claude'),
-      args: z.array(z.string()).default(['--dangerously-skip-permissions']),
+      args: z.array(z.string()).default([]),
     })
     .default({}),
   colors: z.boolean().default(true),
@@ -87,7 +93,7 @@ export const DEFAULT_CONFIG: RuntimeConfig = {
     '✅ TASK COMPLETE',
   ],
   claudeCommand: 'claude',
-  claudeArgs: ['--dangerously-skip-permissions'],
+  claudeArgs: [],
   colors: true,
   verbose: false,
 };

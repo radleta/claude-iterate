@@ -95,6 +95,19 @@ export function listCommand(): Command {
 
         logger.info(`Total: ${workspaces.length} workspace(s)`);
 
+        // Show Claude configuration
+        logger.line();
+        logger.log('🤖 Claude Configuration:');
+        logger.log(`   Command: ${runtimeConfig.claudeCommand}`);
+        if (runtimeConfig.claudeArgs.length > 0) {
+          logger.log(`   Args: ${runtimeConfig.claudeArgs.join(' ')}`);
+          if (runtimeConfig.claudeArgs.includes('--dangerously-skip-permissions')) {
+            logger.warn('   ⚠️  Permission prompts disabled');
+          }
+        } else {
+          logger.log('   Args: (none - will prompt for permissions)');
+        }
+
       } catch (error) {
         logger.error('Failed to list workspaces', error as Error);
         process.exit(1);

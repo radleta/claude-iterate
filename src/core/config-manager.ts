@@ -135,7 +135,7 @@ export class ConfigManager {
     config: RuntimeConfig,
     projectConfig: ProjectConfig
   ): RuntimeConfig {
-    return {
+    const merged: RuntimeConfig = {
       ...config,
       workspacesDir: projectConfig.workspacesDir,
       templatesDir: projectConfig.templatesDir,
@@ -146,6 +146,14 @@ export class ConfigManager {
       notifyUrl: projectConfig.notifyUrl,
       notifyEvents: projectConfig.notifyEvents,
     };
+
+    // Merge claude config if present (project overrides user)
+    if (projectConfig.claude) {
+      merged.claudeCommand = projectConfig.claude.command;
+      merged.claudeArgs = projectConfig.claude.args;
+    }
+
+    return merged;
   }
 
   /**

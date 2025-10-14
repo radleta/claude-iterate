@@ -2,7 +2,7 @@
 
 A professional CLI tool for managing automated task iterations with Claude Code. Provides workspace management, instruction crafting, templates, and autonomous iteration loops—all with comprehensive TypeScript types and testing.
 
-[![Tests](https://img.shields.io/badge/tests-133%20passing-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-131%20passing-brightgreen)]()
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue)]()
 [![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)]()
 
@@ -293,6 +293,7 @@ claude-iterate run my-task --no-delay
 - `-d, --delay <seconds>` - Override delay
 - `--no-delay` - Skip delay between iterations
 - `--completion-markers <markers>` - Override completion markers (comma-separated, loop mode only)
+- `--dangerously-skip-permissions` - Skip permission prompts (runtime only, not saved to config)
 
 **How it works:**
 1. Reads INSTRUCTIONS.md
@@ -458,6 +459,102 @@ claude-iterate clean my-task --force
 claude-iterate clean my-task --force --no-archive
 ```
 
+### Configuration Management
+
+#### `config [key] [value]`
+
+Get or set configuration values with git-style interface. Configuration is stored at two levels:
+- **Project**: `.claude-iterate.json` (project-specific settings)
+- **Global**: `~/.config/claude-iterate/config.json` (user-wide defaults)
+
+**Basic usage:**
+
+```bash
+# List all configuration (project)
+claude-iterate config --list
+
+# List global configuration
+claude-iterate config --global --list
+
+# Get a value
+claude-iterate config claude.args
+
+# Set a value
+claude-iterate config defaultMaxIterations 100
+
+# Set a global value
+claude-iterate config --global defaultMaxIterations 50
+```
+
+**Array operations:**
+
+```bash
+# Add to array
+claude-iterate config claude.args --add --dangerously-skip-permissions
+
+# Add to global config
+claude-iterate config --global claude.args --add --dangerously-skip-permissions
+
+# Remove from array
+claude-iterate config claude.args --remove --dangerously-skip-permissions
+
+# Unset (delete) a key
+claude-iterate config claude.args --unset
+```
+
+**Options:**
+- `-g, --global` - Use global user config instead of project config
+- `-l, --list` - List all configuration values
+- `--add <value>` - Add value to array (for array-type configs)
+- `--remove <value>` - Remove value from array
+- `--unset` - Remove configuration key
+
+**Common configurations:**
+
+```bash
+# Configure Claude CLI args (enables autonomous iteration)
+claude-iterate config claude.args --add --dangerously-skip-permissions
+
+# Set default max iterations
+claude-iterate config defaultMaxIterations 100
+
+# Configure notification URL
+claude-iterate config notifyUrl https://ntfy.sh/my-topic
+
+# Set completion markers
+claude-iterate config completionMarkers --add "DONE"
+claude-iterate config completionMarkers --add "COMPLETE"
+```
+
+**Dot notation** is supported for nested keys:
+
+```bash
+claude-iterate config claude.command    # Get claude.command
+claude-iterate config claude.args       # Get claude.args array
+```
+
+**Security note for `claude.args`:**
+
+By default, `claude.args` is empty, meaning Claude Code will prompt for permissions during execution. This is the **safe** default but may interrupt autonomous iteration.
+
+To enable uninterrupted autonomous execution, you can add `--dangerously-skip-permissions`:
+
+```bash
+# Per-project (safer - limited to current project)
+claude-iterate config claude.args --add --dangerously-skip-permissions
+
+# Globally (applies to all projects)
+claude-iterate config --global claude.args --add --dangerously-skip-permissions
+
+# Per-run only (doesn't save to config, highest priority)
+claude-iterate run my-task --dangerously-skip-permissions
+```
+
+⚠️ **WARNING:** The `--dangerously-skip-permissions` flag disables permission prompts for Claude Code. This allows Claude to read/write files and execute commands without confirmation. Anthropic recommends using this flag "only in a container without internet access" to minimize security risks.
+
+Learn more about the security implications:
+https://docs.anthropic.com/en/docs/agents/agent-security-model#disabling-permission-prompts
+
 ### Notifications
 
 claude-iterate can send notifications for long-running tasks via HTTP POST (compatible with ntfy.sh and similar services).
@@ -609,12 +706,20 @@ Create `~/.config/claude-iterate/config.json`:
   "notifyUrl": "https://ntfy.sh/my-personal-topic",
   "claude": {
     "command": "claude",
-    "args": ["--dangerously-skip-permissions"]
+    "args": []
   },
   "colors": true,
   "verbose": false
 }
 ```
+
+**Note:** The `claude.args` array is empty by default. This is the **safe** default where Claude Code will prompt for permissions. To enable autonomous iteration without prompts, you can add `--dangerously-skip-permissions` using the `config` command:
+
+```bash
+claude-iterate config --global claude.args --add --dangerously-skip-permissions
+```
+
+See the "Configuration Management" section for details on the security implications.
 
 ### Global Options
 
@@ -738,7 +843,7 @@ npm run format      # Format code
 │  CLI Entry  │ (Commander.js)
 └──────┬──────┘
        │
-       ├─────► Commands (init, setup, run, list, template, archive)
+       ├─────► Commands (init, setup, run, list, config, template, archive)
        │         │
        │         └─────► Core Services
        │                  │
@@ -769,6 +874,7 @@ claude-iterate/
 │   │   ├── show.ts
 │   │   ├── clean.ts
 │   │   ├── reset.ts
+│   │   ├── config.ts
 │   │   ├── template.ts
 │   │   └── archive.ts
 │   ├── core/                       # Core business logic
@@ -852,10 +958,11 @@ MIT
 
 ✅ **Complete and tested:**
 - Core implementation (Workspace, Metadata, Completion, Template, Archive, Config)
-- All CLI commands (init, setup, edit, validate, run, list, show, clean, reset, template, archive)
+- All CLI commands (init, setup, edit, validate, run, list, show, clean, reset, config, template, archive)
 - Execution modes (loop and iterative) with strategy pattern
 - Template-based prompt system with token replacement
-- Comprehensive test suite (133 passing tests)
+- Configuration management with git-style CLI interface
+- Comprehensive test suite (131 passing tests)
 - TypeScript build and ESLint checks
 
 ## Support

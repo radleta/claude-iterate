@@ -69,6 +69,19 @@ export function showCommand(): Command {
         }
         logger.line();
 
+        // Claude configuration
+        logger.log('🤖 Claude Configuration:');
+        logger.log(`   Command: ${runtimeConfig.claudeCommand}`);
+        if (runtimeConfig.claudeArgs.length > 0) {
+          logger.log(`   Args: ${runtimeConfig.claudeArgs.join(' ')}`);
+          if (runtimeConfig.claudeArgs.includes('--dangerously-skip-permissions')) {
+            logger.warn('   ⚠️  Permission prompts disabled (--dangerously-skip-permissions)');
+          }
+        } else {
+          logger.log('   Args: (none - will prompt for permissions)');
+        }
+        logger.line();
+
         // Timestamps
         logger.log('🕐 Timestamps:');
         logger.log(`   Created: ${new Date(info.created).toLocaleString()}`);
