@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 📚 Documentation
+    url: https://github.com/radleta/claude-iterate#readme
+    about: Check the README for usage documentation and examples
+  - name: 💬 Discussions
+    url: https://github.com/radleta/claude-iterate/discussions
+    about: Ask questions and discuss ideas with the community

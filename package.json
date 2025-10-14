@@ -35,13 +35,20 @@
   },
   "keywords": [
     "claude",
+    "claude-code",
     "ai",
+    "llm",
     "cli",
     "automation",
     "task-management",
+    "workflow",
     "workspace",
     "templates",
-    "iteration"
+    "iteration",
+    "devtools",
+    "productivity",
+    "agent",
+    "autonomous"
   ],
   "homepage": "https://github.com/radleta/claude-iterate#readme",
   "bugs": {
