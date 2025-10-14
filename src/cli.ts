@@ -1,4 +1,5 @@
 import { Command } from 'commander';
+import { createRequire } from 'module';
 import { initCommand } from './commands/init.js';
 import { setupCommand } from './commands/setup.js';
 import { editCommand } from './commands/edit.js';
@@ -12,7 +13,9 @@ import { templateCommand } from './commands/template.js';
 import { archiveCommand } from './commands/archive.js';
 import { configCommand } from './commands/config.js';
 
-const VERSION = '1.0.0';
+// Import version from package.json
+const require = createRequire(import.meta.url);
+const { version: VERSION } = require('../../package.json');
 
 /**
  * Main CLI setup
