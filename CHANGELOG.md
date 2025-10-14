@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2025-10-14
+
 ### Fixed
 - **Notification System**: Fixed critical bugs preventing notifications from working properly
   - Fixed stale metadata during iterations: metadata now refreshes after each iteration
@@ -216,3 +218,4 @@ This is the initial release of claude-iterate.
 ---
 
 **Note:** This project follows [Semantic Versioning](https://semver.org/). Future releases will be documented in this file following the [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
+

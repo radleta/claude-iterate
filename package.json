@@ -1,6 +1,6 @@
 {
   "name": "claude-iterate",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Task iteration system with Claude Code - workspace management, templates, and autonomous execution",
   "type": "module",
   "main": "dist/src/index.js",
