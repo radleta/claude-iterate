@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Notification System**: Fixed critical bugs preventing notifications from working properly
+  - Fixed stale metadata during iterations: metadata now refreshes after each iteration
+  - Fixed missing config fallback: global `notifyUrl` and `notifyEvents` now properly fall back from config
+  - Notifications now use fresh metadata ensuring settings changes take effect immediately
+
+### Changed
+- **Notification Defaults**: Per-iteration notifications now enabled by default for better visibility
+  - Default events changed from `[completion, error]` to `[iteration, completion, error]`
+  - Users receive real-time progress updates during long-running tasks
+  - Can opt-out with: `config notifyEvents completion,error`
+
+### Added
+- **Iteration Notifications**: New `iteration` event type for per-iteration progress updates
+  - Sends notification after each iteration with current progress
+  - Includes iteration count, remaining items, and status
+  - Enabled by default (can be disabled per-workspace or globally)
+
+---
+
 Initial release of claude-iterate - a professional CLI tool for managing automated task iterations with Claude Code.
 
 ### Core Features
@@ -83,11 +103,14 @@ Initial release of claude-iterate - a professional CLI tool for managing automat
 - **Event Types**:
   - `setup_complete` - After guided setup finishes
   - `execution_start` - When execution loop begins
+  - `iteration` - After each iteration (NEW - enabled by default)
   - `iteration_milestone` - Every 10 iterations
   - `completion` - Task completes successfully
   - `error` - Execution encounters error
   - `all` - All events above
+- **Default Events**: `iteration`, `completion`, `error` (real-time progress updates)
 - **Flexible Configuration**: Configure per workspace or globally
+- **Config Fallback**: Global notifyUrl/notifyEvents used when workspace has none
 - **Priority Levels**: High priority for completion, urgent for errors
 
 ### Security Features
@@ -119,10 +142,11 @@ Initial release of claude-iterate - a professional CLI tool for managing automat
 - **Template-Based Prompts**: Markdown files with token replacement
 
 #### Testing
-- **131 Passing Tests**: Comprehensive test coverage
+- **147 Passing Tests**: Comprehensive test coverage
 - **Mocked Claude Calls**: Fast, deterministic tests without real API calls
 - **Vitest Framework**: Modern testing with great developer experience
 - **Integration Tests**: Real process lifecycle testing
+- **Notification Tests**: 16 integration tests for notification flow with mocked fetch
 
 #### Code Quality
 - **ESLint**: Strict linting rules enforced
