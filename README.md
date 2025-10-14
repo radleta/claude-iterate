@@ -2,7 +2,7 @@
 
 Automate multi-step tasks with Claude Code through managed workspaces, reusable templates, and autonomous iteration loops.
 
-[![Tests](https://img.shields.io/badge/tests-131%20passing-brightgreen)](https://github.com/radleta/claude-iterate)
+[![Tests](https://img.shields.io/badge/tests-147%20passing-brightgreen)](https://github.com/radleta/claude-iterate)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue)](https://www.typescriptlang.org/)
 [![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
@@ -275,9 +275,9 @@ claude-iterate init my-task \
 claude-iterate config notifyUrl https://ntfy.sh/my-topic
 ```
 
-**Available events:** `setup_complete`, `execution_start`, `iteration_milestone`, `completion`, `error`, `all`
+**Available events:** `setup_complete`, `execution_start`, `iteration`, `iteration_milestone`, `completion`, `error`, `all`
 
-**Default events:** `completion`, `error`
+**Default events:** `iteration`, `completion`, `error`
 
 ## Examples
 
@@ -410,6 +410,6 @@ npm run validate  # Run all checks
 
 ## Acknowledgments
 
-Built with TypeScript, Commander.js, and Zod. Tested with Vitest (131 passing tests).
+Built with TypeScript, Commander.js, and Zod. Tested with Vitest (147 passing tests).
 
 Requires [Claude CLI](https://docs.anthropic.com/en/docs/claude-code) by Anthropic.

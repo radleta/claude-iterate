@@ -188,6 +188,7 @@ describe('NotificationService', () => {
     it('should use default events if none configured', () => {
       const metadata = {} as Metadata;
 
+      expect(service.shouldNotify('iteration', metadata)).toBe(true);
       expect(service.shouldNotify('completion', metadata)).toBe(true);
       expect(service.shouldNotify('error', metadata)).toBe(true);
       expect(service.shouldNotify('execution_start', metadata)).toBe(false);
@@ -224,6 +225,7 @@ describe('NotificationService', () => {
       } as Partial<Metadata> as Metadata;
 
       // Empty array should fall back to defaults
+      expect(service.shouldNotify('iteration', metadata)).toBe(true);
       expect(service.shouldNotify('completion', metadata)).toBe(true);
       expect(service.shouldNotify('error', metadata)).toBe(true);
       expect(service.shouldNotify('execution_start', metadata)).toBe(false);
@@ -240,11 +242,12 @@ describe('NotificationService', () => {
 
     it('should handle multiple specific events', () => {
       const metadata = {
-        notifyEvents: ['setup_complete', 'execution_start', 'iteration_milestone', 'completion', 'error'],
+        notifyEvents: ['setup_complete', 'execution_start', 'iteration', 'iteration_milestone', 'completion', 'error'],
       } as Metadata;
 
       expect(service.shouldNotify('setup_complete', metadata)).toBe(true);
       expect(service.shouldNotify('execution_start', metadata)).toBe(true);
+      expect(service.shouldNotify('iteration', metadata)).toBe(true);
       expect(service.shouldNotify('iteration_milestone', metadata)).toBe(true);
       expect(service.shouldNotify('completion', metadata)).toBe(true);
       expect(service.shouldNotify('error', metadata)).toBe(true);

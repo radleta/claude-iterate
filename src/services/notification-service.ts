@@ -59,8 +59,8 @@ export class NotificationService {
    */
   shouldNotify(event: string, metadata: Metadata): boolean {
     if (!metadata.notifyEvents || metadata.notifyEvents.length === 0) {
-      // Default events: completion and error only
-      return ['completion', 'error'].includes(event);
+      // Default events: iteration, completion, and error
+      return ['iteration', 'completion', 'error'].includes(event);
     }
 
     // Check if 'all' is specified
@@ -69,6 +69,6 @@ export class NotificationService {
     }
 
     // Check if specific event is enabled
-    return metadata.notifyEvents.includes(event as 'setup_complete' | 'execution_start' | 'iteration_milestone' | 'completion' | 'error' | 'all');
+    return metadata.notifyEvents.includes(event as 'setup_complete' | 'execution_start' | 'iteration' | 'iteration_milestone' | 'completion' | 'error' | 'all');
   }
 }

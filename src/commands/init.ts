@@ -73,7 +73,7 @@ export function initCommand(): Command {
           mode,
           completionMarkers,
           notifyUrl: options.notifyUrl || runtimeConfig.notifyUrl,
-          notifyEvents: notifyEvents as Array<'setup_complete' | 'execution_start' | 'iteration_milestone' | 'completion' | 'error' | 'all'>,
+          notifyEvents: notifyEvents as Array<'setup_complete' | 'execution_start' | 'iteration' | 'iteration_milestone' | 'completion' | 'error' | 'all'>,
         });
 
         const metadata = await workspace.getMetadata();

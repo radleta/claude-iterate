@@ -39,7 +39,7 @@ export class Workspace {
       mode?: import('../types/mode.js').ExecutionMode;
       completionMarkers?: string[];
       notifyUrl?: string;
-      notifyEvents?: Array<'setup_complete' | 'execution_start' | 'iteration_milestone' | 'completion' | 'error' | 'all'>;
+      notifyEvents?: Array<'setup_complete' | 'execution_start' | 'iteration' | 'iteration_milestone' | 'completion' | 'error' | 'all'>;
     }
   ): Promise<Workspace> {
     // Check if workspace already exists

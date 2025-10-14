@@ -71,6 +71,15 @@ export function runCommand(): Command {
           const delay =
             options.delay === false ? 0 : (options.delay ?? metadata.delay);
 
+          // Apply config fallback for notification settings if not in metadata
+          // Priority: Workspace metadata > Config file
+          if (!metadata.notifyUrl && runtimeConfig.notifyUrl) {
+            metadata.notifyUrl = runtimeConfig.notifyUrl;
+          }
+          if ((!metadata.notifyEvents || metadata.notifyEvents.length === 0) && runtimeConfig.notifyEvents) {
+            metadata.notifyEvents = runtimeConfig.notifyEvents as Array<'setup_complete' | 'execution_start' | 'iteration' | 'iteration_milestone' | 'completion' | 'error' | 'all'>;
+          }
+
           // Override completion markers if provided via CLI (runtime only, not persisted to metadata)
           // Priority: CLI flag > Workspace metadata > Config file > Built-in defaults
           if (options.completionMarkers) {
@@ -183,8 +192,10 @@ export function runCommand(): Command {
               // Execute Claude non-interactively from project root with iteration context
               await client.executeNonInteractive(prompt, systemPrompt);
 
-              // Increment iteration count
-              await workspace.incrementIterations('execution');
+              // Increment iteration count and update metadata
+              const updatedMetadata = await workspace.incrementIterations('execution');
+              // Update in-memory metadata to ensure notification checks use fresh data
+              Object.assign(metadata, updatedMetadata);
 
               // Check completion
               isComplete = await workspace.isComplete();
@@ -220,6 +231,22 @@ export function runCommand(): Command {
 
               if (remainingCount !== null) {
                 logger.log(`   Remaining: ${remainingCount}`);
+              }
+
+              // Send iteration notification (after each iteration)
+              if (
+                notificationService.isConfigured(metadata) &&
+                notificationService.shouldNotify('iteration', metadata) &&
+                metadata.notifyUrl
+              ) {
+                await notificationService.send(
+                  `ITERATION ${iterationCount}/${maxIterations}\n\nWorkspace: ${name}\nStatus: In progress\nRemaining: ${remainingCount !== null ? remainingCount : 'unknown'}`,
+                  {
+                    url: metadata.notifyUrl,
+                    title: `Iteration ${iterationCount}`,
+                    tags: ['claude-iterate', 'iteration'],
+                  }
+                );
               }
 
               // Send milestone notification (every 10 iterations)
