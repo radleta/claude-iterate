@@ -24,7 +24,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Best for complex multi-step tasks requiring sustained focus
 - **Mode Configuration**:
   - `--mode <mode>` flag on `init` command
-  - `defaultMode` option in configuration files
   - Mode stored in workspace `.metadata.json`
 - **Strategy Pattern**: Extensible architecture for adding new modes
   - Mode-specific prompt generation
@@ -38,6 +37,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Setup, edit, and validate use mode-specific prompts
   - Run command displays current mode
   - Show command displays workspace mode
+
+#### Completion Markers Customization
+
+- **Three-Tier Customization** (loop mode only):
+  - Config file defaults (project: `.claude-iterate.json`, user: `~/.config/claude-iterate/config.json`)
+  - Workspace-specific markers via `--completion-markers` flag on `init` command
+  - Runtime overrides via `--completion-markers` flag on `run` command
+- **Clear Priority Hierarchy**: Runtime CLI flag > Workspace init flag > Config file > Built-in defaults
+- **Flexible Configuration**: Comma-separated marker strings (e.g., `"DONE,COMPLETE,Task finished"`)
+- **Backward Compatible**: Default markers unchanged (`Remaining: 0`, `**Remaining**: 0`, `TASK COMPLETE`, `✅ TASK COMPLETE`)
 
 #### Infrastructure
 
@@ -54,6 +63,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - New tests for mode factory, loop mode strategy, iterative mode strategy
   - Updated tests for mode-aware completion and workspace
 - **TypeScript Types**: Added `ExecutionMode` enum and `ModeDefinition` type
+- **Workspace Instructions**: Instructions file name now hardcoded to `INSTRUCTIONS.md` (removed configurable `instructionsFile` field)
+
+### Removed
+
+#### Code Cleanup
+
+- **Unused Enums**: Removed `WorkspaceStatus` and `NotifyEvent` enums from `src/types/metadata.ts` (never used, string literals used instead)
+- **Singleton Logger Export**: Removed unused `logger` singleton export from `src/utils/logger.ts` (all code creates new instances)
+- **Unused Config Fields**: Removed `defaultMode` from config schemas (mode determined at workspace init, not from config)
+- **Config Command**: Removed undocumented `config` command (100 lines, no tests, limited value)
+- **Instructions File Field**: Removed `instructionsFile` metadata field (always `INSTRUCTIONS.md`, convention not configuration)
+- **Total Impact**: ~150 lines of dead code removed, improved maintainability and type system clarity
 
 ### Technical Details
 
@@ -72,19 +93,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tests/unit/iterative-mode.test.ts` - Iterative mode strategy tests
 
 **Modified Files:**
-- `src/types/metadata.ts` - Added `mode` field
-- `src/types/config.ts` - Added `defaultMode` field
+- `src/types/metadata.ts` - Added `mode` field, removed unused enums and `instructionsFile` field
+- `src/types/config.ts` - Added `completionMarkers` field, removed `defaultMode` field
 - `src/templates/system-prompt.ts` - Converted to async template loading
 - `src/core/completion.ts` - Added mode-aware completion detection
-- `src/core/workspace.ts` - Added mode support to init and methods
-- `src/commands/init.ts` - Added `--mode` flag
+- `src/core/config-manager.ts` - Added completion markers merging logic
+- `src/core/workspace.ts` - Added mode support and completion markers to init, simplified instructions methods
+- `src/commands/init.ts` - Added `--mode` and `--completion-markers` flags
 - `src/commands/setup.ts` - Use mode-specific prompts
 - `src/commands/edit.ts` - Use mode-specific prompts
 - `src/commands/validate.ts` - Use mode-specific prompts
-- `src/commands/run.ts` - Display mode, use mode-specific prompts
+- `src/commands/run.ts` - Display mode, use mode-specific prompts, support `--completion-markers` override
 - `src/commands/show.ts` - Display workspace mode
+- `src/utils/logger.ts` - Removed singleton export
 - `tests/unit/completion.test.ts` - Added iterative mode tests
 - `tests/unit/workspace.test.ts` - Added mode-specific tests
+
+**Removed Files:**
+- `src/commands/config.ts` - Undocumented command with no tests
 
 ---
 

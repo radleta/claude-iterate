@@ -69,7 +69,8 @@ export function runCommand(): Command {
           const delay =
             options.delay === false ? 0 : (options.delay ?? metadata.delay);
 
-          // Override completion markers if provided via CLI
+          // Override completion markers if provided via CLI (runtime only, not persisted to metadata)
+          // Priority: CLI flag > Workspace metadata > Config file > Built-in defaults
           if (options.completionMarkers) {
             metadata.completionMarkers = options.completionMarkers
               .split(',')
