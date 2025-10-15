@@ -89,11 +89,16 @@ export class ClaudeClient {
    * @param systemPrompt - Optional system prompt to append
    * @param cwd - Working directory for Claude execution (defaults to process.cwd())
    *              Normally runs from project root. Workspace files accessed via absolute paths.
+   * @param callbacks - Optional callbacks for streaming output
    */
   async executeNonInteractive(
     prompt: string,
     systemPrompt?: string,
-    cwd?: string
+    cwd?: string,
+    callbacks?: {
+      onStdout?: (chunk: string) => void;
+      onStderr?: (chunk: string) => void;
+    }
   ): Promise<string> {
     return new Promise((resolve, reject) => {
       if (this.isShuttingDown) {
@@ -110,7 +115,7 @@ export class ClaudeClient {
 
       allArgs.push(prompt);
 
-      const options: SpawnOptions = {
+      const spawnOptions: SpawnOptions = {
         cwd: cwd || process.cwd(), // Project root - Claude accesses all files
         shell: false, // Don't use shell - we're passing args directly
         stdio: ['ignore', 'pipe', 'pipe'], // Close stdin, pipe stdout/stderr
@@ -118,18 +123,24 @@ export class ClaudeClient {
 
       this.logger.debug(`Executing: ${this.command} with ${allArgs.length} args`, true);
 
-      const child = spawn(this.command, allArgs, options);
+      const child = spawn(this.command, allArgs, spawnOptions);
       this.currentChild = child;
 
       let stdout = '';
       let stderr = '';
 
       child.stdout?.on('data', (data) => {
-        stdout += data.toString();
+        const chunk = data.toString();
+        stdout += chunk;
+        // Call streaming callback if provided
+        callbacks?.onStdout?.(chunk);
       });
 
       child.stderr?.on('data', (data) => {
-        stderr += data.toString();
+        const chunk = data.toString();
+        stderr += chunk;
+        // Call streaming callback if provided
+        callbacks?.onStderr?.(chunk);
       });
 
       const cleanup = () => {

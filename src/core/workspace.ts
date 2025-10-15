@@ -85,10 +85,6 @@ export class Workspace {
       `# TODO - ${name}\n\n*Instructions not yet created. Run setup command first.*\n`
     );
 
-    // Create logs
-    await writeText(join(workspacePath, 'setup.log'), '');
-    await writeText(join(workspacePath, 'iterate.log'), '');
-
     return new Workspace(name, workspacePath);
   }
 

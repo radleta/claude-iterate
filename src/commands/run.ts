@@ -1,8 +1,10 @@
 import { Command } from 'commander';
+import { join } from 'path';
 import { Workspace } from '../core/workspace.js';
 import { ConfigManager } from '../core/config-manager.js';
 import { ClaudeClient } from '../services/claude-client.js';
 import { NotificationService } from '../services/notification-service.js';
+import { FileLogger } from '../services/file-logger.js';
 import { Logger } from '../utils/logger.js';
 import { getWorkspacePath } from '../utils/paths.js';
 import { getIterationPrompt, getIterationSystemPrompt } from '../templates/system-prompt.js';
@@ -159,6 +161,17 @@ export function runCommand(): Command {
           // Create notification service
           const notificationService = new NotificationService(logger, runtimeConfig.verbose);
 
+          // Create file logger with timestamped filename
+          const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+          const logPath = join(workspace.path, `iterate-${timestamp}.log`);
+          const fileLogger = new FileLogger(logPath, true);
+
+          // Log workspace info if verbose
+          if (runtimeConfig.verbose && fileLogger.isEnabled()) {
+            logger.log(`  📝 Logging to: ${logPath}`);
+            logger.line();
+          }
+
           // Send execution start notification
           if (
             notificationService.isConfigured(metadata) &&
@@ -189,8 +202,36 @@ export function runCommand(): Command {
             const prompt = await getIterationPrompt(instructions, iterationCount, metadata.mode);
 
             try {
+              // Log iteration start
+              await fileLogger.logIterationStart(iterationCount, prompt, systemPrompt);
+
               // Execute Claude non-interactively from project root with iteration context
-              await client.executeNonInteractive(prompt, systemPrompt);
+              // Stream output to file and console (if verbose)
+              await client.executeNonInteractive(
+                prompt,
+                systemPrompt,
+                undefined,
+                {
+                  onStdout: (chunk) => {
+                    // Always log to file (async, but don't await in callback)
+                    fileLogger.appendOutput(chunk);
+
+                    // Show to console if verbose
+                    if (runtimeConfig.verbose) {
+                      process.stdout.write(chunk);
+                    }
+                  },
+                  onStderr: (chunk) => {
+                    // Always log to file
+                    fileLogger.appendOutput(chunk);
+
+                    // Show to console if verbose
+                    if (runtimeConfig.verbose) {
+                      process.stderr.write(chunk);
+                    }
+                  }
+                }
+              );
 
               // Increment iteration count and update metadata
               const updatedMetadata = await workspace.incrementIterations('execution');
@@ -200,6 +241,13 @@ export function runCommand(): Command {
               // Check completion
               isComplete = await workspace.isComplete();
               const remainingCount = await workspace.getRemainingCount();
+
+              // Log iteration completion
+              await fileLogger.logIterationComplete(
+                iterationCount,
+                'success',
+                remainingCount
+              );
 
               if (isComplete) {
                 logger.line();
@@ -280,6 +328,9 @@ export function runCommand(): Command {
                 );
               }
             } catch (error) {
+              // Log error to file
+              await fileLogger.logError(iterationCount, error as Error);
+
               logger.error(
                 `Iteration ${iterationCount} failed`,
                 error as Error
@@ -309,6 +360,9 @@ export function runCommand(): Command {
             logger.line();
           }
 
+          // Flush any remaining log buffer
+          await fileLogger.flush();
+
           if (!isComplete && iterationCount >= maxIterations) {
             logger.warn(`⚠️  Reached maximum iterations (${maxIterations})`);
             logger.line();
@@ -326,6 +380,9 @@ export function runCommand(): Command {
           logger.log(
             `Execution iterations: ${metadata.executionIterations + iterationCount}`
           );
+          if (fileLogger.isEnabled()) {
+            logger.log(`Log file: ${fileLogger.getLogPath()}`);
+          }
         } catch (error) {
           logger.error('Run failed', error as Error);
           process.exit(1);

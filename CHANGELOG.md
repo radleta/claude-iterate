@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **File Logging**: Each run now creates a timestamped log file (e.g., `iterate-20251015-142345.log`)
+  - All Claude output captured to log files regardless of verbose setting
+  - Structured format with iteration numbers, timestamps, and full responses
+  - Easy to review specific runs with timestamped filenames
+- **Verbose Output**: `--verbose` flag now shows Claude's full output in real-time during iterations
+  - Streams Claude responses to console as they're generated
+  - File logging continues to work alongside console output
+  - Helpful for debugging and monitoring long-running tasks
+
+### Changed
+- **Log File Format**: Workspace log files now timestamped per run instead of single append-only file
+  - Format: `iterate-YYYYMMDD-HHMMSS.log` (e.g., `iterate-20251015-142345.log`)
+  - Makes it easy to identify and review specific execution runs
+  - No manual log rotation needed - each run creates its own file
+
+### Removed
+- **Empty Placeholder Logs**: Removed creation of empty `setup.log` and `iterate.log` files
+  - These were never populated and served no purpose
+  - Replaced with timestamped logs that contain actual execution history
+
 ## [1.0.1] - 2025-10-14
 
 ### Fixed

@@ -2,7 +2,7 @@
 
 Automate multi-step tasks with Claude Code through managed workspaces, reusable templates, and autonomous iteration loops.
 
-[![Tests](https://img.shields.io/badge/tests-147%20passing-brightgreen)](https://github.com/radleta/claude-iterate)
+[![Tests](https://img.shields.io/badge/tests-183%20passing-brightgreen)](https://github.com/radleta/claude-iterate)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue)](https://www.typescriptlang.org/)
 [![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
@@ -63,6 +63,7 @@ Isolated task environments with:
 - `INSTRUCTIONS.md` - What Claude should do
 - `TODO.md` - Progress tracking
 - `.metadata.json` - Iteration state
+- `iterate-*.log` - Timestamped execution logs
 - `working/` - Scratch space
 
 ### Execution Modes
@@ -279,6 +280,49 @@ claude-iterate config notifyUrl https://ntfy.sh/my-topic
 
 **Default events:** `iteration`, `completion`, `error`
 
+## Viewing Claude Output
+
+By default, claude-iterate runs iterations silently to avoid console clutter. You have two ways to see what Claude is doing:
+
+### Console Output (--verbose)
+
+Show Claude's full responses in real-time as each iteration executes:
+
+```bash
+claude-iterate run my-task --verbose
+```
+
+This streams all Claude output directly to your console, helpful for:
+- Debugging issues
+- Monitoring progress in real-time
+- Understanding Claude's reasoning
+
+### Log Files
+
+Every run automatically creates a timestamped log file in the workspace directory:
+
+```bash
+# List all log files for a workspace (sorted by time)
+ls -lt claude-iterate/workspaces/my-task/iterate-*.log
+
+# View the latest log file
+ls -t claude-iterate/workspaces/my-task/iterate-*.log | head -1 | xargs cat
+
+# Search for specific content across all logs
+grep "error" claude-iterate/workspaces/my-task/iterate-*.log
+```
+
+**Log file naming:** `iterate-YYYYMMDD-HHMMSS.log` (e.g., `iterate-20251015-142345.log`)
+
+Each log file contains:
+- Run start timestamp
+- Iteration numbers
+- Full prompts sent to Claude
+- Complete Claude responses
+- Completion status and remaining counts
+
+**Note:** Log files are created regardless of the --verbose flag, so you always have a record of what happened.
+
 ## Examples
 
 ### Basic Workflow
@@ -351,6 +395,8 @@ claude-iterate run report-january-2025
     │       ├── INSTRUCTIONS.md
     │       ├── TODO.md
     │       ├── .metadata.json
+    │       ├── iterate-20251015-142345.log  # Run logs (timestamped)
+    │       ├── iterate-20251015-153021.log
     │       └── working/
     ├── templates/             # Project templates
     └── archive/               # Completed workspaces
@@ -410,6 +456,6 @@ npm run validate  # Run all checks
 
 ## Acknowledgments
 
-Built with TypeScript, Commander.js, and Zod. Tested with Vitest (147 passing tests).
+Built with TypeScript, Commander.js, and Zod. Tested with Vitest (183 passing tests).
 
 Requires [Claude CLI](https://docs.anthropic.com/en/docs/claude-code) by Anthropic.
