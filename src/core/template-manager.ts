@@ -5,6 +5,7 @@ import {
   TemplateMetadataSchema,
   TemplateListItem,
 } from '../types/template.js';
+import { Metadata } from '../types/metadata.js';
 import {
   dirExists,
   ensureDir,
@@ -68,7 +69,7 @@ export class TemplateManager {
 
     // Read workspace metadata to get configuration
     const metadataPath = join(workspacePath, '.metadata.json');
-    let workspaceMetadata: any = {};
+    let workspaceMetadata: Partial<Metadata> = {};
     if (await fileExists(metadataPath)) {
       workspaceMetadata = await readJson(metadataPath);
     }
