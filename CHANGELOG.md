@@ -31,7 +31,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Primary completion detection mechanism (replaces text marker parsing)
   - Prevents false positives from markers appearing in instructions or examples
   - Example: `{"complete": false, "progress": {"completed": 35, "total": 60}}`
-  - Backward compatible: Falls back to legacy marker detection if file missing
 - **Status Display**: `show` command now displays `.status.json` information
   - Shows progress counts (completed/total)
   - Displays optional summary, phase, and blockers
@@ -82,21 +81,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **Completion Detection**: Now uses `.status.json` as primary completion signal
-  - Primary: Checks `.status.json` for `complete: true`
-  - Fallback: Legacy marker detection in TODO.md (backward compatible)
+- **Completion Detection**: Now exclusively uses `.status.json` for completion signal
+  - Checks `.status.json` for `complete: true`
   - More reliable: No false positives from markers in instructions/examples
   - Unified: Single code path for both loop and iterative modes
+  - No legacy marker detection fallback (breaking change)
 - **Progress Display**: `run` command now shows structured progress from `.status.json`
-  - Shows `Progress: 35/60` format when status file exists
-  - Falls back to `Remaining: N` from TODO.md if status file missing
+  - Shows `Progress: 35/60` format for loop mode (when progress tracking exists)
+  - Shows worked status and summary for iterative mode
   - Displays summary text from status file on completion
 - **Prompt Templates**: Updated iteration system prompts to document `.status.json`
   - Loop mode: Explains status file format and required fields
   - Iterative mode: Documents status updates alongside TODO.md checkboxes
   - Setup prompts: Instructs users to update status file each iteration
   - Clear examples showing status file structure
-- **Test Suite**: Updated from 183 to 204 passing tests (+21 tests)
+- **Test Suite**: Updated from 147 to 199 passing tests (+52 tests)
   - New status-manager unit tests (15 tests)
   - Enhanced completion detection tests (6 tests)
   - All tests pass with new .status.json system
