@@ -9,15 +9,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking Changes
 
-- **Iterative Mode Completion Detection**: Iterative mode now uses completion markers instead of checkbox counting
-  - Previously: Detected completion by counting unchecked (`- [ ]`) vs checked (`- [x]`) items
-  - Now: Uses same marker-based detection as loop mode (searches for marker strings in TODO.md)
-  - **Migration**: Add a completion marker (e.g., `TASK COMPLETE` or `Remaining: 0`) to iterative workspace TODO.md files
-  - **Reason**: Simplifies completion logic, unifies both modes, allows custom completion criteria
-  - This affects existing iterative mode workspaces - they will need explicit completion markers to complete
+- **Completion Detection Simplification**: Completion detection now exclusively uses `.status.json`
+  - **Removed**: `completionMarkers` configuration option (from metadata, config files, and CLI)
+  - **Removed**: `--completion-markers` CLI flag
+  - **Removed**: Marker-based text parsing in TODO.md (e.g., "Remaining: 0", "TASK COMPLETE")
+  - **Migration**: None required - .status.json is created automatically during iterations
+  - **Rationale**: Simplifies system, eliminates false positives, improves reliability
+  - Legacy marker detection removed - single code path for all modes
+
+- **Status Instructions Moved to Runtime**: `.status.json` format no longer in setup prompts
+  - User instructions now focus purely on task description (WHAT to build)
+  - Status tracking instructions automatically appended at runtime (HOW to track)
+  - Makes system more maintainable and format updates won't break existing workspaces
+  - Existing workspaces continue to work (instructions are just longer than needed)
 
 ### Added
 
+- **Status File (.status.json)**: Machine-readable completion status for robust progress tracking
+  - Structured JSON format with `complete`, `progress`, `summary`, and optional fields
+  - Claude updates `.status.json` each iteration with current progress
+  - Primary completion detection mechanism (replaces text marker parsing)
+  - Prevents false positives from markers appearing in instructions or examples
+  - Example: `{"complete": false, "progress": {"completed": 35, "total": 60}}`
+  - Backward compatible: Falls back to legacy marker detection if file missing
+- **Status Display**: `show` command now displays `.status.json` information
+  - Shows progress counts (completed/total)
+  - Displays optional summary, phase, and blockers
+  - Validation warnings for inconsistent status (e.g., completed > total)
+- **Status Methods**: New workspace methods for status access
+  - `workspace.getStatus()`: Read full status object
+  - `workspace.getProgress()`: Get progress with percentage
+  - `workspace.validateStatus()`: Check for inconsistencies
+- **15 New Tests**: Comprehensive test coverage for status manager and completion detection
+  - Unit tests for StatusManager (read, validation, progress calculation)
+  - Integration tests for .status.json priority over legacy markers
+  - Fallback behavior tests for backward compatibility
 - **File Logging**: Each run now creates a timestamped log file (e.g., `iterate-20251015-142345.log`)
   - All Claude output captured to log files regardless of verbose setting
   - Structured format with iteration numbers, timestamps, and full responses
@@ -26,6 +52,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Streams Claude responses to console as they're generated
   - File logging continues to work alongside console output
   - Helpful for debugging and monitoring long-running tasks
+- **Stagnation Detection**: Automatic stop after N consecutive no-work iterations (iterative mode only)
+  - Default threshold: 2 consecutive iterations with no work
+  - Prevents infinite loops when Claude reports `worked: false` without setting `complete: true`
+  - Configurable via `--stagnation-threshold` CLI flag (0=disabled)
+  - Can be set in workspace metadata, project config, or user config
+  - Configuration hierarchy: CLI flag > Workspace metadata > Project config > User config > Default (2)
+  - Only applies to iterative mode (loop mode has explicit progress tracking)
+  - Counter resets to 0 when work is detected (worked=true or undefined)
+  - Debug logging shows stagnation count progression when verbose enabled
 - **Smoke Test Templates**: Two templates for testing execution modes
   - `test-loop-mode`: Tests loop mode with "Remaining: N" countdown (5→4→3→2→1→0)
   - `test-iterative-mode`: Tests iterative mode with "COUNT: N" count-up (0→1→2→3→4→5)
@@ -47,6 +82,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Completion Detection**: Now uses `.status.json` as primary completion signal
+  - Primary: Checks `.status.json` for `complete: true`
+  - Fallback: Legacy marker detection in TODO.md (backward compatible)
+  - More reliable: No false positives from markers in instructions/examples
+  - Unified: Single code path for both loop and iterative modes
+- **Progress Display**: `run` command now shows structured progress from `.status.json`
+  - Shows `Progress: 35/60` format when status file exists
+  - Falls back to `Remaining: N` from TODO.md if status file missing
+  - Displays summary text from status file on completion
+- **Prompt Templates**: Updated iteration system prompts to document `.status.json`
+  - Loop mode: Explains status file format and required fields
+  - Iterative mode: Documents status updates alongside TODO.md checkboxes
+  - Setup prompts: Instructs users to update status file each iteration
+  - Clear examples showing status file structure
+- **Test Suite**: Updated from 183 to 204 passing tests (+21 tests)
+  - New status-manager unit tests (15 tests)
+  - Enhanced completion detection tests (6 tests)
+  - All tests pass with new .status.json system
 - **Log File Format**: Workspace log files now timestamped per run instead of single append-only file
   - Format: `iterate-YYYYMMDD-HHMMSS.log` (e.g., `iterate-20251015-142345.log`)
   - Makes it easy to identify and review specific execution runs
@@ -81,15 +134,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-- **Empty Placeholder Logs**: Removed creation of empty `setup.log` and `iterate.log` files
-  - These were never populated and served no purpose
-  - Replaced with timestamped logs that contain actual execution history
-- **Mode-Specific Completion Logic**: Removed `getRemainingCountIterative()` method
-  - No longer needed with unified completion detection
-  - Reduces code complexity
-- **Checkbox Counting for Iterative Mode**: Removed checkbox-based completion detection
-  - Replaced with marker-based detection
-  - More flexible and consistent
+- **Completion Markers Configuration**: Removed from metadata, config, and CLI
+  - No longer needed with .status.json-only detection
+  - Simplifies configuration surface
+  - Reduces user confusion
+  - Removed from: MetadataSchema, ProjectConfigSchema, UserConfigSchema, RuntimeConfig, DEFAULT_CONFIG
+  - Removed CLI flags: `--completion-markers` (from init and run commands)
+  - Removed config command support: `config completionMarkers`
+- **Legacy Marker Detection**: Removed all TODO.md text parsing for completion
+  - No backward compatibility fallback
+  - Cleaner, simpler codebase
+  - Single code path for all modes
+  - Removed methods: `isCompleteLegacy()`, `isCompleteLoop()`, `isCompleteIterative()`, `getRemainingCountLoop()`
+  - Removed: `hasTodo()` and `hasInstructions()` helper methods from CompletionDetector
+- **Mode-Specific Completion Logic**: Unified completion detection for all modes
+  - Both loop and iterative modes use identical .status.json mechanism
+  - Removed mode branching in completion detector
+  - Simplified from 194 lines to 58 lines in completion.ts
+- **Status Tracking in Setup Prompts**: Removed .status.json documentation from user-facing prompts
+  - Setup prompts no longer explain status file format
+  - Status instructions moved to runtime (appended to iteration prompts automatically)
+  - Users focus on task description, not system mechanics
+  - Removed "Status Tracking" sections from loop/setup.md and iterative/setup.md
 
 ## [1.0.1] - 2025-10-14
 

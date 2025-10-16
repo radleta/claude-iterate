@@ -13,14 +13,9 @@ export const MetadataSchema = z.object({
   totalIterations: z.number().int().min(0).default(0),
   setupIterations: z.number().int().min(0).default(0),
   executionIterations: z.number().int().min(0).default(0),
-  completionMarkers: z.array(z.string()).default([
-    'Remaining: 0',
-    '**Remaining**: 0',
-    'TASK COMPLETE',
-    '✅ TASK COMPLETE',
-  ]),
   maxIterations: z.number().int().min(1).default(50),
   delay: z.number().int().min(0).default(2),
+  stagnationThreshold: z.number().int().min(0).default(2),
   notifyUrl: z.string().url().optional(),
   notifyEvents: z.array(z.enum(['setup_complete', 'execution_start', 'iteration', 'iteration_milestone', 'completion', 'error', 'all'])).optional(),
 });

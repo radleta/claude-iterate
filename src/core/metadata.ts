@@ -26,14 +26,9 @@ export class MetadataManager {
       totalIterations: 0,
       setupIterations: 0,
       executionIterations: 0,
-      completionMarkers: [
-        'Remaining: 0',
-        '**Remaining**: 0',
-        'TASK COMPLETE',
-        '✅ TASK COMPLETE',
-      ],
       maxIterations: 50,
       delay: 2,
+      stagnationThreshold: 2,
     };
   }
 

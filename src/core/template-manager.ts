@@ -85,7 +85,6 @@ export class TemplateManager {
       mode: workspaceMetadata.mode,
       maxIterations: workspaceMetadata.maxIterations,
       delay: workspaceMetadata.delay,
-      completionMarkers: workspaceMetadata.completionMarkers,
     };
 
     await writeJson(join(templatePath, '.template.json'), metadata);

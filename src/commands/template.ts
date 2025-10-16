@@ -117,7 +117,6 @@ export function templateCommand(): Command {
           mode: templateInfo.metadata?.mode,
           maxIterations: templateInfo.metadata?.maxIterations,
           delay: templateInfo.metadata?.delay,
-          completionMarkers: templateInfo.metadata?.completionMarkers,
         });
 
         // Copy INSTRUCTIONS.md from template

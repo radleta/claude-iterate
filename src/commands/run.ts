@@ -27,7 +27,7 @@ export function runCommand(): Command {
       parseInt
     )
     .option('--no-delay', 'Skip delay between iterations')
-    .option('--completion-markers <markers>', 'Override completion markers (comma-separated, loop mode only)')
+    .option('--stagnation-threshold <number>', 'Stop after N consecutive no-work iterations (iterative mode only, 0=never)', parseInt)
     .option('--dangerously-skip-permissions', 'Skip permission prompts (runtime only, not saved to config)')
     .option('--dry-run', 'Use mock Claude for testing (logs to /tmp/mock-claude.log)')
     .action(
@@ -36,7 +36,7 @@ export function runCommand(): Command {
         options: {
           maxIterations?: number;
           delay?: number | false;
-          completionMarkers?: string;
+          stagnationThreshold?: number;
           dangerouslySkipPermissions?: boolean;
           dryRun?: boolean;
         },
@@ -82,14 +82,6 @@ export function runCommand(): Command {
             metadata.notifyEvents = runtimeConfig.notifyEvents as Array<'setup_complete' | 'execution_start' | 'iteration' | 'iteration_milestone' | 'completion' | 'error' | 'all'>;
           }
 
-          // Override completion markers if provided via CLI (runtime only, not persisted to metadata)
-          // Priority: CLI flag > Workspace metadata > Config file > Built-in defaults
-          if (options.completionMarkers) {
-            metadata.completionMarkers = options.completionMarkers
-              .split(',')
-              .map(m => m.trim());
-          }
-
           logger.header(`Running iteration loop: ${name}`);
           logger.log(`  🔧 Mode: ${metadata.mode}`);
           logger.log(`  📊 Max iterations: ${maxIterations}`);
@@ -115,7 +107,7 @@ export function runCommand(): Command {
             // Use Node.js mock (cross-platform)
             claudeCommand = 'node';
             claudeArgs = [
-              `${process.cwd()}/mock-claude.js`,
+              `${process.cwd()}/mock-claude.cjs`,
               ...claudeArgs,
             ];
           }
@@ -191,15 +183,19 @@ export function runCommand(): Command {
           // Iteration loop
           let iterationCount = 0;
           let isComplete = false;
+          let noWorkCount = 0; // Track consecutive no-work iterations
+
+          // Get stagnation threshold (from CLI override, workspace metadata, or config)
+          const stagnationThreshold = options.stagnationThreshold ?? metadata.stagnationThreshold ?? runtimeConfig.stagnationThreshold;
 
           while (iterationCount < maxIterations && !isComplete) {
             iterationCount++;
 
             logger.info(`Iteration ${iterationCount}/${maxIterations}`);
 
-            // Generate prompts (mode-aware)
+            // Generate prompts (mode-aware) with status instructions
             const systemPrompt = await getIterationSystemPrompt(workspace.path, metadata.mode);
-            const prompt = await getIterationPrompt(instructions, iterationCount, metadata.mode);
+            const prompt = await getIterationPrompt(instructions, iterationCount, metadata.mode, workspace.path);
 
             try {
               // Log iteration start
@@ -242,6 +238,24 @@ export function runCommand(): Command {
               isComplete = await workspace.isComplete();
               const remainingCount = await workspace.getRemainingCount();
 
+              // Stagnation detection (iterative mode only)
+              if (metadata.mode === 'iterative' && !isComplete) {
+                const status = await workspace.getStatus();
+                if (status.worked === false) {
+                  noWorkCount++;
+                  logger.debug(`No work detected (${noWorkCount}/${stagnationThreshold})`, runtimeConfig.verbose);
+
+                  if (stagnationThreshold > 0 && noWorkCount >= stagnationThreshold) {
+                    logger.line();
+                    logger.warn(`⚠️  Stagnation detected: ${noWorkCount} consecutive iterations with no work`);
+                    logger.info('Marking task as complete due to stagnation threshold');
+                    isComplete = true;
+                  }
+                } else {
+                  noWorkCount = 0; // Reset counter on any work
+                }
+              }
+
               // Log iteration completion
               await fileLogger.logIterationComplete(
                 iterationCount,
@@ -252,9 +266,17 @@ export function runCommand(): Command {
               if (isComplete) {
                 logger.line();
                 logger.success('✅ Task completed!');
-                if (remainingCount !== null) {
-                  logger.log(`   Remaining: ${remainingCount}`);
+
+                // Show status from .status.json
+                const status = await workspace.getStatus();
+                if (status.summary) {
+                  logger.log(`   ${status.summary}`);
                 }
+                // Only show progress for loop mode
+                if (status.progress) {
+                  logger.log(`   Progress: ${status.progress.completed}/${status.progress.total}`);
+                }
+
                 await workspace.markCompleted();
 
                 // Send completion notification
@@ -277,7 +299,22 @@ export function runCommand(): Command {
                 break;
               }
 
-              if (remainingCount !== null) {
+              // Show progress from .status.json (loop mode) or summary (iterative mode)
+              const status = await workspace.getStatus();
+              if (status.progress && status.progress.total > 0) {
+                // Loop mode: show progress counts
+                logger.log(`   Progress: ${status.progress.completed}/${status.progress.total}`);
+                const remaining = status.progress.total - status.progress.completed;
+                if (remaining > 0) {
+                  logger.log(`   Remaining: ${remaining}`);
+                }
+              } else if (status.worked !== undefined) {
+                // Iterative mode: show work status
+                if (status.summary) {
+                  logger.log(`   ${status.summary}`);
+                }
+              } else if (remainingCount !== null) {
+                // Fallback to legacy remaining count
                 logger.log(`   Remaining: ${remainingCount}`);
               }
 

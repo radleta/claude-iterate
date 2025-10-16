@@ -59,4 +59,10 @@ export class LoopModeStrategy implements ModePromptStrategy {
   async getValidationCriteria(): Promise<string> {
     return loadTemplate('loop/validation-criteria.md', {});
   }
+
+  async getStatusInstructions(workspacePath: string): Promise<string> {
+    return loadTemplate('loop/status-instructions.md', {
+      workspacePath,
+    });
+  }
 }

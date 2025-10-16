@@ -58,13 +58,24 @@ export async function getIterationSystemPrompt(
 }
 
 /**
- * Generate iteration prompt (mode-aware)
+ * Generate iteration prompt (mode-aware) with status instructions appended
  */
 export async function getIterationPrompt(
   instructionsContent: string,
   iterationNumber: number,
-  mode: ExecutionMode = ExecutionMode.LOOP
+  mode: ExecutionMode = ExecutionMode.LOOP,
+  workspacePath?: string
 ): Promise<string> {
   const strategy = ModeFactory.getStrategy(mode);
-  return strategy.getIterationPrompt(instructionsContent, iterationNumber);
+
+  // Get base iteration prompt
+  const basePrompt = await strategy.getIterationPrompt(instructionsContent, iterationNumber);
+
+  // If workspace path provided, append status instructions
+  if (workspacePath) {
+    const statusInstructions = await strategy.getStatusInstructions(workspacePath);
+    return `${basePrompt}\n\n---\n\n${statusInstructions}`;
+  }
+
+  return basePrompt;
 }

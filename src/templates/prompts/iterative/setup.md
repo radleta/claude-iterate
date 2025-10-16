@@ -47,7 +47,7 @@ Create INSTRUCTIONS.md containing:
 [Explicit template using checkboxes: `- [ ]` for incomplete, `- [x]` for complete]
 
 **## Completion Criteria**
-[Unambiguous conditions indicating task is done - typically all checkboxes checked]
+[Unambiguous conditions indicating task is done]
 
 **## Quality Standards**
 [Requirements for code quality, testing, documentation, error handling]

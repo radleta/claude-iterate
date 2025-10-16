@@ -44,7 +44,7 @@ describe('LoopModeStrategy', () => {
   it('should generate iteration system prompt with state management', async () => {
     const prompt = await strategy.getIterationSystemPrompt('/path/to/workspace');
     expect(prompt).toContain('NO memory of previous iterations');
-    expect(prompt).toContain('TODO.md file is your ONLY source of state');
+    expect(prompt).toContain('Your state is tracked in TODO.md');
     expect(prompt).toContain('Iteration Protocol');
     expect(prompt).toContain('/path/to/workspace');
   });

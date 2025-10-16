@@ -44,10 +44,10 @@ Create INSTRUCTIONS.md containing:
 [Step-by-step breakdown or strategy]
 
 **## TODO.md Format**
-[Explicit template showing exactly what to track. Use "Remaining: N" format]
+[Explicit template showing exactly what to track]
 
 **## Completion Criteria**
-[Unambiguous conditions indicating task is done - must include "Remaining: 0"]
+[Unambiguous conditions indicating task is done]
 
 **## Error Handling**
 [Guidance for dealing with failures or blockers]

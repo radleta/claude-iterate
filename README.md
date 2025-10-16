@@ -2,7 +2,7 @@
 
 Automate multi-step tasks with Claude Code through managed workspaces, reusable templates, and autonomous iteration loops.
 
-[![Tests](https://img.shields.io/badge/tests-183%20passing-brightgreen)](https://github.com/radleta/claude-iterate)
+[![Tests](https://img.shields.io/badge/tests-204%20passing-brightgreen)](https://github.com/radleta/claude-iterate)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue)](https://www.typescriptlang.org/)
 [![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
@@ -12,6 +12,7 @@ Automate multi-step tasks with Claude Code through managed workspaces, reusable 
 - 🎯 **Workspace Management** - Isolated environments for complex tasks
 - 🔄 **Autonomous Execution** - Iteration loops that run until completion
 - 🎭 **Dual Modes** - Loop (incremental) or iterative (autonomous) execution
+- 🛡️ **Stagnation Detection** - Automatic stop after N consecutive no-work iterations (iterative mode)
 - 📦 **Templates** - Reusable patterns for common workflows
 - ⚙️ **Git-Style Config** - Layered configuration (project, user, runtime)
 - 📁 **Archives** - Preserve and restore completed work
@@ -61,28 +62,58 @@ npx claude-iterate init my-task
 
 Isolated task environments with:
 - `INSTRUCTIONS.md` - What Claude should do
-- `TODO.md` - Progress tracking
+- `TODO.md` - Progress tracking (human-readable)
+- `.status.json` - Completion status (machine-readable)
 - `.metadata.json` - Iteration state
 - `iterate-*.log` - Timestamped execution logs
 - `working/` - Scratch space
+
+#### Status Tracking
+
+Claude tracks progress in two complementary files:
+
+**TODO.md** - Human-readable task list and notes for Claude's working context
+
+**.status.json** - Machine-readable progress signals for reliable completion detection:
+
+```json
+{
+  "complete": false,
+  "progress": {
+    "completed": 35,
+    "total": 60
+  },
+  "summary": "Migrated 35/60 API endpoints",
+  "lastUpdated": "2025-10-16T14:30:00Z"
+}
+```
+
+Claude updates `.status.json` each iteration. When `complete: true`, the task is finished. This prevents false positives from completion markers appearing in instructions or examples.
 
 ### Execution Modes
 
 **Loop Mode (Default)**
 - Incremental progress with explicit step tracking
-- Uses "Remaining: N" counter in TODO.md
+- Complete one item per iteration
 - Best for tasks with discrete steps
 - Default max: 50 iterations
 
 **Iterative Mode**
 - Autonomous work sessions completing multiple items
-- Uses completion markers (same as loop mode)
+- Complete as many items as possible per iteration
 - Best for complex tasks requiring sustained focus
 - Default max: 20 iterations (does more per iteration)
+- **Stagnation detection**: Automatically stops after N consecutive iterations with no work (default: 2, prevents infinite loops)
 
 ```bash
 # Use iterative mode
 claude-iterate init my-task --mode iterative
+
+# Customize stagnation threshold
+claude-iterate init my-task --mode iterative --stagnation-threshold 5
+
+# Disable stagnation detection (trust Claude completely)
+claude-iterate init my-task --mode iterative --stagnation-threshold 0
 ```
 
 ### Templates
@@ -145,7 +176,7 @@ claude-iterate config --global notifyUrl https://ntfy.sh/my-topic
 - `-m, --max-iterations <n>` - Override iteration limit
 - `-d, --delay <seconds>` - Delay between iterations
 - `--no-delay` - Skip delays
-- `--completion-markers <markers>` - Custom completion detection (loop mode)
+- `--stagnation-threshold <n>` - Stop after N consecutive no-work iterations (iterative mode only, 0=never)
 - `--dangerously-skip-permissions` - Disable permission prompts (see security note)
 
 ### Templates
@@ -200,7 +231,7 @@ Create `.claude-iterate.json` in your project root:
   "archiveDir": "./claude-iterate/archive",
   "defaultMaxIterations": 50,
   "defaultDelay": 2,
-  "completionMarkers": ["Remaining: 0", "TASK COMPLETE"],
+  "defaultStagnationThreshold": 2,
   "notifyUrl": "https://ntfy.sh/my-project",
   "notifyEvents": ["completion", "error"]
 }
@@ -215,6 +246,7 @@ Create `~/.config/claude-iterate/config.json`:
   "globalTemplatesDir": "~/.config/claude-iterate/templates",
   "defaultMaxIterations": 50,
   "defaultDelay": 2,
+  "defaultStagnationThreshold": 2,
   "claude": {
     "command": "claude",
     "args": []
@@ -242,31 +274,6 @@ claude-iterate run my-task --dangerously-skip-permissions
 ```
 
 ⚠️ **WARNING:** The `--dangerously-skip-permissions` flag allows Claude to read/write files and execute commands without confirmation. Anthropic recommends using this "only in a container without internet access." [Learn more](https://docs.anthropic.com/en/docs/agents/agent-security-model#disabling-permission-prompts)
-
-### Completion Markers
-
-Both loop and iterative modes use completion markers to detect task completion.
-
-Customize how task completion is detected:
-
-```bash
-# During init
-claude-iterate init my-task --completion-markers "DONE,FINISHED"
-
-# During run
-claude-iterate run my-task --completion-markers "ALL DONE"
-
-# In config
-claude-iterate config completionMarkers --add "Task Complete"
-```
-
-**Default markers:** `Remaining: 0`, `**Remaining**: 0`, `TASK COMPLETE`, `✅ TASK COMPLETE`
-
-**Loop mode example** (countdown):
-- Remaining: 5 → 4 → 3 → 2 → 1 → 0 ✓ Complete
-
-**Iterative mode example** (count-up):
-- COUNT: 0 → 1 → 2 → 3 → 4 → 5 ✓ Complete
 
 ### Notifications
 
@@ -400,6 +407,7 @@ claude-iterate run report-january-2025
     │   └── my-task/
     │       ├── INSTRUCTIONS.md
     │       ├── TODO.md
+    │       ├── .status.json         # Machine-readable completion status
     │       ├── .metadata.json
     │       ├── iterate-20251015-142345.log  # Run logs (timestamped)
     │       ├── iterate-20251015-153021.log
@@ -462,6 +470,6 @@ npm run validate  # Run all checks
 
 ## Acknowledgments
 
-Built with TypeScript, Commander.js, and Zod. Tested with Vitest (183 passing tests).
+Built with TypeScript, Commander.js, and Zod. Tested with Vitest (204 passing tests).
 
 Requires [Claude CLI](https://docs.anthropic.com/en/docs/claude-code) by Anthropic.

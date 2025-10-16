@@ -48,7 +48,7 @@ describe('IterativeModeStrategy', () => {
     expect(prompt).toContain('Complete as much');
     expect(prompt).toContain('stop early');
     expect(prompt).not.toContain('NO memory of previous iterations');
-    expect(prompt).toContain('checkbox');
+    expect(prompt).toContain('[ ]'); // Checkbox format
   });
 
   it('should generate iteration prompt for work session', async () => {

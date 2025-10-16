@@ -1,7 +1,9 @@
 import { join } from 'path';
 import { Metadata } from '../types/metadata.js';
+import { WorkspaceStatus } from '../types/status.js';
 import { MetadataManager } from './metadata.js';
 import { CompletionDetector } from './completion.js';
+import { StatusManager } from './status-manager.js';
 import {
   ensureDir,
   dirExists,
@@ -36,8 +38,8 @@ export class Workspace {
     options?: {
       maxIterations?: number;
       delay?: number;
+      stagnationThreshold?: number;
       mode?: import('../types/mode.js').ExecutionMode;
-      completionMarkers?: string[];
       notifyUrl?: string;
       notifyEvents?: Array<'setup_complete' | 'execution_start' | 'iteration' | 'iteration_milestone' | 'completion' | 'error' | 'all'>;
     }
@@ -58,11 +60,11 @@ export class Workspace {
     if (options?.delay) {
       metadata.delay = options.delay;
     }
+    if (options?.stagnationThreshold !== undefined) {
+      metadata.stagnationThreshold = options.stagnationThreshold;
+    }
     if (options?.mode) {
       metadata.mode = options.mode;
-    }
-    if (options?.completionMarkers) {
-      metadata.completionMarkers = options.completionMarkers;
     }
     if (options?.notifyUrl) {
       metadata.notifyUrl = options.notifyUrl;
@@ -129,8 +131,7 @@ export class Workspace {
     const metadata = await this.getMetadata();
     return await CompletionDetector.isComplete(
       this.path,
-      metadata.mode,
-      metadata.completionMarkers
+      metadata.mode
     );
   }
 
@@ -141,8 +142,7 @@ export class Workspace {
     const metadata = await this.getMetadata();
     return await CompletionDetector.getStatus(
       this.path,
-      metadata.mode,
-      metadata.completionMarkers
+      metadata.mode
     );
   }
 
@@ -227,6 +227,35 @@ export class Workspace {
    */
   async resetIterations(): Promise<void> {
     await this.metadataManager.resetIterations();
+  }
+
+  /**
+   * Get workspace status from .status.json
+   */
+  async getStatus(): Promise<WorkspaceStatus> {
+    return await StatusManager.read(this.path);
+  }
+
+  /**
+   * Get workspace progress information
+   */
+  async getProgress(): Promise<{
+    completed: number;
+    total: number;
+    percentage: number;
+  }> {
+    return await StatusManager.getProgress(this.path);
+  }
+
+  /**
+   * Validate workspace status
+   */
+  async validateStatus(): Promise<{
+    valid: boolean;
+    errors?: string[];
+    warnings?: string[];
+  }> {
+    return await StatusManager.validate(this.path);
   }
 
   /**

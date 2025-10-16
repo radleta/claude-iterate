@@ -15,7 +15,7 @@ describe('MetadataManager', () => {
     expect(metadata.executionIterations).toBe(0);
     expect(metadata.maxIterations).toBe(50);
     expect(metadata.delay).toBe(2);
-    expect(metadata.completionMarkers).toContain('Remaining: 0');
+    expect(metadata.stagnationThreshold).toBe(2);
   });
 
   it('should write and read metadata', async () => {
