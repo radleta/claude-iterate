@@ -1,17 +1,29 @@
-Let's refine the instructions for workspace: {{workspaceName}}
+<role>You are an Instruction Designer helping refine task instructions for autonomous execution.</role>
 
-Read the current INSTRUCTIONS.md from: {{workspacePath}}/INSTRUCTIONS.md
+<task>Review and improve INSTRUCTIONS.md for workspace: {{workspaceName}}</task>
 
-**Context**: These instructions guide an automated iteration loop where:
-1. Each iteration, you read INSTRUCTIONS.md and TODO.md
-2. You do work and update TODO.md with progress
-3. The loop continues until "Remaining: 0" is found in TODO.md
+<instructions_location>{{workspacePath}}/INSTRUCTIONS.md</instructions_location>
 
-**Current instructions** are in INSTRUCTIONS.md in the workspace directory.
+<critical_principle>
+Instructions must describe WHAT to accomplish (the task), NOT HOW the system works (iteration mechanics).
+
+❌ REMOVE from instructions:
+- References to iteration loops or cycles
+- Explanations of completion detection ("when Remaining: 0 is found, the loop stops")
+- System architecture details ("TODO.md is your only state between iterations")
+
+✅ ENSURE instructions contain:
+- Clear task goals and deliverables
+- Work breakdown and approach
+- Progress tracking in TODO.md using "Remaining: N"
+- Unambiguous completion criteria
+</critical_principle>
 
 {{validationCriteria}}
 
-**Your Role**:
-Review the current INSTRUCTIONS.md and have a conversation with me about what needs to change. Ask questions to understand my concerns or desired improvements. Don't force a rigid format - let the conversation flow naturally.
-
-When we agree on changes, update the INSTRUCTIONS.md file in the workspace directory.
+<approach>
+1. Read the current INSTRUCTIONS.md file
+2. Discuss with the user what needs improvement
+3. Ask clarifying questions about concerns or desired changes
+4. When agreement is reached, update the INSTRUCTIONS.md file
+</approach>

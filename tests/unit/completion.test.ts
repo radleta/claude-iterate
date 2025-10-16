@@ -177,102 +177,107 @@ Working on tasks...
     expect(status.remainingCount).toBe(0);
   });
 
-  // Iterative mode tests
-  it('should detect iterative mode completion with all checkboxes checked', async () => {
+  // Iterative mode tests - uses completion markers
+  it('should detect iterative mode completion with COUNT: 5 marker', async () => {
     const workspacePath = await createTestWorkspace('test-workspace');
     const todoPath = join(workspacePath, 'TODO.md');
 
     await writeTestFile(todoPath, `
 # TODO
 
-- [x] Task 1
-- [x] Task 2
-- [x] Task 3
+COUNT: 5
     `);
 
+    const markers = ['COUNT: 5'];
     const isComplete = await CompletionDetector.isComplete(
       workspacePath,
-      ExecutionMode.ITERATIVE
+      ExecutionMode.ITERATIVE,
+      markers
     );
 
     expect(isComplete).toBe(true);
   });
 
-  it('should not detect iterative mode completion with unchecked items', async () => {
+  it('should not detect iterative mode completion with COUNT: 3 when expecting COUNT: 5', async () => {
     const workspacePath = await createTestWorkspace('test-workspace');
     const todoPath = join(workspacePath, 'TODO.md');
 
     await writeTestFile(todoPath, `
 # TODO
 
-- [x] Task 1
-- [ ] Task 2
-- [ ] Task 3
+COUNT: 3
     `);
 
+    const markers = ['COUNT: 5'];
     const isComplete = await CompletionDetector.isComplete(
       workspacePath,
-      ExecutionMode.ITERATIVE
+      ExecutionMode.ITERATIVE,
+      markers
     );
 
     expect(isComplete).toBe(false);
   });
 
-  it('should get remaining count for iterative mode', async () => {
+  it('should support TASK COMPLETE marker in iterative mode (same as loop mode)', async () => {
     const workspacePath = await createTestWorkspace('test-workspace');
     const todoPath = join(workspacePath, 'TODO.md');
 
     await writeTestFile(todoPath, `
 # TODO
 
-- [x] Task 1
-- [ ] Task 2
-- [ ] Task 3
+All items done.
+TASK COMPLETE
     `);
 
-    const count = await CompletionDetector.getRemainingCount(
-      workspacePath,
-      ExecutionMode.ITERATIVE
-    );
-
-    expect(count).toBe(2);
-  });
-
-  it('should return 0 remaining for iterative mode when all checked', async () => {
-    const workspacePath = await createTestWorkspace('test-workspace');
-    const todoPath = join(workspacePath, 'TODO.md');
-
-    await writeTestFile(todoPath, `
-# TODO
-
-- [x] Task 1
-- [x] Task 2
-    `);
-
-    const count = await CompletionDetector.getRemainingCount(
-      workspacePath,
-      ExecutionMode.ITERATIVE
-    );
-
-    expect(count).toBe(0);
-  });
-
-  it('should handle uppercase X in checkboxes', async () => {
-    const workspacePath = await createTestWorkspace('test-workspace');
-    const todoPath = join(workspacePath, 'TODO.md');
-
-    await writeTestFile(todoPath, `
-# TODO
-
-- [X] Task 1 (uppercase)
-- [x] Task 2 (lowercase)
-    `);
-
+    const markers = ['TASK COMPLETE'];
     const isComplete = await CompletionDetector.isComplete(
       workspacePath,
-      ExecutionMode.ITERATIVE
+      ExecutionMode.ITERATIVE,
+      markers
     );
 
     expect(isComplete).toBe(true);
+  });
+
+  it('should work identically to loop mode with same markers', async () => {
+    const workspacePath = await createTestWorkspace('test-workspace');
+    const todoPath = join(workspacePath, 'TODO.md');
+
+    await writeTestFile(todoPath, `
+# TODO
+
+Remaining: 0
+    `);
+
+    const markers = ['Remaining: 0'];
+
+    const loopComplete = await CompletionDetector.isComplete(
+      workspacePath,
+      ExecutionMode.LOOP,
+      markers
+    );
+
+    const iterativeComplete = await CompletionDetector.isComplete(
+      workspacePath,
+      ExecutionMode.ITERATIVE,
+      markers
+    );
+
+    // Both modes should behave identically
+    expect(loopComplete).toBe(true);
+    expect(iterativeComplete).toBe(true);
+  });
+
+  it('should return false for iterative mode when TODO.md does not exist', async () => {
+    const workspacePath = await createTestWorkspace('test-workspace');
+
+    const markers = ['COUNT: 5'];
+    const isComplete = await CompletionDetector.isComplete(
+      workspacePath,
+      ExecutionMode.ITERATIVE,
+      markers
+    );
+
+    expect(isComplete).toBe(false);
   });
 });

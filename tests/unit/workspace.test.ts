@@ -268,11 +268,12 @@ describe('Workspace', () => {
 
     const workspace = await Workspace.init('test-iterative-completion', workspacePath, {
       mode: ExecutionMode.ITERATIVE,
+      completionMarkers: ['TASK COMPLETE'],
     });
 
     await writeTestFile(
       join(workspacePath, 'TODO.md'),
-      '- [x] Done\n- [x] Also done'
+      'TASK COMPLETE'
     );
 
     const isComplete = await workspace.isComplete();
@@ -303,7 +304,7 @@ describe('Workspace', () => {
 
     await writeTestFile(
       join(workspacePath, 'TODO.md'),
-      '- [x] Item 1\n- [ ] Item 2\n- [ ] Item 3'
+      'Remaining: 2'
     );
 
     const count = await workspace.getRemainingCount();

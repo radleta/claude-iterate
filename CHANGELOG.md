@@ -7,7 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Breaking Changes
+
+- **Iterative Mode Completion Detection**: Iterative mode now uses completion markers instead of checkbox counting
+  - Previously: Detected completion by counting unchecked (`- [ ]`) vs checked (`- [x]`) items
+  - Now: Uses same marker-based detection as loop mode (searches for marker strings in TODO.md)
+  - **Migration**: Add a completion marker (e.g., `TASK COMPLETE` or `Remaining: 0`) to iterative workspace TODO.md files
+  - **Reason**: Simplifies completion logic, unifies both modes, allows custom completion criteria
+  - This affects existing iterative mode workspaces - they will need explicit completion markers to complete
+
 ### Added
+
 - **File Logging**: Each run now creates a timestamped log file (e.g., `iterate-20251015-142345.log`)
   - All Claude output captured to log files regardless of verbose setting
   - Structured format with iteration numbers, timestamps, and full responses
@@ -16,17 +26,70 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Streams Claude responses to console as they're generated
   - File logging continues to work alongside console output
   - Helpful for debugging and monitoring long-running tasks
+- **Smoke Test Templates**: Two templates for testing execution modes
+  - `test-loop-mode`: Tests loop mode with "Remaining: N" countdown (5→4→3→2→1→0)
+  - `test-iterative-mode`: Tests iterative mode with "COUNT: N" count-up (0→1→2→3→4→5)
+  - Information asymmetry design: Claude doesn't know when task completes
+  - Forces multiple iterations for proper testing
+  - See `claude-iterate/templates/README.md` for usage
+- **Developer Utility Scripts**:
+  - `scripts/analyze-iterations.sh <workspace>`: Analyze iteration logs for patterns
+    - Shows remaining count progression, checkbox changes, iteration markers
+    - Helpful for debugging completion detection
+  - `scripts/verify-example.sh <workspace> <mode>`: Verify workspace completion
+    - Mode-specific checks (markers for loop, checkboxes for old behavior)
+    - Validates metadata status, working directory content
+    - Warnings for insufficient iterations (may indicate batching)
+- **Template README**: Documentation for smoke test templates at `claude-iterate/templates/README.md`
+  - Explains purpose and usage of both test templates
+  - Documents information asymmetry design principle
+  - Includes expected iteration counts and test instructions
 
 ### Changed
+
 - **Log File Format**: Workspace log files now timestamped per run instead of single append-only file
   - Format: `iterate-YYYYMMDD-HHMMSS.log` (e.g., `iterate-20251015-142345.log`)
   - Makes it easy to identify and review specific execution runs
   - No manual log rotation needed - each run creates its own file
+- **Unified Completion Detection**: Both loop and iterative modes now use the same marker-based completion detection
+  - Simplified internal logic - single code path for both modes
+  - Custom completion markers work in both modes
+  - `getRemainingCount()` unified - both modes parse "Remaining: N" format
+  - Removed mode-specific checkbox counting logic
+- **Template Configuration Preservation**: Templates now save and restore full workspace configuration
+  - Saved: `mode`, `maxIterations`, `delay`, `completionMarkers`
+  - Workspaces created from templates inherit original execution settings
+  - Templates are now true snapshots of working configurations
+  - Makes templates more powerful and reusable
+- **Enhanced Prompt Templates**: Restructured all prompt templates with XML-style tags for better Claude comprehension
+  - Added `<role>`, `<task>`, `<critical_principle>`, `<approach>` structure
+  - **Critical Principle**: Instructions describe WHAT (the task), NOT HOW (system mechanics)
+  - Removed references to "work sessions", "iteration loops", "system architecture" from user instructions
+  - Better separation between task description and system implementation
+  - Improved instruction quality and clarity
+- **Instruction Quality Guidance**: Setup and edit prompts now enforce WHAT vs HOW principle
+  - Users create task-focused instructions without system details
+  - Claude removes iteration mechanics from instructions automatically
+  - Results in cleaner, more maintainable task descriptions
+
+### Fixed
+
+- **Completion Logic Simplification**: Removed redundant mode-specific completion detection code
+  - Single unified implementation reduces bugs
+  - Easier to maintain and extend
+  - Consistent behavior across modes
 
 ### Removed
+
 - **Empty Placeholder Logs**: Removed creation of empty `setup.log` and `iterate.log` files
   - These were never populated and served no purpose
   - Replaced with timestamped logs that contain actual execution history
+- **Mode-Specific Completion Logic**: Removed `getRemainingCountIterative()` method
+  - No longer needed with unified completion detection
+  - Reduces code complexity
+- **Checkbox Counting for Iterative Mode**: Removed checkbox-based completion detection
+  - Replaced with marker-based detection
+  - More flexible and consistent
 
 ## [1.0.1] - 2025-10-14
 

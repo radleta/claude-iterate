@@ -76,7 +76,7 @@ Isolated task environments with:
 
 **Iterative Mode**
 - Autonomous work sessions completing multiple items
-- Uses checkbox format (- [ ] / - [x]) in TODO.md
+- Uses completion markers (same as loop mode)
 - Best for complex tasks requiring sustained focus
 - Default max: 20 iterations (does more per iteration)
 
@@ -243,7 +243,9 @@ claude-iterate run my-task --dangerously-skip-permissions
 
 ⚠️ **WARNING:** The `--dangerously-skip-permissions` flag allows Claude to read/write files and execute commands without confirmation. Anthropic recommends using this "only in a container without internet access." [Learn more](https://docs.anthropic.com/en/docs/agents/agent-security-model#disabling-permission-prompts)
 
-### Completion Markers (Loop Mode)
+### Completion Markers
+
+Both loop and iterative modes use completion markers to detect task completion.
 
 Customize how task completion is detected:
 
@@ -260,7 +262,11 @@ claude-iterate config completionMarkers --add "Task Complete"
 
 **Default markers:** `Remaining: 0`, `**Remaining**: 0`, `TASK COMPLETE`, `✅ TASK COMPLETE`
 
-**Note:** Iterative mode uses checkbox completion (- [ ] / - [x]) instead.
+**Loop mode example** (countdown):
+- Remaining: 5 → 4 → 3 → 2 → 1 → 0 ✓ Complete
+
+**Iterative mode example** (count-up):
+- COUNT: 0 → 1 → 2 → 3 → 4 → 5 ✓ Complete
 
 ### Notifications
 

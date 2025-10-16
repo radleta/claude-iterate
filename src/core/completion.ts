@@ -18,7 +18,7 @@ export class CompletionDetector {
       case ExecutionMode.LOOP:
         return this.isCompleteLoop(workspacePath, markers || []);
       case ExecutionMode.ITERATIVE:
-        return this.isCompleteIterative(workspacePath);
+        return this.isCompleteIterative(workspacePath, markers || []);
       default:
         throw new Error(`Unknown execution mode: ${mode}`);
     }
@@ -50,9 +50,12 @@ export class CompletionDetector {
   }
 
   /**
-   * Iterative mode completion: check if all checkboxes are marked
+   * Iterative mode completion: check for markers (same as loop mode)
    */
-  private static async isCompleteIterative(workspacePath: string): Promise<boolean> {
+  private static async isCompleteIterative(
+    workspacePath: string,
+    markers: string[]
+  ): Promise<boolean> {
     const todoPath = join(workspacePath, 'TODO.md');
 
     if (!(await fileExists(todoPath))) {
@@ -61,19 +64,14 @@ export class CompletionDetector {
 
     const content = await readText(todoPath);
 
-    // Count unchecked items: - [ ]
-    const uncheckedPattern = /^[\s-]*\[\s\]/gm;
-    const uncheckedMatches = content.match(uncheckedPattern);
+    // Check if any completion marker is found
+    for (const marker of markers) {
+      if (content.includes(marker)) {
+        return true;
+      }
+    }
 
-    // Count checked items: - [x] or - [X]
-    const checkedPattern = /^[\s-]*\[[xX]\]/gm;
-    const checkedMatches = content.match(checkedPattern);
-
-    // Complete if we have checkboxes and none are unchecked
-    const hasCheckboxes = (checkedMatches?.length || 0) > 0;
-    const hasUnchecked = (uncheckedMatches?.length || 0) > 0;
-
-    return hasCheckboxes && !hasUnchecked;
+    return false;
   }
 
   /**
@@ -82,16 +80,10 @@ export class CompletionDetector {
    */
   static async getRemainingCount(
     workspacePath: string,
-    mode: ExecutionMode
+    _mode: ExecutionMode
   ): Promise<number | null> {
-    switch (mode) {
-      case ExecutionMode.LOOP:
-        return this.getRemainingCountLoop(workspacePath);
-      case ExecutionMode.ITERATIVE:
-        return this.getRemainingCountIterative(workspacePath);
-      default:
-        return null;
-    }
+    // Both modes parse "Remaining: N" format
+    return this.getRemainingCountLoop(workspacePath);
   }
 
   /**
@@ -125,24 +117,6 @@ export class CompletionDetector {
     return null;
   }
 
-  /**
-   * Iterative mode remaining: count unchecked items
-   */
-  private static async getRemainingCountIterative(workspacePath: string): Promise<number | null> {
-    const todoPath = join(workspacePath, 'TODO.md');
-
-    if (!(await fileExists(todoPath))) {
-      return null;
-    }
-
-    const content = await readText(todoPath);
-
-    // Count unchecked items: - [ ]
-    const uncheckedPattern = /^[\s-]*\[\s\]/gm;
-    const uncheckedMatches = content.match(uncheckedPattern);
-
-    return uncheckedMatches?.length || 0;
-  }
 
   /**
    * Check if workspace has TODO.md

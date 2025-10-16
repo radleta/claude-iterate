@@ -66,6 +66,13 @@ export class TemplateManager {
     const instructionsDest = join(templatePath, 'INSTRUCTIONS.md');
     await copyFile(instructionsSource, instructionsDest);
 
+    // Read workspace metadata to get configuration
+    const metadataPath = join(workspacePath, '.metadata.json');
+    let workspaceMetadata: any = {};
+    if (await fileExists(metadataPath)) {
+      workspaceMetadata = await readJson(metadataPath);
+    }
+
     // Create template metadata
     const metadata: TemplateMetadata = {
       name: templateName,
@@ -73,6 +80,11 @@ export class TemplateManager {
       tags: options?.tags || [],
       estimatedIterations: options?.estimatedIterations,
       created: new Date().toISOString(),
+      // Save workspace configuration
+      mode: workspaceMetadata.mode,
+      maxIterations: workspaceMetadata.maxIterations,
+      delay: workspaceMetadata.delay,
+      completionMarkers: workspaceMetadata.completionMarkers,
     };
 
     await writeJson(join(templatePath, '.template.json'), metadata);
@@ -86,23 +98,38 @@ export class TemplateManager {
 
   /**
    * Use template to create new workspace
+   * Returns template metadata for workspace initialization
+   * @deprecated Use getTemplateForInit instead
    */
   async useTemplate(
-    templateName: string,
-    workspacePath: string
-  ): Promise<void> {
+    templateName: string
+  ): Promise<TemplateMetadata | undefined> {
     const template = await this.findTemplate(templateName);
 
     if (!template) {
       throw new TemplateNotFoundError(templateName);
     }
 
-    // Create workspace directory
-    await ensureDir(workspacePath);
+    return template.metadata;
+  }
 
-    // Copy INSTRUCTIONS.md
-    const instructionsDest = join(workspacePath, 'INSTRUCTIONS.md');
-    await copyFile(template.instructionsPath, instructionsDest);
+  /**
+   * Get template for workspace initialization
+   * Returns both metadata and instructions path
+   */
+  async getTemplateForInit(
+    templateName: string
+  ): Promise<{ metadata?: TemplateMetadata; instructionsPath: string }> {
+    const template = await this.findTemplate(templateName);
+
+    if (!template) {
+      throw new TemplateNotFoundError(templateName);
+    }
+
+    return {
+      metadata: template.metadata,
+      instructionsPath: template.instructionsPath,
+    };
   }
 
   /**
