@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0] - 2025-10-17
+
 ### Added
 
 - **Console Output Levels**: Three modes for better user experience and control
@@ -201,18 +203,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.1] - 2025-10-14
 
 ### Fixed
+
 - **Notification System**: Fixed critical bugs preventing notifications from working properly
   - Fixed stale metadata during iterations: metadata now refreshes after each iteration
   - Fixed missing config fallback: global `notifyUrl` and `notifyEvents` now properly fall back from config
   - Notifications now use fresh metadata ensuring settings changes take effect immediately
 
 ### Changed
+
 - **Notification Defaults**: Per-iteration notifications now enabled by default for better visibility
   - Default events changed from `[completion, error]` to `[iteration, completion, error]`
   - Users receive real-time progress updates during long-running tasks
   - Can opt-out with: `config notifyEvents completion,error`
 
 ### Added
+
 - **Iteration Notifications**: New `iteration` event type for per-iteration progress updates
   - Sends notification after each iteration with current progress
   - Includes iteration count, remaining items, and status
@@ -225,12 +230,14 @@ Initial release of claude-iterate - a professional CLI tool for managing automat
 ### Core Features
 
 #### Workspace Management
+
 - **Initialize Workspaces**: Create isolated task environments with `init` command
 - **Workspace Operations**: List, show details, clean up, and reset workspaces
 - **Metadata Tracking**: Automatic tracking of iterations, status, and timestamps
 - **Working Directory**: Dedicated scratch space for task files
 
 #### Instructions & Validation
+
 - **Guided Setup**: Interactive instruction creation with Claude (`setup` command)
 - **Instruction Editing**: Modify instructions interactively (`edit` command)
 - **Validation**: Comprehensive validation against quality criteria (`validate` command)
@@ -241,12 +248,14 @@ Initial release of claude-iterate - a professional CLI tool for managing automat
   - Completion detection
 
 #### Execution System
+
 - **Autonomous Iteration**: Run tasks with automatic iteration loops (`run` command)
 - **Completion Detection**: Automatic detection when tasks are complete
 - **Configurable Limits**: Set max iterations and delay between runs
 - **Progress Tracking**: Real-time iteration counts and status updates
 
 #### Execution Modes
+
 - **Loop Mode** (default): Incremental iterations with explicit progress tracking
   - Uses "Remaining: N" count tracking
   - Completes one step at a time per iteration
@@ -261,6 +270,7 @@ Initial release of claude-iterate - a professional CLI tool for managing automat
 - **Strategy Pattern**: Extensible architecture for adding new modes
 
 #### Template System
+
 - **Save Templates**: Create reusable task patterns from successful workspaces
 - **Use Templates**: Initialize new workspaces from templates
 - **Template Scopes**: Project-level and global (user-level) templates
@@ -268,12 +278,14 @@ Initial release of claude-iterate - a professional CLI tool for managing automat
 - **Metadata**: Descriptions, tags, estimated iterations, and author info
 
 #### Archive System
+
 - **Archive Workspaces**: Preserve completed work with timestamped archives
 - **Archive Management**: List, show, restore, and delete archives
 - **Smart Archiving**: Automatic archiving before workspace deletion (optional)
 - **Archive Restore**: Restore archived workspaces to continue work
 
 #### Configuration Management
+
 - **Git-Style Config**: Familiar `config` command interface
   - `config --list` - List all configuration
   - `config <key>` - Get specific value
@@ -286,12 +298,14 @@ Initial release of claude-iterate - a professional CLI tool for managing automat
 - **Layered Configuration**: CLI flags > Project config > User config > Built-in defaults
 
 #### Completion Markers
+
 - **Customizable Markers**: Define custom completion detection strings (loop mode)
 - **Three-Tier Configuration**: Runtime flag > Workspace init > Config file > Defaults
 - **Default Markers**: `Remaining: 0`, `**Remaining**: 0`, `TASK COMPLETE`, `✅ TASK COMPLETE`
 - **Flexible Format**: Comma-separated marker strings
 
 #### Notification System
+
 - **HTTP Notifications**: Send notifications via HTTP POST (ntfy.sh compatible)
 - **Event Types**:
   - `setup_complete` - After guided setup finishes
@@ -309,6 +323,7 @@ Initial release of claude-iterate - a professional CLI tool for managing automat
 ### Security Features
 
 #### Safe Default Configuration
+
 - **Permission Prompts**: Claude Code prompts for permissions by default
 - **Empty Args**: `claude.args` defaults to `[]` (empty array)
 - **Explicit Opt-In**: `--dangerously-skip-permissions` requires explicit configuration
@@ -320,6 +335,7 @@ Initial release of claude-iterate - a professional CLI tool for managing automat
 - **Warnings**: Automatic warnings when dangerous flag is configured
 
 #### Runtime Permission Override
+
 - **Per-Run Flag**: `--dangerously-skip-permissions` flag on `run` command
 - **Temporary Override**: Runtime-only, not saved to configuration
 - **Highest Priority**: Overrides all other configuration levels
@@ -328,6 +344,7 @@ Initial release of claude-iterate - a professional CLI tool for managing automat
 ### Technical Implementation
 
 #### Architecture
+
 - **TypeScript 5.8+**: Strict mode with full type safety
 - **Commander.js**: Professional CLI framework
 - **Zod Schemas**: Runtime validation for all configurations
@@ -335,6 +352,7 @@ Initial release of claude-iterate - a professional CLI tool for managing automat
 - **Template-Based Prompts**: Markdown files with token replacement
 
 #### Testing
+
 - **147 Passing Tests**: Comprehensive test coverage
 - **Mocked Claude Calls**: Fast, deterministic tests without real API calls
 - **Vitest Framework**: Modern testing with great developer experience
@@ -342,18 +360,21 @@ Initial release of claude-iterate - a professional CLI tool for managing automat
 - **Notification Tests**: 16 integration tests for notification flow with mocked fetch
 
 #### Code Quality
+
 - **ESLint**: Strict linting rules enforced
 - **TypeScript Compiler**: No type errors
 - **Clean Architecture**: Separation of concerns (commands, core, services, utils)
 - **Error Handling**: Custom error classes for clear error messages
 
 #### Cross-Platform Support
+
 - **Windows, macOS, Linux**: Full support on all platforms
 - **Node.js 18+**: Modern JavaScript features
 - **Path Handling**: Proper cross-platform path resolution
 - **Process Management**: Clean child process lifecycle handling
 
 #### Developer Experience
+
 - **Build System**: Native TypeScript compiler
 - **Watch Mode**: Development with hot reload
 - **Debug Logging**: Verbose mode for troubleshooting
@@ -409,4 +430,3 @@ This is the initial release of claude-iterate.
 ---
 
 **Note:** This project follows [Semantic Versioning](https://semver.org/). Future releases will be documented in this file following the [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
-
