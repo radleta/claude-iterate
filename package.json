@@ -4,12 +4,19 @@
   "description": "Task iteration system with Claude Code - workspace management, templates, and autonomous execution",
   "type": "module",
   "main": "dist/src/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/src/index.js",
+      "types": "./dist/src/index.d.ts"
+    }
+  },
   "bin": {
     "claude-iterate": "./dist/src/index.js"
   },
   "scripts": {
     "build": "tsc && npm run copy-package-files",
     "postbuild": "chmod +x dist/src/index.js",
+    "prepare": "husky && npm run build",
     "dev": "tsc --watch",
     "test": "vitest run",
     "test:unit": "vitest run tests/unit",
@@ -76,11 +83,13 @@
     "@types/node": "^22.10.5",
     "@typescript-eslint/eslint-plugin": "^8.20.0",
     "@typescript-eslint/parser": "^8.20.0",
-    "@vitest/coverage-v8": "^2.1.8",
+    "@vitest/coverage-v8": "^3.2.4",
     "eslint": "^9.18.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.4",
     "prettier": "^3.4.2",
     "typescript": "^5.8.3",
-    "vitest": "^2.1.8"
+    "vitest": "^3.2.4"
   },
   "files": [
     "dist/",
@@ -91,5 +100,14 @@
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
+  },
+  "lint-staged": {
+    "*.ts": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
   }
 }

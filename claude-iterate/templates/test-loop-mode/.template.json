@@ -1,0 +1,19 @@
+{
+  "name": "test-loop-mode",
+  "description": "Loop mode smoke test - checks boxes and decrements Remaining count",
+  "tags": [
+    "test",
+    "smoke",
+    "loop"
+  ],
+  "created": "2025-10-16T01:17:45.084Z",
+  "mode": "loop",
+  "maxIterations": 10,
+  "delay": 2,
+  "completionMarkers": [
+    "Remaining: 0",
+    "**Remaining**: 0",
+    "TASK COMPLETE",
+    "✅ TASK COMPLETE"
+  ]
+}

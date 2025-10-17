@@ -1,8 +1,11 @@
 import { Command } from 'commander';
+import { join } from 'path';
 import { Workspace } from '../core/workspace.js';
 import { ConfigManager } from '../core/config-manager.js';
 import { ClaudeClient } from '../services/claude-client.js';
 import { NotificationService } from '../services/notification-service.js';
+import { FileLogger } from '../services/file-logger.js';
+import { ConsoleReporter } from '../services/console-reporter.js';
 import { Logger } from '../utils/logger.js';
 import { getWorkspacePath } from '../utils/paths.js';
 import { getIterationPrompt, getIterationSystemPrompt } from '../templates/system-prompt.js';
@@ -25,7 +28,10 @@ export function runCommand(): Command {
       parseInt
     )
     .option('--no-delay', 'Skip delay between iterations')
-    .option('--completion-markers <markers>', 'Override completion markers (comma-separated, loop mode only)')
+    .option('--stagnation-threshold <number>', 'Stop after N consecutive no-work iterations (iterative mode only, 0=never)', parseInt)
+    .option('-v, --verbose', 'Show full Claude output (equivalent to --output verbose)')
+    .option('-q, --quiet', 'Silent execution, errors only (equivalent to --output quiet)')
+    .option('--output <level>', 'Output level: quiet, progress, verbose')
     .option('--dangerously-skip-permissions', 'Skip permission prompts (runtime only, not saved to config)')
     .option('--dry-run', 'Use mock Claude for testing (logs to /tmp/mock-claude.log)')
     .action(
@@ -34,7 +40,10 @@ export function runCommand(): Command {
         options: {
           maxIterations?: number;
           delay?: number | false;
-          completionMarkers?: string;
+          stagnationThreshold?: number;
+          verbose?: boolean;
+          quiet?: boolean;
+          output?: string;
           dangerouslySkipPermissions?: boolean;
           dryRun?: boolean;
         },
@@ -43,9 +52,22 @@ export function runCommand(): Command {
         const logger = new Logger(command.optsWithGlobals().colors !== false);
 
         try {
+          // Validate conflicting output flags
+          const hasVerbose = options.verbose === true;
+          const hasQuiet = options.quiet === true;
+          const hasOutput = options.output !== undefined;
+
+          if ((hasVerbose && hasQuiet) || (hasVerbose && hasOutput) || (hasQuiet && hasOutput)) {
+            logger.error('Cannot use multiple output flags (--verbose, --quiet, --output) together');
+            process.exit(1);
+          }
+
           // Load config
           const config = await ConfigManager.load(command.optsWithGlobals());
           const runtimeConfig = config.getConfig();
+
+          // Create console reporter with configured output level
+          const reporter = new ConsoleReporter(runtimeConfig.outputLevel);
 
           // Get workspace path
           const workspacePath = getWorkspacePath(
@@ -80,22 +102,13 @@ export function runCommand(): Command {
             metadata.notifyEvents = runtimeConfig.notifyEvents as Array<'setup_complete' | 'execution_start' | 'iteration' | 'iteration_milestone' | 'completion' | 'error' | 'all'>;
           }
 
-          // Override completion markers if provided via CLI (runtime only, not persisted to metadata)
-          // Priority: CLI flag > Workspace metadata > Config file > Built-in defaults
-          if (options.completionMarkers) {
-            metadata.completionMarkers = options.completionMarkers
-              .split(',')
-              .map(m => m.trim());
-          }
-
-          logger.header(`Running iteration loop: ${name}`);
-          logger.log(`  🔧 Mode: ${metadata.mode}`);
-          logger.log(`  📊 Max iterations: ${maxIterations}`);
-          logger.log(`  ⏱️  Delay: ${delay}s`);
+          // Show initial run info using reporter (respects output level)
+          reporter.progress(`Starting claude-iterate run for workspace: ${name}`);
+          reporter.progress(`Mode: ${metadata.mode} | Max iterations: ${maxIterations} | Delay: ${delay}s`);
           if (options.dryRun) {
-            logger.log(`  🧪 DRY RUN: Using mock Claude`);
+            reporter.progress(`🧪 DRY RUN: Using mock Claude`);
           }
-          logger.line();
+          reporter.progress('');
 
           // Create Claude client (use mock if --dry-run)
           let claudeCommand = runtimeConfig.claudeCommand;
@@ -113,7 +126,7 @@ export function runCommand(): Command {
             // Use Node.js mock (cross-platform)
             claudeCommand = 'node';
             claudeArgs = [
-              `${process.cwd()}/mock-claude.js`,
+              `${process.cwd()}/mock-claude.cjs`,
               ...claudeArgs,
             ];
           }
@@ -159,6 +172,41 @@ export function runCommand(): Command {
           // Create notification service
           const notificationService = new NotificationService(logger, runtimeConfig.verbose);
 
+          // Create file logger with timestamped filename
+          const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+          const logPath = join(workspace.path, `iterate-${timestamp}.log`);
+          const fileLogger = new FileLogger(logPath, true);
+
+          // Log workspace info if verbose
+          if (fileLogger.isEnabled()) {
+            reporter.verbose(`📝 Logging to: ${logPath}`);
+          }
+
+          // Log static content once at run start
+          await fileLogger.logRunStart({
+            workspace: name,
+            mode: metadata.mode,
+            maxIterations,
+            startTime: new Date(),
+          });
+
+          // Log instructions once
+          await fileLogger.logInstructions(instructions);
+
+          // Generate and log system prompt once
+          const systemPrompt = await getIterationSystemPrompt(workspace.path, metadata.mode);
+          await fileLogger.logSystemPrompt(systemPrompt);
+
+          // Generate and log status instructions once (if exists)
+          try {
+            const statusInstructionsPath = join(workspace.path, '.status-instructions.md');
+            const { readFile } = await import('fs/promises');
+            const statusInstructions = await readFile(statusInstructionsPath, 'utf-8');
+            await fileLogger.logStatusInstructions(statusInstructions);
+          } catch {
+            // Status instructions file might not exist, that's okay
+          }
+
           // Send execution start notification
           if (
             notificationService.isConfigured(metadata) &&
@@ -178,19 +226,47 @@ export function runCommand(): Command {
           // Iteration loop
           let iterationCount = 0;
           let isComplete = false;
+          let noWorkCount = 0; // Track consecutive no-work iterations
+
+          // Get stagnation threshold (from CLI override, workspace metadata, or config)
+          const stagnationThreshold = options.stagnationThreshold ?? metadata.stagnationThreshold ?? runtimeConfig.stagnationThreshold;
 
           while (iterationCount < maxIterations && !isComplete) {
             iterationCount++;
 
-            logger.info(`Iteration ${iterationCount}/${maxIterations}`);
+            reporter.progress(`\nRunning iteration ${iterationCount}...`);
 
-            // Generate prompts (mode-aware)
-            const systemPrompt = await getIterationSystemPrompt(workspace.path, metadata.mode);
-            const prompt = await getIterationPrompt(instructions, iterationCount, metadata.mode);
+            // Generate prompts (mode-aware) with status instructions
+            // Note: System prompt already logged once at start
+            const prompt = await getIterationPrompt(instructions, iterationCount, metadata.mode, workspace.path);
 
             try {
+              // Log iteration start (no longer includes prompt - logged once at run start)
+              await fileLogger.logIterationStart(iterationCount, new Date());
+
               // Execute Claude non-interactively from project root with iteration context
-              await client.executeNonInteractive(prompt, systemPrompt);
+              // Stream output to file and console (based on output level)
+              await client.executeNonInteractive(
+                prompt,
+                systemPrompt,
+                undefined,
+                {
+                  onStdout: (chunk) => {
+                    // Always log to file (async, but don't await in callback)
+                    fileLogger.appendOutput(chunk);
+
+                    // Stream to console based on output level
+                    reporter.stream(chunk);
+                  },
+                  onStderr: (chunk) => {
+                    // Always log to file
+                    fileLogger.appendOutput(chunk);
+
+                    // Stream to console based on output level
+                    reporter.stream(chunk);
+                  }
+                }
+              );
 
               // Increment iteration count and update metadata
               const updatedMetadata = await workspace.incrementIterations('execution');
@@ -201,12 +277,44 @@ export function runCommand(): Command {
               isComplete = await workspace.isComplete();
               const remainingCount = await workspace.getRemainingCount();
 
-              if (isComplete) {
-                logger.line();
-                logger.success('✅ Task completed!');
-                if (remainingCount !== null) {
-                  logger.log(`   Remaining: ${remainingCount}`);
+              // Stagnation detection (iterative mode only)
+              if (metadata.mode === 'iterative' && !isComplete) {
+                const status = await workspace.getStatus();
+                if (status.worked === false) {
+                  noWorkCount++;
+                  reporter.verbose(`No work detected (${noWorkCount}/${stagnationThreshold})`);
+
+                  if (stagnationThreshold > 0 && noWorkCount >= stagnationThreshold) {
+                    logger.line();
+                    logger.warn(`⚠️  Stagnation detected: ${noWorkCount} consecutive iterations with no work`);
+                    logger.info('Marking task as complete due to stagnation threshold');
+                    isComplete = true;
+                  }
+                } else {
+                  noWorkCount = 0; // Reset counter on any work
                 }
+              }
+
+              // Log iteration completion
+              await fileLogger.logIterationComplete(
+                iterationCount,
+                'success',
+                remainingCount
+              );
+
+              if (isComplete) {
+                reporter.status('\n✓ Task completed successfully after ' + iterationCount + ' iterations');
+
+                // Show status from .status.json
+                const status = await workspace.getStatus();
+                if (status.summary) {
+                  reporter.status(`   ${status.summary}`);
+                }
+                // Only show progress for loop mode
+                if (status.progress) {
+                  reporter.status(`   Progress: ${status.progress.completed}/${status.progress.total}`);
+                }
+
                 await workspace.markCompleted();
 
                 // Send completion notification
@@ -229,8 +337,25 @@ export function runCommand(): Command {
                 break;
               }
 
-              if (remainingCount !== null) {
-                logger.log(`   Remaining: ${remainingCount}`);
+              // Show progress from .status.json (loop mode) or summary (iterative mode)
+              const status = await workspace.getStatus();
+              if (status.progress && status.progress.total > 0) {
+                // Loop mode: show progress counts
+                const remaining = status.progress.total - status.progress.completed;
+                reporter.status(`✓ Iteration ${iterationCount} complete (${remaining} items remaining)`);
+              } else if (status.worked !== undefined) {
+                // Iterative mode: show work status
+                if (status.summary) {
+                  reporter.status(`✓ Iteration ${iterationCount} complete`);
+                  reporter.status(`   ${status.summary}`);
+                } else {
+                  reporter.status(`✓ Iteration ${iterationCount} complete`);
+                }
+              } else if (remainingCount !== null) {
+                // Fallback to legacy remaining count
+                reporter.status(`✓ Iteration ${iterationCount} complete (${remainingCount} items remaining)`);
+              } else {
+                reporter.status(`✓ Iteration ${iterationCount} complete`);
               }
 
               // Send iteration notification (after each iteration)
@@ -271,15 +396,15 @@ export function runCommand(): Command {
 
               // Delay before next iteration
               if (delay > 0 && iterationCount < maxIterations && !isComplete) {
-                logger.debug(
-                  `Waiting ${delay}s before next iteration...`,
-                  runtimeConfig.verbose
-                );
+                reporter.verbose(`Waiting ${delay}s before next iteration...`);
                 await new Promise((resolve) =>
                   setTimeout(resolve, delay * 1000)
                 );
               }
             } catch (error) {
+              // Log error to file
+              await fileLogger.logError(iterationCount, error as Error);
+
               logger.error(
                 `Iteration ${iterationCount} failed`,
                 error as Error
@@ -305,9 +430,10 @@ export function runCommand(): Command {
 
               throw error;
             }
-
-            logger.line();
           }
+
+          // Flush any remaining log buffer
+          await fileLogger.flush();
 
           if (!isComplete && iterationCount >= maxIterations) {
             logger.warn(`⚠️  Reached maximum iterations (${maxIterations})`);
@@ -326,6 +452,9 @@ export function runCommand(): Command {
           logger.log(
             `Execution iterations: ${metadata.executionIterations + iterationCount}`
           );
+          if (fileLogger.isEnabled()) {
+            logger.log(`Log file: ${fileLogger.getLogPath()}`);
+          }
         } catch (error) {
           logger.error('Run failed', error as Error);
           process.exit(1);

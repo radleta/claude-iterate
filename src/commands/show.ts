@@ -50,6 +50,36 @@ export function showCommand(): Command {
           logger.log(`   Remaining items: ${info.remainingCount}`);
         }
 
+        // Status from .status.json
+        const status = await workspace.getStatus();
+        const validation = await workspace.validateStatus();
+
+        // Loop mode: show progress counts
+        if (status.progress && status.progress.total > 0) {
+          logger.log(`   Status file progress: ${status.progress.completed}/${status.progress.total}`);
+        }
+
+        // Iterative mode: show work flag
+        if (status.worked !== undefined) {
+          logger.log(`   Work done: ${status.worked ? 'Yes' : 'No'}`);
+        }
+
+        // Common fields (both modes)
+        if (status.summary) {
+          logger.log(`   Summary: ${status.summary}`);
+        }
+        if (status.phase) {
+          logger.log(`   Phase: ${status.phase}`);
+        }
+        if (status.blockers && status.blockers.length > 0) {
+          logger.log(`   ⚠️  Blockers: ${status.blockers.join(', ')}`);
+        }
+
+        if (validation.warnings && validation.warnings.length > 0) {
+          logger.warn('   ⚠️  Status warnings:');
+          validation.warnings.forEach(w => logger.log(`      - ${w}`));
+        }
+
         logger.line();
 
         // Files
@@ -64,6 +94,7 @@ export function showCommand(): Command {
         logger.log(`   Mode: ${metadata.mode}`);
         logger.log(`   Max iterations: ${metadata.maxIterations}`);
         logger.log(`   Delay: ${metadata.delay}s`);
+        logger.log(`   Stagnation threshold: ${metadata.stagnationThreshold} (iterative mode)`);
         if (metadata.notifyUrl) {
           logger.log(`   Notify URL: ${metadata.notifyUrl}`);
         }

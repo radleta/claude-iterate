@@ -9,12 +9,8 @@ export const ProjectConfigSchema = z.object({
   archiveDir: z.string().default('./claude-iterate/archive'),
   defaultMaxIterations: z.number().int().min(1).default(50),
   defaultDelay: z.number().int().min(0).default(2),
-  completionMarkers: z.array(z.string()).default([
-    'Remaining: 0',
-    '**Remaining**: 0',
-    'TASK COMPLETE',
-    '✅ TASK COMPLETE',
-  ]),
+  defaultStagnationThreshold: z.number().int().min(0).default(2),
+  outputLevel: z.enum(['quiet', 'progress', 'verbose']).default('progress'),
   notifyUrl: z.string().url().optional(),
   notifyEvents: z
     .array(z.enum(['completion', 'error', 'iteration']))
@@ -38,12 +34,8 @@ export const UserConfigSchema = z.object({
     .default('~/.config/claude-iterate/templates'),
   defaultMaxIterations: z.number().int().min(1).default(50),
   defaultDelay: z.number().int().min(0).default(2),
-  completionMarkers: z.array(z.string()).default([
-    'Remaining: 0',
-    '**Remaining**: 0',
-    'TASK COMPLETE',
-    '✅ TASK COMPLETE',
-  ]),
+  defaultStagnationThreshold: z.number().int().min(0).default(2),
+  outputLevel: z.enum(['quiet', 'progress', 'verbose']).default('progress'),
   notifyUrl: z.string().url().optional(),
   claude: z
     .object({
@@ -52,7 +44,7 @@ export const UserConfigSchema = z.object({
     })
     .default({}),
   colors: z.boolean().default(true),
-  verbose: z.boolean().default(false),
+  verbose: z.boolean().default(false), // Deprecated - use outputLevel instead
 });
 
 export type UserConfig = z.infer<typeof UserConfigSchema>;
@@ -67,13 +59,14 @@ export interface RuntimeConfig {
   globalTemplatesDir: string;
   maxIterations: number;
   delay: number;
-  completionMarkers: string[];
+  stagnationThreshold: number;
+  outputLevel: 'quiet' | 'progress' | 'verbose';
   notifyUrl?: string;
   notifyEvents?: string[];
   claudeCommand: string;
   claudeArgs: string[];
   colors: boolean;
-  verbose: boolean;
+  verbose: boolean; // Deprecated - use outputLevel instead
 }
 
 /**
@@ -86,14 +79,10 @@ export const DEFAULT_CONFIG: RuntimeConfig = {
   globalTemplatesDir: '~/.config/claude-iterate/templates',
   maxIterations: 50,
   delay: 2,
-  completionMarkers: [
-    'Remaining: 0',
-    '**Remaining**: 0',
-    'TASK COMPLETE',
-    '✅ TASK COMPLETE',
-  ],
+  stagnationThreshold: 2,
+  outputLevel: 'progress',
   claudeCommand: 'claude',
   claudeArgs: [],
   colors: true,
-  verbose: false,
+  verbose: false, // Deprecated - use outputLevel instead
 };

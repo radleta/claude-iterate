@@ -35,4 +35,10 @@ export interface ModePromptStrategy {
    * Get validation criteria specific to this mode
    */
   getValidationCriteria(): Promise<string>;
+
+  /**
+   * Get status tracking instructions (appended to iteration prompts)
+   * Mode-specific instructions for maintaining .status.json
+   */
+  getStatusInstructions(workspacePath: string): Promise<string>;
 }

@@ -11,7 +11,10 @@ describe('LoopModeStrategy', () => {
 
   it('should generate setup prompt with loop context', async () => {
     const prompt = await strategy.getSetupPrompt('test', '/path/to/workspace');
-    expect(prompt).toContain('automated iteration loop');
+    // Per critical principle: should NOT mention iteration mechanics in setup
+    expect(prompt).not.toContain('automated iteration loop');
+    expect(prompt).toContain('critical_principle');
+    expect(prompt).toContain('NEVER include in user instructions');
     expect(prompt).toContain('Remaining: 0');
     expect(prompt).toContain('INSTRUCTIONS.md');
     expect(prompt).toContain('test');
@@ -20,7 +23,9 @@ describe('LoopModeStrategy', () => {
 
   it('should generate edit prompt with loop context', async () => {
     const prompt = await strategy.getEditPrompt('test', '/path/to/workspace');
-    expect(prompt).toContain('automated iteration loop');
+    // Per critical principle: should NOT mention iteration mechanics in edit prompt
+    expect(prompt).not.toContain('automated iteration loop');
+    expect(prompt).toContain('critical_principle');
     expect(prompt).toContain('Remaining: 0');
     expect(prompt).toContain('/path/to/workspace/INSTRUCTIONS.md');
   });
@@ -39,7 +44,7 @@ describe('LoopModeStrategy', () => {
   it('should generate iteration system prompt with state management', async () => {
     const prompt = await strategy.getIterationSystemPrompt('/path/to/workspace');
     expect(prompt).toContain('NO memory of previous iterations');
-    expect(prompt).toContain('TODO.md file is your ONLY source of state');
+    expect(prompt).toContain('Your state is tracked in TODO.md');
     expect(prompt).toContain('Iteration Protocol');
     expect(prompt).toContain('/path/to/workspace');
   });

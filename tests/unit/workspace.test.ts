@@ -26,12 +26,14 @@ describe('Workspace', () => {
     const workspace = await Workspace.init('test-options', workspacePath, {
       maxIterations: 100,
       delay: 5,
+      stagnationThreshold: 5,
       notifyUrl: 'https://ntfy.sh/test',
     });
 
     const metadata = await workspace.getMetadata();
     expect(metadata.maxIterations).toBe(100);
     expect(metadata.delay).toBe(5);
+    expect(metadata.stagnationThreshold).toBe(5);
     expect(metadata.notifyUrl).toBe('https://ntfy.sh/test');
   });
 
@@ -75,9 +77,12 @@ describe('Workspace', () => {
 
     expect(await workspace.isComplete()).toBe(false);
 
-    // Create TODO with completion marker
-    const todoPath = join(workspacePath, 'TODO.md');
-    await writeTestFile(todoPath, '- Remaining: 0');
+    // Create .status.json with complete: true
+    const statusPath = join(workspacePath, '.status.json');
+    await writeTestFile(statusPath, JSON.stringify({
+      complete: true,
+      progress: { completed: 10, total: 10 }
+    }));
 
     expect(await workspace.isComplete()).toBe(true);
   });
@@ -88,7 +93,10 @@ describe('Workspace', () => {
 
     const workspace = await Workspace.init('test-status', workspacePath);
 
-    await writeTestFile(join(workspacePath, 'TODO.md'), '- Remaining: 5');
+    await writeTestFile(join(workspacePath, '.status.json'), JSON.stringify({
+      complete: false,
+      progress: { completed: 5, total: 10 }
+    }));
     await writeTestFile(join(workspacePath, 'INSTRUCTIONS.md'), 'Instructions');
 
     const status = await workspace.getCompletionStatus();
@@ -105,7 +113,10 @@ describe('Workspace', () => {
 
     const workspace = await Workspace.init('test-count', workspacePath);
 
-    await writeTestFile(join(workspacePath, 'TODO.md'), '- Remaining: 23');
+    await writeTestFile(join(workspacePath, '.status.json'), JSON.stringify({
+      complete: false,
+      progress: { completed: 7, total: 30 }
+    }));
 
     const count = await workspace.getRemainingCount();
     expect(count).toBe(23);
@@ -256,7 +267,10 @@ describe('Workspace', () => {
       mode: ExecutionMode.LOOP,
     });
 
-    await writeTestFile(join(workspacePath, 'TODO.md'), 'Remaining: 0');
+    await writeTestFile(join(workspacePath, '.status.json'), JSON.stringify({
+      complete: true,
+      progress: { completed: 10, total: 10 }
+    }));
 
     const isComplete = await workspace.isComplete();
     expect(isComplete).toBe(true);
@@ -271,8 +285,11 @@ describe('Workspace', () => {
     });
 
     await writeTestFile(
-      join(workspacePath, 'TODO.md'),
-      '- [x] Done\n- [x] Also done'
+      join(workspacePath, '.status.json'),
+      JSON.stringify({
+        complete: true,
+        progress: { completed: 12, total: 12 }
+      })
     );
 
     const isComplete = await workspace.isComplete();
@@ -287,7 +304,10 @@ describe('Workspace', () => {
       mode: ExecutionMode.LOOP,
     });
 
-    await writeTestFile(join(workspacePath, 'TODO.md'), 'Remaining: 5');
+    await writeTestFile(join(workspacePath, '.status.json'), JSON.stringify({
+      complete: false,
+      progress: { completed: 5, total: 10 }
+    }));
 
     const count = await workspace.getRemainingCount();
     expect(count).toBe(5);
@@ -302,8 +322,11 @@ describe('Workspace', () => {
     });
 
     await writeTestFile(
-      join(workspacePath, 'TODO.md'),
-      '- [x] Item 1\n- [ ] Item 2\n- [ ] Item 3'
+      join(workspacePath, '.status.json'),
+      JSON.stringify({
+        complete: false,
+        progress: { completed: 10, total: 12 }
+      })
     );
 
     const count = await workspace.getRemainingCount();

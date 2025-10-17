@@ -109,11 +109,21 @@ export function templateCommand(): Command {
 
         logger.info(`Creating workspace from template: ${templateName}`);
 
-        // Initialize workspace
-        const workspace = await Workspace.init(workspaceName, workspacePath);
+        // Get template information
+        const templateInfo = await templateManager.getTemplateForInit(templateName);
 
-        // Use template (copy INSTRUCTIONS.md)
-        await templateManager.useTemplate(templateName, workspace.path);
+        // Initialize workspace with template configuration
+        await Workspace.init(workspaceName, workspacePath, {
+          mode: templateInfo.metadata?.mode,
+          maxIterations: templateInfo.metadata?.maxIterations,
+          delay: templateInfo.metadata?.delay,
+        });
+
+        // Copy INSTRUCTIONS.md from template
+        const { copyFile } = await import('../utils/fs.js');
+        const { join } = await import('path');
+        const instructionsDest = join(workspacePath, 'INSTRUCTIONS.md');
+        await copyFile(templateInfo.instructionsPath, instructionsDest);
 
         logger.success(`Workspace created: ${workspaceName}`);
         logger.line();

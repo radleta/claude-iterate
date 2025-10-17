@@ -15,15 +15,21 @@ describe('IterativeModeStrategy', () => {
     expect(prompt).not.toContain('automated iteration loop');
     expect(prompt).not.toContain('Remaining: 0');
     expect(prompt).toContain('checkbox');
-    expect(prompt).toContain('as many TODO items as possible');
-    expect(prompt).toContain('autonomous work sessions');
+    // Should include critical principle teaching what NOT to mention
+    expect(prompt).toContain('critical_principle');
+    expect(prompt).toContain('NEVER include in user instructions');
+    // Should focus on task goals instead
+    expect(prompt).toContain('autonomous');
+    expect(prompt).toContain('WHAT to accomplish');
   });
 
   it('should generate edit prompt for iterative mode', async () => {
     const prompt = await strategy.getEditPrompt('test', '/path/to/workspace');
     expect(prompt).not.toContain('automated iteration loop');
-    expect(prompt).toContain('autonomous work sessions');
+    // Per critical principle: should NOT mention iteration mechanics
+    expect(prompt).not.toContain('work in sessions');
     expect(prompt).toContain('/path/to/workspace/INSTRUCTIONS.md');
+    expect(prompt).toContain('autonomous');
   });
 
   it('should generate validation prompt', async () => {
@@ -39,17 +45,17 @@ describe('IterativeModeStrategy', () => {
 
   it('should generate iteration system prompt focused on completing work', async () => {
     const prompt = await strategy.getIterationSystemPrompt('/path/to/workspace');
-    expect(prompt).toContain('Complete as much work as possible');
-    expect(prompt).toContain('Don\'t stop early');
+    expect(prompt).toContain('Complete as much');
+    expect(prompt).toContain('stop early');
     expect(prompt).not.toContain('NO memory of previous iterations');
-    expect(prompt).toContain('checkbox');
+    expect(prompt).toContain('[ ]'); // Checkbox format
   });
 
   it('should generate iteration prompt for work session', async () => {
     const prompt = await strategy.getIterationPrompt('Do the task', 5);
     expect(prompt).toContain('Work Session 5');
     expect(prompt).toContain('Do the task');
-    expect(prompt).toContain('complete as many outstanding items as possible');
+    expect(prompt).toContain('as many outstanding items');
   });
 
   it('should use checkbox format in validation criteria', async () => {
@@ -58,6 +64,6 @@ describe('IterativeModeStrategy', () => {
     expect(criteria).toContain('- [ ]');
     expect(criteria).toContain('- [x]');
     expect(criteria).not.toContain('Remaining: 0');
-    expect(criteria).toContain('No Loop Mentions');
+    expect(criteria).toContain('No System Mentions');
   });
 });

@@ -2,7 +2,7 @@
 
 Automate multi-step tasks with Claude Code through managed workspaces, reusable templates, and autonomous iteration loops.
 
-[![Tests](https://img.shields.io/badge/tests-147%20passing-brightgreen)](https://github.com/radleta/claude-iterate)
+[![Tests](https://img.shields.io/badge/tests-228%20passing-brightgreen)](https://github.com/radleta/claude-iterate)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue)](https://www.typescriptlang.org/)
 [![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
@@ -12,6 +12,7 @@ Automate multi-step tasks with Claude Code through managed workspaces, reusable 
 - 🎯 **Workspace Management** - Isolated environments for complex tasks
 - 🔄 **Autonomous Execution** - Iteration loops that run until completion
 - 🎭 **Dual Modes** - Loop (incremental) or iterative (autonomous) execution
+- 🛡️ **Stagnation Detection** - Automatic stop after N consecutive no-work iterations (iterative mode)
 - 📦 **Templates** - Reusable patterns for common workflows
 - ⚙️ **Git-Style Config** - Layered configuration (project, user, runtime)
 - 📁 **Archives** - Preserve and restore completed work
@@ -61,27 +62,58 @@ npx claude-iterate init my-task
 
 Isolated task environments with:
 - `INSTRUCTIONS.md` - What Claude should do
-- `TODO.md` - Progress tracking
+- `TODO.md` - Progress tracking (human-readable)
+- `.status.json` - Completion status (machine-readable)
 - `.metadata.json` - Iteration state
+- `iterate-*.log` - Timestamped execution logs
 - `working/` - Scratch space
+
+#### Status Tracking
+
+Claude tracks progress in two complementary files:
+
+**TODO.md** - Human-readable task list and notes for Claude's working context
+
+**.status.json** - Machine-readable progress signals for reliable completion detection:
+
+```json
+{
+  "complete": false,
+  "progress": {
+    "completed": 35,
+    "total": 60
+  },
+  "summary": "Migrated 35/60 API endpoints",
+  "lastUpdated": "2025-10-16T14:30:00Z"
+}
+```
+
+Claude updates `.status.json` each iteration. When `complete: true`, the task is finished. This prevents false positives from completion markers appearing in instructions or examples.
 
 ### Execution Modes
 
 **Loop Mode (Default)**
 - Incremental progress with explicit step tracking
-- Uses "Remaining: N" counter in TODO.md
+- Complete one item per iteration
 - Best for tasks with discrete steps
 - Default max: 50 iterations
 
 **Iterative Mode**
 - Autonomous work sessions completing multiple items
-- Uses checkbox format (- [ ] / - [x]) in TODO.md
+- Complete as many items as possible per iteration
 - Best for complex tasks requiring sustained focus
 - Default max: 20 iterations (does more per iteration)
+- **Stagnation detection**: Automatically stops after N consecutive iterations with no work (default: 2, prevents infinite loops)
 
 ```bash
 # Use iterative mode
 claude-iterate init my-task --mode iterative
+
+# Customize stagnation threshold
+claude-iterate init my-task --mode iterative --stagnation-threshold 5
+
+# Disable stagnation detection (trust Claude completely)
+claude-iterate init my-task --mode iterative --stagnation-threshold 0
 ```
 
 ### Templates
@@ -144,7 +176,10 @@ claude-iterate config --global notifyUrl https://ntfy.sh/my-topic
 - `-m, --max-iterations <n>` - Override iteration limit
 - `-d, --delay <seconds>` - Delay between iterations
 - `--no-delay` - Skip delays
-- `--completion-markers <markers>` - Custom completion detection (loop mode)
+- `--stagnation-threshold <n>` - Stop after N consecutive no-work iterations (iterative mode only, 0=never)
+- `-v, --verbose` - Show full Claude output (equivalent to --output verbose)
+- `-q, --quiet` - Silent execution, errors only (equivalent to --output quiet)
+- `--output <level>` - Output level: quiet, progress, verbose
 - `--dangerously-skip-permissions` - Disable permission prompts (see security note)
 
 ### Templates
@@ -199,7 +234,8 @@ Create `.claude-iterate.json` in your project root:
   "archiveDir": "./claude-iterate/archive",
   "defaultMaxIterations": 50,
   "defaultDelay": 2,
-  "completionMarkers": ["Remaining: 0", "TASK COMPLETE"],
+  "defaultStagnationThreshold": 2,
+  "outputLevel": "progress",
   "notifyUrl": "https://ntfy.sh/my-project",
   "notifyEvents": ["completion", "error"]
 }
@@ -214,12 +250,13 @@ Create `~/.config/claude-iterate/config.json`:
   "globalTemplatesDir": "~/.config/claude-iterate/templates",
   "defaultMaxIterations": 50,
   "defaultDelay": 2,
+  "defaultStagnationThreshold": 2,
+  "outputLevel": "progress",
   "claude": {
     "command": "claude",
     "args": []
   },
-  "colors": true,
-  "verbose": false
+  "colors": true
 }
 ```
 
@@ -242,25 +279,6 @@ claude-iterate run my-task --dangerously-skip-permissions
 
 ⚠️ **WARNING:** The `--dangerously-skip-permissions` flag allows Claude to read/write files and execute commands without confirmation. Anthropic recommends using this "only in a container without internet access." [Learn more](https://docs.anthropic.com/en/docs/agents/agent-security-model#disabling-permission-prompts)
 
-### Completion Markers (Loop Mode)
-
-Customize how task completion is detected:
-
-```bash
-# During init
-claude-iterate init my-task --completion-markers "DONE,FINISHED"
-
-# During run
-claude-iterate run my-task --completion-markers "ALL DONE"
-
-# In config
-claude-iterate config completionMarkers --add "Task Complete"
-```
-
-**Default markers:** `Remaining: 0`, `**Remaining**: 0`, `TASK COMPLETE`, `✅ TASK COMPLETE`
-
-**Note:** Iterative mode uses checkbox completion (- [ ] / - [x]) instead.
-
 ### Notifications
 
 Send HTTP POST notifications for long-running tasks (compatible with ntfy.sh):
@@ -278,6 +296,89 @@ claude-iterate config notifyUrl https://ntfy.sh/my-topic
 **Available events:** `setup_complete`, `execution_start`, `iteration`, `iteration_milestone`, `completion`, `error`, `all`
 
 **Default events:** `iteration`, `completion`, `error`
+
+## Viewing Claude Output
+
+Claude-iterate provides three output levels for console feedback, plus comprehensive log files:
+
+### Output Levels
+
+**Progress (Default)** - Shows iteration progress and completion status without full output:
+
+```bash
+claude-iterate run my-task
+
+# Output:
+# Starting claude-iterate run for workspace: my-task
+# Mode: loop | Max iterations: 50 | Delay: 2s
+#
+# Running iteration 1...
+# ✓ Iteration 1 complete (4 items remaining)
+#
+# Running iteration 2...
+# ✓ Iteration 2 complete (3 items remaining)
+# ...
+# ✓ Task completed successfully after 5 iterations
+```
+
+**Verbose** - Shows full Claude output in real-time:
+
+```bash
+claude-iterate run my-task --verbose
+# or
+claude-iterate run my-task --output verbose
+```
+
+Helpful for:
+- Debugging issues
+- Monitoring Claude's reasoning
+- Understanding detailed progress
+
+**Quiet** - Silent execution, only errors/warnings:
+
+```bash
+claude-iterate run my-task --quiet
+# or
+claude-iterate run my-task --output quiet
+```
+
+Ideal for:
+- CI/CD pipelines
+- Background tasks
+- Minimal logging
+
+You can also configure the default output level in your config:
+
+```json
+{
+  "outputLevel": "progress"
+}
+```
+
+### Log Files
+
+Every run automatically creates a timestamped log file in the workspace directory:
+
+```bash
+# List all log files for a workspace (sorted by time)
+ls -lt claude-iterate/workspaces/my-task/iterate-*.log
+
+# View the latest log file
+ls -t claude-iterate/workspaces/my-task/iterate-*.log | head -1 | xargs cat
+
+# Search for specific content across all logs
+grep "error" claude-iterate/workspaces/my-task/iterate-*.log
+```
+
+**Log file naming:** `iterate-YYYYMMDD-HHMMSS.log` (e.g., `iterate-20251015-142345.log`)
+
+Each log file contains:
+- Run metadata (workspace, mode, max iterations) - logged once
+- Instructions and system prompts - logged once at start for efficiency
+- Iteration timestamps and Claude output
+- Completion status and remaining counts
+
+**Note:** Log files use a deduplicated format that logs static content (instructions, system prompts) once at the start instead of repeating them for each iteration. This reduces log file size by ~60% while maintaining full auditability. Log files are created regardless of the output level.
 
 ## Examples
 
@@ -350,7 +451,10 @@ claude-iterate run report-january-2025
     │   └── my-task/
     │       ├── INSTRUCTIONS.md
     │       ├── TODO.md
+    │       ├── .status.json         # Machine-readable completion status
     │       ├── .metadata.json
+    │       ├── iterate-20251015-142345.log  # Run logs (timestamped)
+    │       ├── iterate-20251015-153021.log
     │       └── working/
     ├── templates/             # Project templates
     └── archive/               # Completed workspaces
@@ -410,6 +514,6 @@ npm run validate  # Run all checks
 
 ## Acknowledgments
 
-Built with TypeScript, Commander.js, and Zod. Tested with Vitest (147 passing tests).
+Built with TypeScript, Commander.js, and Zod. Tested with Vitest (228 passing tests).
 
 Requires [Claude CLI](https://docs.anthropic.com/en/docs/claude-code) by Anthropic.

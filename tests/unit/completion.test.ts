@@ -2,271 +2,140 @@ import { describe, it, expect } from 'vitest';
 import { join } from 'path';
 import { CompletionDetector } from '../../src/core/completion.js';
 import { ExecutionMode } from '../../src/types/mode.js';
+import { WorkspaceStatus } from '../../src/types/status.js';
 import { createTestWorkspace, writeTestFile } from '../setup.js';
 
 describe('CompletionDetector', () => {
-  it('should detect completion with "Remaining: 0"', async () => {
+  it('should detect completion from .status.json', async () => {
     const workspacePath = await createTestWorkspace('test-workspace');
-    const todoPath = join(workspacePath, 'TODO.md');
+    const statusPath = join(workspacePath, '.status.json');
 
-    await writeTestFile(todoPath, `
-# TODO
+    const status: WorkspaceStatus = {
+      complete: true,
+      progress: { completed: 60, total: 60 },
+    };
 
-## Progress
-- Remaining: 0
-    `);
-
-    const markers = ['Remaining: 0'];
-    const isComplete = await CompletionDetector.isComplete(workspacePath, ExecutionMode.LOOP, markers);
-
-    expect(isComplete).toBe(true);
-  });
-
-  it('should detect completion with "**Remaining**: 0"', async () => {
-    const workspacePath = await createTestWorkspace('test-workspace');
-    const todoPath = join(workspacePath, 'TODO.md');
-
-    await writeTestFile(todoPath, `
-# TODO
-
-- **Remaining**: 0
-    `);
-
-    const markers = ['**Remaining**: 0'];
-    const isComplete = await CompletionDetector.isComplete(workspacePath, ExecutionMode.LOOP, markers);
-
-    expect(isComplete).toBe(true);
-  });
-
-  it('should detect completion with "TASK COMPLETE"', async () => {
-    const workspacePath = await createTestWorkspace('test-workspace');
-    const todoPath = join(workspacePath, 'TODO.md');
-
-    await writeTestFile(todoPath, `
-# TODO
-
-✅ TASK COMPLETE
-
-All items processed successfully.
-    `);
-
-    const markers = ['TASK COMPLETE'];
-    const isComplete = await CompletionDetector.isComplete(workspacePath, ExecutionMode.LOOP, markers);
-
-    expect(isComplete).toBe(true);
-  });
-
-  it('should not detect completion when not complete', async () => {
-    const workspacePath = await createTestWorkspace('test-workspace');
-    const todoPath = join(workspacePath, 'TODO.md');
-
-    await writeTestFile(todoPath, `
-# TODO
-
-- Remaining: 5
-
-Still working on it...
-    `);
-
-    const markers = ['Remaining: 0', 'TASK COMPLETE'];
-    const isComplete = await CompletionDetector.isComplete(workspacePath, ExecutionMode.LOOP, markers);
-
-    expect(isComplete).toBe(false);
-  });
-
-  it('should return false if TODO.md does not exist', async () => {
-    const workspacePath = await createTestWorkspace('test-workspace');
-
-    const markers = ['Remaining: 0'];
-    const isComplete = await CompletionDetector.isComplete(workspacePath, ExecutionMode.LOOP, markers);
-
-    expect(isComplete).toBe(false);
-  });
-
-  it('should extract remaining count', async () => {
-    const workspacePath = await createTestWorkspace('test-workspace');
-    const todoPath = join(workspacePath, 'TODO.md');
-
-    await writeTestFile(todoPath, `
-# TODO
-
-- Remaining: 42
-    `);
-
-    const count = await CompletionDetector.getRemainingCount(workspacePath, ExecutionMode.LOOP);
-
-    expect(count).toBe(42);
-  });
-
-  it('should extract remaining count from bold markdown', async () => {
-    const workspacePath = await createTestWorkspace('test-workspace');
-    const todoPath = join(workspacePath, 'TODO.md');
-
-    await writeTestFile(todoPath, `
-# TODO
-
-- **Remaining**: 15
-    `);
-
-    const count = await CompletionDetector.getRemainingCount(workspacePath, ExecutionMode.LOOP);
-
-    expect(count).toBe(15);
-  });
-
-  it('should handle case-insensitive remaining count', async () => {
-    const workspacePath = await createTestWorkspace('test-workspace');
-    const todoPath = join(workspacePath, 'TODO.md');
-
-    await writeTestFile(todoPath, `
-# TODO
-
-- remaining: 7
-    `);
-
-    const count = await CompletionDetector.getRemainingCount(workspacePath, ExecutionMode.LOOP);
-
-    expect(count).toBe(7);
-  });
-
-  it('should return null if no remaining count found', async () => {
-    const workspacePath = await createTestWorkspace('test-workspace');
-    const todoPath = join(workspacePath, 'TODO.md');
-
-    await writeTestFile(todoPath, `
-# TODO
-
-Working on tasks...
-    `);
-
-    const count = await CompletionDetector.getRemainingCount(workspacePath, ExecutionMode.LOOP);
-
-    expect(count).toBe(null);
-  });
-
-  it('should check if TODO.md exists', async () => {
-    const workspacePath = await createTestWorkspace('test-workspace');
-
-    expect(await CompletionDetector.hasTodo(workspacePath)).toBe(false);
-
-    await writeTestFile(join(workspacePath, 'TODO.md'), 'Content');
-
-    expect(await CompletionDetector.hasTodo(workspacePath)).toBe(true);
-  });
-
-  it('should check if INSTRUCTIONS.md exists', async () => {
-    const workspacePath = await createTestWorkspace('test-workspace');
-
-    expect(await CompletionDetector.hasInstructions(workspacePath)).toBe(false);
-
-    await writeTestFile(join(workspacePath, 'INSTRUCTIONS.md'), 'Content');
-
-    expect(await CompletionDetector.hasInstructions(workspacePath)).toBe(true);
-  });
-
-  it('should get full status', async () => {
-    const workspacePath = await createTestWorkspace('test-workspace');
-
-    await writeTestFile(join(workspacePath, 'TODO.md'), '- Remaining: 0');
-    await writeTestFile(join(workspacePath, 'INSTRUCTIONS.md'), 'Instructions');
-
-    const status = await CompletionDetector.getStatus(workspacePath, ExecutionMode.LOOP, ['Remaining: 0']);
-
-    expect(status.isComplete).toBe(true);
-    expect(status.hasTodo).toBe(true);
-    expect(status.hasInstructions).toBe(true);
-    expect(status.remainingCount).toBe(0);
-  });
-
-  // Iterative mode tests
-  it('should detect iterative mode completion with all checkboxes checked', async () => {
-    const workspacePath = await createTestWorkspace('test-workspace');
-    const todoPath = join(workspacePath, 'TODO.md');
-
-    await writeTestFile(todoPath, `
-# TODO
-
-- [x] Task 1
-- [x] Task 2
-- [x] Task 3
-    `);
+    await writeTestFile(statusPath, JSON.stringify(status));
 
     const isComplete = await CompletionDetector.isComplete(
       workspacePath,
-      ExecutionMode.ITERATIVE
+      ExecutionMode.LOOP
     );
 
     expect(isComplete).toBe(true);
   });
 
-  it('should not detect iterative mode completion with unchecked items', async () => {
+  it('should return false when .status.json has complete: false', async () => {
     const workspacePath = await createTestWorkspace('test-workspace');
-    const todoPath = join(workspacePath, 'TODO.md');
+    const statusPath = join(workspacePath, '.status.json');
 
-    await writeTestFile(todoPath, `
-# TODO
+    const status: WorkspaceStatus = {
+      complete: false,
+      progress: { completed: 35, total: 60 },
+    };
 
-- [x] Task 1
-- [ ] Task 2
-- [ ] Task 3
-    `);
+    await writeTestFile(statusPath, JSON.stringify(status));
 
     const isComplete = await CompletionDetector.isComplete(
       workspacePath,
-      ExecutionMode.ITERATIVE
+      ExecutionMode.LOOP
     );
 
     expect(isComplete).toBe(false);
   });
 
-  it('should get remaining count for iterative mode', async () => {
+  it('should return false when .status.json missing', async () => {
     const workspacePath = await createTestWorkspace('test-workspace');
-    const todoPath = join(workspacePath, 'TODO.md');
 
-    await writeTestFile(todoPath, `
-# TODO
-
-- [x] Task 1
-- [ ] Task 2
-- [ ] Task 3
-    `);
-
-    const count = await CompletionDetector.getRemainingCount(
+    const isComplete = await CompletionDetector.isComplete(
       workspacePath,
-      ExecutionMode.ITERATIVE
+      ExecutionMode.LOOP
     );
 
-    expect(count).toBe(2);
+    expect(isComplete).toBe(false);
   });
 
-  it('should return 0 remaining for iterative mode when all checked', async () => {
+  it('should get remaining count from .status.json', async () => {
     const workspacePath = await createTestWorkspace('test-workspace');
-    const todoPath = join(workspacePath, 'TODO.md');
+    const statusPath = join(workspacePath, '.status.json');
 
-    await writeTestFile(todoPath, `
-# TODO
+    const status: WorkspaceStatus = {
+      complete: false,
+      progress: { completed: 35, total: 60 },
+    };
 
-- [x] Task 1
-- [x] Task 2
-    `);
+    await writeTestFile(statusPath, JSON.stringify(status));
 
-    const count = await CompletionDetector.getRemainingCount(
+    const remaining = await CompletionDetector.getRemainingCount(
       workspacePath,
-      ExecutionMode.ITERATIVE
+      ExecutionMode.LOOP
     );
 
-    expect(count).toBe(0);
+    expect(remaining).toBe(25);
   });
 
-  it('should handle uppercase X in checkboxes', async () => {
+  it('should return null for remaining count when .status.json missing', async () => {
     const workspacePath = await createTestWorkspace('test-workspace');
-    const todoPath = join(workspacePath, 'TODO.md');
 
-    await writeTestFile(todoPath, `
-# TODO
+    const remaining = await CompletionDetector.getRemainingCount(
+      workspacePath,
+      ExecutionMode.LOOP
+    );
 
-- [X] Task 1 (uppercase)
-- [x] Task 2 (lowercase)
-    `);
+    expect(remaining).toBe(null);
+  });
+
+  it('should return null for remaining count when .status.json has no total', async () => {
+    const workspacePath = await createTestWorkspace('test-workspace');
+    const statusPath = join(workspacePath, '.status.json');
+
+    const status: WorkspaceStatus = {
+      complete: false,
+      progress: { completed: 0, total: 0 },
+    };
+
+    await writeTestFile(statusPath, JSON.stringify(status));
+
+    const remaining = await CompletionDetector.getRemainingCount(
+      workspacePath,
+      ExecutionMode.LOOP
+    );
+
+    expect(remaining).toBe(null);
+  });
+
+  it('should get completion status', async () => {
+    const workspacePath = await createTestWorkspace('test-workspace');
+    const statusPath = join(workspacePath, '.status.json');
+
+    const status: WorkspaceStatus = {
+      complete: true,
+      progress: { completed: 60, total: 60 },
+    };
+
+    await writeTestFile(statusPath, JSON.stringify(status));
+
+    const completionStatus = await CompletionDetector.getStatus(
+      workspacePath,
+      ExecutionMode.LOOP
+    );
+
+    expect(completionStatus.isComplete).toBe(true);
+    expect(completionStatus.hasTodo).toBe(true);
+    expect(completionStatus.hasInstructions).toBe(true);
+    expect(completionStatus.remainingCount).toBe(0);
+  });
+
+  it('should work with iterative mode', async () => {
+    const workspacePath = await createTestWorkspace('test-workspace');
+    const statusPath = join(workspacePath, '.status.json');
+
+    const status: WorkspaceStatus = {
+      complete: true,
+      progress: { completed: 12, total: 12 },
+    };
+
+    await writeTestFile(statusPath, JSON.stringify(status));
 
     const isComplete = await CompletionDetector.isComplete(
       workspacePath,

@@ -81,12 +81,17 @@ describe('TemplateManager', () => {
 
     const manager = new TemplateManager(projectTemplatesDir, globalTemplatesDir);
 
-    // Initialize workspace first
+    // Get template for init
+    const templateInfo = await manager.getTemplateForInit('my-template');
+
+    // Initialize workspace
     const newWorkspacePath = join(testDir, 'workspaces', 'from-template');
     await Workspace.init('from-template', newWorkspacePath);
 
-    // Use template (copies INSTRUCTIONS.md)
-    await manager.useTemplate('my-template', newWorkspacePath);
+    // Copy INSTRUCTIONS.md from template
+    const { copyFile } = await import('../../src/utils/fs.js');
+    const instructionsDest = join(newWorkspacePath, 'INSTRUCTIONS.md');
+    await copyFile(templateInfo.instructionsPath, instructionsDest);
 
     // Verify INSTRUCTIONS.md was copied
     const workspace = await Workspace.load('from-template', newWorkspacePath);

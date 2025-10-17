@@ -59,4 +59,10 @@ export class IterativeModeStrategy implements ModePromptStrategy {
   async getValidationCriteria(): Promise<string> {
     return loadTemplate('iterative/validation-criteria.md', {});
   }
+
+  async getStatusInstructions(workspacePath: string): Promise<string> {
+    return loadTemplate('iterative/status-instructions.md', {
+      workspacePath,
+    });
+  }
 }

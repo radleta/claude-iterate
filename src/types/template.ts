@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ExecutionMode } from './mode.js';
 
 /**
  * Template metadata schema (.template.json)
@@ -11,6 +12,11 @@ export const TemplateMetadataSchema = z.object({
   estimatedIterations: z.number().int().min(1).optional(),
   author: z.string().optional(),
   created: z.string().datetime().optional(),
+  // Workspace configuration
+  mode: z.nativeEnum(ExecutionMode).optional(),
+  maxIterations: z.number().int().min(1).optional(),
+  delay: z.number().int().min(0).optional(),
+  completionMarkers: z.array(z.string()).optional(),
 });
 
 export type TemplateMetadata = z.infer<typeof TemplateMetadataSchema>;
