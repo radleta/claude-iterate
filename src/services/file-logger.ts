@@ -50,42 +50,105 @@ ${'='.repeat(80)}
   }
 
   /**
-   * Format iteration header
+   * Log run metadata (called once at start)
    */
-  private formatIterationHeader(iteration: number): string {
-    const timestamp = new Date().toISOString();
-    return `
+  async logRunStart(metadata: {
+    workspace: string;
+    mode: string;
+    maxIterations: number;
+    startTime: Date;
+  }): Promise<void> {
+    if (!this.enabled) return;
+
+    await this.init();
+
+    const content = `${'='.repeat(80)}
+RUN METADATA
 ${'='.repeat(80)}
-ITERATION ${iteration}
-Started: ${timestamp}
-${'='.repeat(80)}
+Workspace: ${metadata.workspace}
+Mode: ${metadata.mode}
+Max Iterations: ${metadata.maxIterations}
+Start Time: ${metadata.startTime.toISOString()}
 
 `;
+
+    await this.append(content);
   }
 
   /**
-   * Log iteration start with prompt
+   * Log instructions content (called once at start)
+   */
+  async logInstructions(content: string): Promise<void> {
+    if (!this.enabled) return;
+
+    await this.init();
+
+    const entry = `${'='.repeat(80)}
+INSTRUCTIONS
+${'='.repeat(80)}
+${content}
+
+`;
+
+    await this.append(entry);
+  }
+
+  /**
+   * Log system prompt (called once at start)
+   */
+  async logSystemPrompt(prompt: string): Promise<void> {
+    if (!this.enabled) return;
+
+    await this.init();
+
+    const entry = `${'='.repeat(80)}
+SYSTEM PROMPT
+${'='.repeat(80)}
+${prompt}
+
+`;
+
+    await this.append(entry);
+  }
+
+  /**
+   * Log status instructions (called once at start)
+   */
+  async logStatusInstructions(content: string): Promise<void> {
+    if (!this.enabled) return;
+
+    await this.init();
+
+    const entry = `${'='.repeat(80)}
+STATUS INSTRUCTIONS
+${'='.repeat(80)}
+${content}
+
+`;
+
+    await this.append(entry);
+  }
+
+  /**
+   * Log iteration start (without prompt - logged once at run start)
    */
   async logIterationStart(
     iteration: number,
-    prompt: string,
-    systemPrompt?: string
+    startTime: Date
   ): Promise<void> {
     if (!this.enabled) return;
 
     await this.init();
 
-    const entry = this.formatIterationHeader(iteration);
-    let content = entry;
+    const entry = `${'='.repeat(80)}
+ITERATION ${iteration}
+Started: ${startTime.toISOString()}
+${'='.repeat(80)}
 
-    if (systemPrompt) {
-      content += `SYSTEM PROMPT:\n${systemPrompt}\n\n`;
-    }
+CLAUDE OUTPUT:
+`;
 
-    content += `PROMPT:\n${prompt}\n\n`;
-    content += `CLAUDE OUTPUT:\n`;
-
-    await this.append(content);
+    await this.append(entry);
   }
 
   /**

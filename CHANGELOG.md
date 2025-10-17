@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Console Output Levels**: Three modes for better user experience and control
+  - `progress` (new default): Shows iteration numbers and status without full Claude output
+  - `verbose`: Shows full Claude output in real-time (previous behavior with `--verbose`)
+  - `quiet`: Silent execution, only errors/warnings shown
+  - New CLI flags: `-v`/`--verbose`, `-q`/`--quiet`, `--output <level>`
+  - New config option: `outputLevel` (replaces boolean `verbose`)
+  - `ConsoleReporter` service provides structured output filtering
+  - Default behavior now shows progress indicators instead of silence
+- **Deduplicated Log Files**: Significantly reduced log file size (~60% smaller)
+  - Instructions and system prompts logged once at run start instead of per-iteration
+  - Run metadata section logged at start (workspace, mode, max iterations, timestamp)
+  - Separate sections for instructions, system prompt, and status instructions
+  - Iteration sections now only contain timestamps and Claude output
+  - Backward compatible: Old log files remain valid, new runs use efficient format
+  - No migration needed for existing workspaces
+- **29 New Tests**: Comprehensive test coverage for new features (total: 228 tests, was 199)
+  - Unit tests for ConsoleReporter (output level filtering, stream handling)
+  - Updated FileLogger tests for deduplicated format
+  - All tests passing with new output and logging systems
+
+### Changed
+
+- **Default Console Output**: Changed from silent to progress mode for better UX
+  - Users now see real-time progress without needing `--verbose`
+  - Silent execution still available via `--quiet` flag
+  - Log files always created regardless of output level
+- **Log File Format**: More efficient structure reduces storage by ~60%
+  - Static content (instructions, system prompt) logged once at start
+  - Iterations only log timestamps and output
+  - Example: 50 iterations reduced from ~1.3MB to ~517KB
+  - Makes reviewing logs easier with clear section separation
+
+### Deprecated
+
+- **verbose Config Option**: Use `outputLevel` instead
+  - `verbose: true` maps to `outputLevel: 'verbose'`
+  - `verbose: false` maps to `outputLevel: 'progress'`
+  - Old config still works (backward compatible)
+  - Will be removed in future major version
+
 ### Breaking Changes
 
 - **Completion Detection Simplification**: Completion detection now exclusively uses `.status.json`

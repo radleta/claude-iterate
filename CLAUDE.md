@@ -25,20 +25,20 @@ CHANGELOG.md - Version history
 
 ## Project Purpose
 
-CLI tool for managing automated task iterations with Claude Code. TypeScript 5.8+, Commander.js, Zod validation, Vitest (105 mocked tests), Node 18+.
+CLI tool for managing automated task iterations with Claude Code. TypeScript 5.8+, Commander.js, Zod validation, Vitest (228 mocked tests), Node 18+.
 
 ## Architecture Quick Reference
 
 **Core modules** (see `src/` for implementation):
 - `commands/` - CLI command handlers (init, setup, run, template, archive, etc.)
 - `core/` - Business logic (workspace, metadata, completion, template-manager, archive-manager, config-manager)
-- `services/` - External integrations (claude-client spawns `claude` CLI, notification-service for HTTP POST)
+- `services/` - External integrations (claude-client spawns `claude` CLI, notification-service for HTTP POST, console-reporter for output, file-logger for logs)
 - `types/` - Zod schemas (metadata, config, template, archive)
 
 **Key files:**
 - `src/index.ts` - Entry point
 - `src/cli.ts` - Commander setup, register all commands here
-- `tests/mocks/claude-client.mock.ts` - Mock for all tests (no real Claude calls)
+- `tests/mocks/claude-client.mock.ts` - Mock for all tests (no real Claude calls, 228 tests passing)
 
 ## Critical Concepts
 

@@ -2,7 +2,7 @@
 
 Automate multi-step tasks with Claude Code through managed workspaces, reusable templates, and autonomous iteration loops.
 
-[![Tests](https://img.shields.io/badge/tests-199%20passing-brightgreen)](https://github.com/radleta/claude-iterate)
+[![Tests](https://img.shields.io/badge/tests-228%20passing-brightgreen)](https://github.com/radleta/claude-iterate)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue)](https://www.typescriptlang.org/)
 [![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
@@ -177,6 +177,9 @@ claude-iterate config --global notifyUrl https://ntfy.sh/my-topic
 - `-d, --delay <seconds>` - Delay between iterations
 - `--no-delay` - Skip delays
 - `--stagnation-threshold <n>` - Stop after N consecutive no-work iterations (iterative mode only, 0=never)
+- `-v, --verbose` - Show full Claude output (equivalent to --output verbose)
+- `-q, --quiet` - Silent execution, errors only (equivalent to --output quiet)
+- `--output <level>` - Output level: quiet, progress, verbose
 - `--dangerously-skip-permissions` - Disable permission prompts (see security note)
 
 ### Templates
@@ -232,6 +235,7 @@ Create `.claude-iterate.json` in your project root:
   "defaultMaxIterations": 50,
   "defaultDelay": 2,
   "defaultStagnationThreshold": 2,
+  "outputLevel": "progress",
   "notifyUrl": "https://ntfy.sh/my-project",
   "notifyEvents": ["completion", "error"]
 }
@@ -247,12 +251,12 @@ Create `~/.config/claude-iterate/config.json`:
   "defaultMaxIterations": 50,
   "defaultDelay": 2,
   "defaultStagnationThreshold": 2,
+  "outputLevel": "progress",
   "claude": {
     "command": "claude",
     "args": []
   },
-  "colors": true,
-  "verbose": false
+  "colors": true
 }
 ```
 
@@ -295,20 +299,61 @@ claude-iterate config notifyUrl https://ntfy.sh/my-topic
 
 ## Viewing Claude Output
 
-By default, claude-iterate runs iterations silently to avoid console clutter. You have two ways to see what Claude is doing:
+Claude-iterate provides three output levels for console feedback, plus comprehensive log files:
 
-### Console Output (--verbose)
+### Output Levels
 
-Show Claude's full responses in real-time as each iteration executes:
+**Progress (Default)** - Shows iteration progress and completion status without full output:
+
+```bash
+claude-iterate run my-task
+
+# Output:
+# Starting claude-iterate run for workspace: my-task
+# Mode: loop | Max iterations: 50 | Delay: 2s
+#
+# Running iteration 1...
+# ✓ Iteration 1 complete (4 items remaining)
+#
+# Running iteration 2...
+# ✓ Iteration 2 complete (3 items remaining)
+# ...
+# ✓ Task completed successfully after 5 iterations
+```
+
+**Verbose** - Shows full Claude output in real-time:
 
 ```bash
 claude-iterate run my-task --verbose
+# or
+claude-iterate run my-task --output verbose
 ```
 
-This streams all Claude output directly to your console, helpful for:
+Helpful for:
 - Debugging issues
-- Monitoring progress in real-time
-- Understanding Claude's reasoning
+- Monitoring Claude's reasoning
+- Understanding detailed progress
+
+**Quiet** - Silent execution, only errors/warnings:
+
+```bash
+claude-iterate run my-task --quiet
+# or
+claude-iterate run my-task --output quiet
+```
+
+Ideal for:
+- CI/CD pipelines
+- Background tasks
+- Minimal logging
+
+You can also configure the default output level in your config:
+
+```json
+{
+  "outputLevel": "progress"
+}
+```
 
 ### Log Files
 
@@ -328,13 +373,12 @@ grep "error" claude-iterate/workspaces/my-task/iterate-*.log
 **Log file naming:** `iterate-YYYYMMDD-HHMMSS.log` (e.g., `iterate-20251015-142345.log`)
 
 Each log file contains:
-- Run start timestamp
-- Iteration numbers
-- Full prompts sent to Claude
-- Complete Claude responses
+- Run metadata (workspace, mode, max iterations) - logged once
+- Instructions and system prompts - logged once at start for efficiency
+- Iteration timestamps and Claude output
 - Completion status and remaining counts
 
-**Note:** Log files are created regardless of the --verbose flag, so you always have a record of what happened.
+**Note:** Log files use a deduplicated format that logs static content (instructions, system prompts) once at the start instead of repeating them for each iteration. This reduces log file size by ~60% while maintaining full auditability. Log files are created regardless of the output level.
 
 ## Examples
 
@@ -470,6 +514,6 @@ npm run validate  # Run all checks
 
 ## Acknowledgments
 
-Built with TypeScript, Commander.js, and Zod. Tested with Vitest (199 passing tests).
+Built with TypeScript, Commander.js, and Zod. Tested with Vitest (228 passing tests).
 
 Requires [Claude CLI](https://docs.anthropic.com/en/docs/claude-code) by Anthropic.

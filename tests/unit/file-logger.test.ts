@@ -45,8 +45,9 @@ describe('FileLogger', () => {
   describe('logIterationStart()', () => {
     it('should initialize file with header on first call', async () => {
       const logger = new FileLogger('/test/iterate.log');
+      const startTime = new Date();
 
-      await logger.logIterationStart(1, 'Test prompt');
+      await logger.logIterationStart(1, startTime);
 
       // Should create directory
       expect(fsUtils.ensureDir).toHaveBeenCalledWith('/test');
@@ -66,43 +67,24 @@ describe('FileLogger', () => {
       );
     });
 
-    it('should include prompt in log', async () => {
+    it('should include start time in log', async () => {
       const logger = new FileLogger('/test/iterate.log');
+      const startTime = new Date('2025-10-16T14:30:00Z');
 
-      await logger.logIterationStart(1, 'Test prompt for iteration');
-
-      expect(fs.appendFile).toHaveBeenCalledWith(
-        '/test/iterate.log',
-        expect.stringContaining('Test prompt for iteration'),
-        'utf8'
-      );
-    });
-
-    it('should include system prompt when provided', async () => {
-      const logger = new FileLogger('/test/iterate.log');
-
-      await logger.logIterationStart(
-        1,
-        'User prompt',
-        'System prompt here'
-      );
+      await logger.logIterationStart(1, startTime);
 
       expect(fs.appendFile).toHaveBeenCalledWith(
         '/test/iterate.log',
-        expect.stringContaining('SYSTEM PROMPT:'),
-        'utf8'
-      );
-      expect(fs.appendFile).toHaveBeenCalledWith(
-        '/test/iterate.log',
-        expect.stringContaining('System prompt here'),
+        expect.stringContaining('2025-10-16T14:30:00'),
         'utf8'
       );
     });
 
     it('should include CLAUDE OUTPUT header', async () => {
       const logger = new FileLogger('/test/iterate.log');
+      const startTime = new Date();
 
-      await logger.logIterationStart(1, 'Test prompt');
+      await logger.logIterationStart(1, startTime);
 
       expect(fs.appendFile).toHaveBeenCalledWith(
         '/test/iterate.log',
@@ -113,8 +95,9 @@ describe('FileLogger', () => {
 
     it('should not write when disabled', async () => {
       const logger = new FileLogger('/test/iterate.log', false);
+      const startTime = new Date();
 
-      await logger.logIterationStart(1, 'Test prompt');
+      await logger.logIterationStart(1, startTime);
 
       expect(fs.writeFile).not.toHaveBeenCalled();
       expect(fs.appendFile).not.toHaveBeenCalled();
@@ -123,8 +106,9 @@ describe('FileLogger', () => {
     it('should disable logger on write failure', async () => {
       vi.mocked(fs.writeFile).mockRejectedValue(new Error('Write failed'));
       const logger = new FileLogger('/test/iterate.log');
+      const startTime = new Date();
 
-      await logger.logIterationStart(1, 'Test prompt');
+      await logger.logIterationStart(1, startTime);
 
       expect(logger.isEnabled()).toBe(false);
     });
@@ -143,7 +127,7 @@ describe('FileLogger', () => {
 
     it('should flush buffer when it exceeds 10KB', async () => {
       const logger = new FileLogger('/test/iterate.log');
-      await logger.logIterationStart(1, 'Test'); // Initialize
+      await logger.logIterationStart(1, new Date()); // Initialize
       vi.clearAllMocks();
 
       // Create a chunk larger than 10KB
@@ -170,7 +154,7 @@ describe('FileLogger', () => {
   describe('logIterationComplete()', () => {
     it('should flush buffer and log completion status', async () => {
       const logger = new FileLogger('/test/iterate.log');
-      await logger.logIterationStart(1, 'Test');
+      await logger.logIterationStart(1, new Date());
       await logger.appendOutput('Some output');
       vi.clearAllMocks();
 
@@ -198,7 +182,7 @@ describe('FileLogger', () => {
 
     it('should log error status', async () => {
       const logger = new FileLogger('/test/iterate.log');
-      await logger.logIterationStart(1, 'Test');
+      await logger.logIterationStart(1, new Date());
       vi.clearAllMocks();
 
       await logger.logIterationComplete(1, 'error');
@@ -212,7 +196,7 @@ describe('FileLogger', () => {
 
     it('should not include remaining count when not provided', async () => {
       const logger = new FileLogger('/test/iterate.log');
-      await logger.logIterationStart(1, 'Test');
+      await logger.logIterationStart(1, new Date());
       vi.clearAllMocks();
 
       await logger.logIterationComplete(1, 'success');
@@ -225,7 +209,7 @@ describe('FileLogger', () => {
 
     it('should include completed timestamp', async () => {
       const logger = new FileLogger('/test/iterate.log');
-      await logger.logIterationStart(1, 'Test');
+      await logger.logIterationStart(1, new Date());
       vi.clearAllMocks();
 
       await logger.logIterationComplete(1, 'success');
@@ -241,7 +225,7 @@ describe('FileLogger', () => {
   describe('logError()', () => {
     it('should flush buffer and log error details', async () => {
       const logger = new FileLogger('/test/iterate.log');
-      await logger.logIterationStart(1, 'Test');
+      await logger.logIterationStart(1, new Date());
       await logger.appendOutput('Some output');
       vi.clearAllMocks();
 
@@ -270,7 +254,7 @@ describe('FileLogger', () => {
 
     it('should include error stack when available', async () => {
       const logger = new FileLogger('/test/iterate.log');
-      await logger.logIterationStart(1, 'Test');
+      await logger.logIterationStart(1, new Date());
       vi.clearAllMocks();
 
       const error = new Error('Test error');
@@ -292,7 +276,7 @@ describe('FileLogger', () => {
 
     it('should include timestamp', async () => {
       const logger = new FileLogger('/test/iterate.log');
-      await logger.logIterationStart(1, 'Test');
+      await logger.logIterationStart(1, new Date());
       vi.clearAllMocks();
 
       await logger.logError(1, new Error('Test'));
@@ -308,7 +292,7 @@ describe('FileLogger', () => {
   describe('flush()', () => {
     it('should write buffered content to file', async () => {
       const logger = new FileLogger('/test/iterate.log');
-      await logger.logIterationStart(1, 'Test');
+      await logger.logIterationStart(1, new Date());
       await logger.appendOutput('buffered output');
       vi.clearAllMocks();
 
@@ -323,7 +307,7 @@ describe('FileLogger', () => {
 
     it('should clear buffer after flush', async () => {
       const logger = new FileLogger('/test/iterate.log');
-      await logger.logIterationStart(1, 'Test');
+      await logger.logIterationStart(1, new Date());
       await logger.appendOutput('buffered output');
       await logger.flush();
       vi.clearAllMocks();
@@ -344,7 +328,7 @@ describe('FileLogger', () => {
 
     it('should disable logger on flush failure', async () => {
       const logger = new FileLogger('/test/iterate.log');
-      await logger.logIterationStart(1, 'Test');
+      await logger.logIterationStart(1, new Date());
       await logger.appendOutput('test');
 
       vi.mocked(fs.appendFile).mockRejectedValueOnce(new Error('Flush failed'));
@@ -376,7 +360,7 @@ describe('FileLogger', () => {
       vi.mocked(fs.writeFile).mockRejectedValue(new Error('Init failed'));
       const logger = new FileLogger('/test/log');
 
-      await logger.logIterationStart(1, 'Test');
+      await logger.logIterationStart(1, new Date());
 
       expect(logger.isEnabled()).toBe(false);
     });
@@ -388,7 +372,7 @@ describe('FileLogger', () => {
       const logger = new FileLogger('/test/iterate.log');
 
       // Should not throw
-      await expect(logger.logIterationStart(1, 'Test')).resolves.toBeUndefined();
+      await expect(logger.logIterationStart(1, new Date())).resolves.toBeUndefined();
 
       // Logger should be disabled
       expect(logger.isEnabled()).toBe(false);
@@ -396,7 +380,7 @@ describe('FileLogger', () => {
 
     it('should gracefully handle append failure', async () => {
       const logger = new FileLogger('/test/iterate.log');
-      await logger.logIterationStart(1, 'Test');
+      await logger.logIterationStart(1, new Date());
 
       vi.mocked(fs.appendFile).mockRejectedValue(new Error('Disk full'));
 
@@ -406,6 +390,93 @@ describe('FileLogger', () => {
 
       // Logger should be disabled
       expect(logger.isEnabled()).toBe(false);
+    });
+  });
+
+  describe('logRunStart()', () => {
+    it('should log run metadata', async () => {
+      const logger = new FileLogger('/test/iterate.log');
+      const startTime = new Date('2025-10-16T14:30:00Z');
+
+      await logger.logRunStart({
+        workspace: 'test-workspace',
+        mode: 'loop',
+        maxIterations: 50,
+        startTime,
+      });
+
+      expect(fs.appendFile).toHaveBeenCalledWith(
+        '/test/iterate.log',
+        expect.stringContaining('RUN METADATA'),
+        'utf8'
+      );
+      expect(fs.appendFile).toHaveBeenCalledWith(
+        '/test/iterate.log',
+        expect.stringContaining('Workspace: test-workspace'),
+        'utf8'
+      );
+      expect(fs.appendFile).toHaveBeenCalledWith(
+        '/test/iterate.log',
+        expect.stringContaining('Mode: loop'),
+        'utf8'
+      );
+    });
+  });
+
+  describe('logInstructions()', () => {
+    it('should log instructions content', async () => {
+      const logger = new FileLogger('/test/iterate.log');
+
+      await logger.logInstructions('Test instructions content');
+
+      expect(fs.appendFile).toHaveBeenCalledWith(
+        '/test/iterate.log',
+        expect.stringContaining('INSTRUCTIONS'),
+        'utf8'
+      );
+      expect(fs.appendFile).toHaveBeenCalledWith(
+        '/test/iterate.log',
+        expect.stringContaining('Test instructions content'),
+        'utf8'
+      );
+    });
+  });
+
+  describe('logSystemPrompt()', () => {
+    it('should log system prompt', async () => {
+      const logger = new FileLogger('/test/iterate.log');
+
+      await logger.logSystemPrompt('Test system prompt');
+
+      expect(fs.appendFile).toHaveBeenCalledWith(
+        '/test/iterate.log',
+        expect.stringContaining('SYSTEM PROMPT'),
+        'utf8'
+      );
+      expect(fs.appendFile).toHaveBeenCalledWith(
+        '/test/iterate.log',
+        expect.stringContaining('Test system prompt'),
+        'utf8'
+      );
+    });
+  });
+
+  describe('logStatusInstructions()', () => {
+    it('should log status instructions', async () => {
+      const logger = new FileLogger('/test/iterate.log');
+
+      await logger.logStatusInstructions('Test status instructions');
+
+      expect(fs.appendFile).toHaveBeenCalledWith(
+        '/test/iterate.log',
+        expect.stringContaining('STATUS INSTRUCTIONS'),
+        'utf8'
+      );
+      expect(fs.appendFile).toHaveBeenCalledWith(
+        '/test/iterate.log',
+        expect.stringContaining('Test status instructions'),
+        'utf8'
+      );
     });
   });
 });

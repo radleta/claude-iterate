@@ -5,6 +5,7 @@ import { ConfigManager } from '../core/config-manager.js';
 import { ClaudeClient } from '../services/claude-client.js';
 import { NotificationService } from '../services/notification-service.js';
 import { FileLogger } from '../services/file-logger.js';
+import { ConsoleReporter } from '../services/console-reporter.js';
 import { Logger } from '../utils/logger.js';
 import { getWorkspacePath } from '../utils/paths.js';
 import { getIterationPrompt, getIterationSystemPrompt } from '../templates/system-prompt.js';
@@ -28,6 +29,9 @@ export function runCommand(): Command {
     )
     .option('--no-delay', 'Skip delay between iterations')
     .option('--stagnation-threshold <number>', 'Stop after N consecutive no-work iterations (iterative mode only, 0=never)', parseInt)
+    .option('-v, --verbose', 'Show full Claude output (equivalent to --output verbose)')
+    .option('-q, --quiet', 'Silent execution, errors only (equivalent to --output quiet)')
+    .option('--output <level>', 'Output level: quiet, progress, verbose')
     .option('--dangerously-skip-permissions', 'Skip permission prompts (runtime only, not saved to config)')
     .option('--dry-run', 'Use mock Claude for testing (logs to /tmp/mock-claude.log)')
     .action(
@@ -37,6 +41,9 @@ export function runCommand(): Command {
           maxIterations?: number;
           delay?: number | false;
           stagnationThreshold?: number;
+          verbose?: boolean;
+          quiet?: boolean;
+          output?: string;
           dangerouslySkipPermissions?: boolean;
           dryRun?: boolean;
         },
@@ -45,9 +52,22 @@ export function runCommand(): Command {
         const logger = new Logger(command.optsWithGlobals().colors !== false);
 
         try {
+          // Validate conflicting output flags
+          const hasVerbose = options.verbose === true;
+          const hasQuiet = options.quiet === true;
+          const hasOutput = options.output !== undefined;
+
+          if ((hasVerbose && hasQuiet) || (hasVerbose && hasOutput) || (hasQuiet && hasOutput)) {
+            logger.error('Cannot use multiple output flags (--verbose, --quiet, --output) together');
+            process.exit(1);
+          }
+
           // Load config
           const config = await ConfigManager.load(command.optsWithGlobals());
           const runtimeConfig = config.getConfig();
+
+          // Create console reporter with configured output level
+          const reporter = new ConsoleReporter(runtimeConfig.outputLevel);
 
           // Get workspace path
           const workspacePath = getWorkspacePath(
@@ -82,14 +102,13 @@ export function runCommand(): Command {
             metadata.notifyEvents = runtimeConfig.notifyEvents as Array<'setup_complete' | 'execution_start' | 'iteration' | 'iteration_milestone' | 'completion' | 'error' | 'all'>;
           }
 
-          logger.header(`Running iteration loop: ${name}`);
-          logger.log(`  🔧 Mode: ${metadata.mode}`);
-          logger.log(`  📊 Max iterations: ${maxIterations}`);
-          logger.log(`  ⏱️  Delay: ${delay}s`);
+          // Show initial run info using reporter (respects output level)
+          reporter.progress(`Starting claude-iterate run for workspace: ${name}`);
+          reporter.progress(`Mode: ${metadata.mode} | Max iterations: ${maxIterations} | Delay: ${delay}s`);
           if (options.dryRun) {
-            logger.log(`  🧪 DRY RUN: Using mock Claude`);
+            reporter.progress(`🧪 DRY RUN: Using mock Claude`);
           }
-          logger.line();
+          reporter.progress('');
 
           // Create Claude client (use mock if --dry-run)
           let claudeCommand = runtimeConfig.claudeCommand;
@@ -159,9 +178,33 @@ export function runCommand(): Command {
           const fileLogger = new FileLogger(logPath, true);
 
           // Log workspace info if verbose
-          if (runtimeConfig.verbose && fileLogger.isEnabled()) {
-            logger.log(`  📝 Logging to: ${logPath}`);
-            logger.line();
+          if (fileLogger.isEnabled()) {
+            reporter.verbose(`📝 Logging to: ${logPath}`);
+          }
+
+          // Log static content once at run start
+          await fileLogger.logRunStart({
+            workspace: name,
+            mode: metadata.mode,
+            maxIterations,
+            startTime: new Date(),
+          });
+
+          // Log instructions once
+          await fileLogger.logInstructions(instructions);
+
+          // Generate and log system prompt once
+          const systemPrompt = await getIterationSystemPrompt(workspace.path, metadata.mode);
+          await fileLogger.logSystemPrompt(systemPrompt);
+
+          // Generate and log status instructions once (if exists)
+          try {
+            const statusInstructionsPath = join(workspace.path, '.status-instructions.md');
+            const { readFile } = await import('fs/promises');
+            const statusInstructions = await readFile(statusInstructionsPath, 'utf-8');
+            await fileLogger.logStatusInstructions(statusInstructions);
+          } catch {
+            // Status instructions file might not exist, that's okay
           }
 
           // Send execution start notification
@@ -191,18 +234,18 @@ export function runCommand(): Command {
           while (iterationCount < maxIterations && !isComplete) {
             iterationCount++;
 
-            logger.info(`Iteration ${iterationCount}/${maxIterations}`);
+            reporter.progress(`\nRunning iteration ${iterationCount}...`);
 
             // Generate prompts (mode-aware) with status instructions
-            const systemPrompt = await getIterationSystemPrompt(workspace.path, metadata.mode);
+            // Note: System prompt already logged once at start
             const prompt = await getIterationPrompt(instructions, iterationCount, metadata.mode, workspace.path);
 
             try {
-              // Log iteration start
-              await fileLogger.logIterationStart(iterationCount, prompt, systemPrompt);
+              // Log iteration start (no longer includes prompt - logged once at run start)
+              await fileLogger.logIterationStart(iterationCount, new Date());
 
               // Execute Claude non-interactively from project root with iteration context
-              // Stream output to file and console (if verbose)
+              // Stream output to file and console (based on output level)
               await client.executeNonInteractive(
                 prompt,
                 systemPrompt,
@@ -212,19 +255,15 @@ export function runCommand(): Command {
                     // Always log to file (async, but don't await in callback)
                     fileLogger.appendOutput(chunk);
 
-                    // Show to console if verbose
-                    if (runtimeConfig.verbose) {
-                      process.stdout.write(chunk);
-                    }
+                    // Stream to console based on output level
+                    reporter.stream(chunk);
                   },
                   onStderr: (chunk) => {
                     // Always log to file
                     fileLogger.appendOutput(chunk);
 
-                    // Show to console if verbose
-                    if (runtimeConfig.verbose) {
-                      process.stderr.write(chunk);
-                    }
+                    // Stream to console based on output level
+                    reporter.stream(chunk);
                   }
                 }
               );
@@ -243,7 +282,7 @@ export function runCommand(): Command {
                 const status = await workspace.getStatus();
                 if (status.worked === false) {
                   noWorkCount++;
-                  logger.debug(`No work detected (${noWorkCount}/${stagnationThreshold})`, runtimeConfig.verbose);
+                  reporter.verbose(`No work detected (${noWorkCount}/${stagnationThreshold})`);
 
                   if (stagnationThreshold > 0 && noWorkCount >= stagnationThreshold) {
                     logger.line();
@@ -264,17 +303,16 @@ export function runCommand(): Command {
               );
 
               if (isComplete) {
-                logger.line();
-                logger.success('✅ Task completed!');
+                reporter.status('\n✓ Task completed successfully after ' + iterationCount + ' iterations');
 
                 // Show status from .status.json
                 const status = await workspace.getStatus();
                 if (status.summary) {
-                  logger.log(`   ${status.summary}`);
+                  reporter.status(`   ${status.summary}`);
                 }
                 // Only show progress for loop mode
                 if (status.progress) {
-                  logger.log(`   Progress: ${status.progress.completed}/${status.progress.total}`);
+                  reporter.status(`   Progress: ${status.progress.completed}/${status.progress.total}`);
                 }
 
                 await workspace.markCompleted();
@@ -303,19 +341,21 @@ export function runCommand(): Command {
               const status = await workspace.getStatus();
               if (status.progress && status.progress.total > 0) {
                 // Loop mode: show progress counts
-                logger.log(`   Progress: ${status.progress.completed}/${status.progress.total}`);
                 const remaining = status.progress.total - status.progress.completed;
-                if (remaining > 0) {
-                  logger.log(`   Remaining: ${remaining}`);
-                }
+                reporter.status(`✓ Iteration ${iterationCount} complete (${remaining} items remaining)`);
               } else if (status.worked !== undefined) {
                 // Iterative mode: show work status
                 if (status.summary) {
-                  logger.log(`   ${status.summary}`);
+                  reporter.status(`✓ Iteration ${iterationCount} complete`);
+                  reporter.status(`   ${status.summary}`);
+                } else {
+                  reporter.status(`✓ Iteration ${iterationCount} complete`);
                 }
               } else if (remainingCount !== null) {
                 // Fallback to legacy remaining count
-                logger.log(`   Remaining: ${remainingCount}`);
+                reporter.status(`✓ Iteration ${iterationCount} complete (${remainingCount} items remaining)`);
+              } else {
+                reporter.status(`✓ Iteration ${iterationCount} complete`);
               }
 
               // Send iteration notification (after each iteration)
@@ -356,10 +396,7 @@ export function runCommand(): Command {
 
               // Delay before next iteration
               if (delay > 0 && iterationCount < maxIterations && !isComplete) {
-                logger.debug(
-                  `Waiting ${delay}s before next iteration...`,
-                  runtimeConfig.verbose
-                );
+                reporter.verbose(`Waiting ${delay}s before next iteration...`);
                 await new Promise((resolve) =>
                   setTimeout(resolve, delay * 1000)
                 );
@@ -393,8 +430,6 @@ export function runCommand(): Command {
 
               throw error;
             }
-
-            logger.line();
           }
 
           // Flush any remaining log buffer

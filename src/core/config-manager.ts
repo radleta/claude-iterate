@@ -36,6 +36,8 @@ export class ConfigManager {
     delay?: number;
     notifyUrl?: string;
     verbose?: boolean;
+    quiet?: boolean;
+    output?: string;
     colors?: boolean;
   }): Promise<ConfigManager> {
     // Start with defaults
@@ -114,12 +116,21 @@ export class ConfigManager {
     config: RuntimeConfig,
     userConfig: UserConfig
   ): RuntimeConfig {
+    // Handle backward compatibility: map verbose boolean to outputLevel
+    let outputLevel = userConfig.outputLevel;
+    if (userConfig.verbose && !userConfig.outputLevel) {
+      outputLevel = 'verbose';
+    } else if (userConfig.verbose === false && !userConfig.outputLevel) {
+      outputLevel = 'progress';
+    }
+
     return {
       ...config,
       globalTemplatesDir: userConfig.globalTemplatesDir,
       maxIterations: userConfig.defaultMaxIterations,
       delay: userConfig.defaultDelay,
       stagnationThreshold: userConfig.defaultStagnationThreshold,
+      outputLevel,
       notifyUrl: userConfig.notifyUrl,
       claudeCommand: userConfig.claude.command,
       claudeArgs: userConfig.claude.args,
@@ -143,6 +154,7 @@ export class ConfigManager {
       maxIterations: projectConfig.defaultMaxIterations,
       delay: projectConfig.defaultDelay,
       stagnationThreshold: projectConfig.defaultStagnationThreshold,
+      outputLevel: projectConfig.outputLevel,
       notifyUrl: projectConfig.notifyUrl,
       notifyEvents: projectConfig.notifyEvents,
     };
@@ -169,6 +181,8 @@ export class ConfigManager {
       delay?: number;
       notifyUrl?: string;
       verbose?: boolean;
+      quiet?: boolean;
+      output?: string;
       colors?: boolean;
     }
   ): RuntimeConfig {
@@ -192,9 +206,22 @@ export class ConfigManager {
     if (cliOptions.notifyUrl !== undefined) {
       merged.notifyUrl = cliOptions.notifyUrl;
     }
-    if (cliOptions.verbose !== undefined) {
-      merged.verbose = cliOptions.verbose;
+
+    // Handle output level with priority: --output > --verbose/--quiet > config
+    if (cliOptions.output !== undefined) {
+      if (['quiet', 'progress', 'verbose'].includes(cliOptions.output)) {
+        merged.outputLevel = cliOptions.output as 'quiet' | 'progress' | 'verbose';
+        // Also set verbose for backward compatibility
+        merged.verbose = cliOptions.output === 'verbose';
+      }
+    } else if (cliOptions.verbose !== undefined) {
+      merged.outputLevel = 'verbose';
+      merged.verbose = true;
+    } else if (cliOptions.quiet !== undefined) {
+      merged.outputLevel = 'quiet';
+      merged.verbose = false;
     }
+
     if (cliOptions.colors !== undefined) {
       merged.colors = cliOptions.colors;
     }
