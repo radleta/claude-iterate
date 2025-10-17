@@ -12,8 +12,11 @@ Loop mode executes incrementally with numerical progress tracking. When creating
 8. **Appropriate Scale**: For 10+ items, is there a batching strategy? Are iteration limits realistic (default: 50)?
 9. **Completion Detection**: Is "Remaining: 0" the explicit completion criteria?
 10. **No Loop Mentions**: Instructions focus on the task, not iteration mechanics?
+11. **Templates Over Examples**: Does it use concrete templates (exact format to copy) rather than abstract examples when showing TODO.md format or file structures?
+12. **Relative Links**: Are all file/directory references using relative paths from INSTRUCTIONS.md location (e.g., `working/output.txt`, `TODO.md`) that will work when INSTRUCTIONS.md is the reference point?
 
 **Note on Dynamic Counting:**
+
 - At bootstrap/initialization: Count items from source (files, database, etc.) - never hardcode
 - During execution: Work through TODO.md as the source of truth
 - On re-runs: If TODO.md deleted or fresh start requested, recount from source
