@@ -1,0 +1,29 @@
+#!/bin/sh
+
+# Pre-commit hook for code quality and workspace protection
+
+# Run lint-staged for code quality
+npx lint-staged
+
+# Prevent committing temporary workspace directories
+if git diff --cached --name-only | grep -qE '^(scratch/|claude-iterate/workspaces/)'; then
+    echo "❌ Error: Cannot commit files from protected directories"
+    echo ""
+    echo "Found blocked files:"
+    git diff --cached --name-only | grep -E '^(scratch/|claude-iterate/workspaces/)' | sed 's/^/  /'
+    echo ""
+    echo "These directories are for temporary work and should not be committed."
+    echo ""
+    echo "To fix this, unstage the files:"
+    echo "  git reset HEAD scratch/ claude-iterate/workspaces/"
+    echo ""
+    echo "For completed work:"
+    echo "  - Save as template: claude-iterate template save <workspace> <name>"
+    echo "  - Archive workspace: claude-iterate archive save <workspace>"
+    echo ""
+    echo "To bypass this hook (not recommended):"
+    echo "  git commit --no-verify"
+    exit 1
+fi
+
+exit 0
