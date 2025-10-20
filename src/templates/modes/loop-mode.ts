@@ -79,4 +79,33 @@ export class LoopModeStrategy implements ModePromptStrategy {
       projectRoot,
     });
   }
+
+  async getVerificationPrompt(
+    workspaceName: string,
+    reportPath: string,
+    workspacePath: string,
+    depth: 'quick' | 'standard' | 'deep' = 'standard'
+  ): Promise<string> {
+    const basePrompt = await loadTemplate('loop/verify-completion.md', {
+      workspaceName,
+      reportPath,
+      workspacePath,
+      projectRoot: process.cwd(),
+    });
+
+    // Add depth-specific note
+    const depthNote = this.getDepthNote(depth);
+    return `${basePrompt}\n\n${depthNote}`;
+  }
+
+  private getDepthNote(depth: string): string {
+    switch (depth) {
+      case 'quick':
+        return '**Verification Depth: Quick**\nFocus on file existence and basic count verification. Skip detailed quality checks.';
+      case 'deep':
+        return '**Verification Depth: Deep**\nPerform comprehensive review including code quality, edge cases, and thorough testing analysis.';
+      default:
+        return '**Verification Depth: Standard**\nBalanced verification of key deliverables and basic quality checks.';
+    }
+  }
 }

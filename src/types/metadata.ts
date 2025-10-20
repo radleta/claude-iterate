@@ -17,7 +17,29 @@ export const MetadataSchema = z.object({
   delay: z.number().int().min(0).default(2),
   stagnationThreshold: z.number().int().min(0).default(2),
   notifyUrl: z.string().url().optional(),
-  notifyEvents: z.array(z.enum(['setup_complete', 'execution_start', 'iteration', 'iteration_milestone', 'completion', 'error', 'all'])).optional(),
+  notifyEvents: z
+    .array(
+      z.enum([
+        'setup_complete',
+        'execution_start',
+        'iteration',
+        'iteration_milestone',
+        'completion',
+        'error',
+        'all',
+      ])
+    )
+    .optional(),
+  verification: z
+    .object({
+      verificationAttempts: z.number().int().min(0).default(0),
+      lastVerificationStatus: z
+        .enum(['pass', 'fail', 'needs_review', 'not_run'])
+        .default('not_run'),
+      lastVerificationTime: z.string().datetime().optional(),
+      verifyResumeCycles: z.number().int().min(0).default(0),
+    })
+    .optional(),
 });
 
 export type Metadata = z.infer<typeof MetadataSchema>;

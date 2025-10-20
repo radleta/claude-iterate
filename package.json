@@ -22,6 +22,8 @@
     "test:unit": "vitest run tests/unit",
     "test:integration": "vitest run tests/integration",
     "test:smoke": "./tests/smoke-test.sh",
+    "test:smoke:verify": "./tests/smoke-test-verification.sh",
+    "test:smoke:all": "./tests/smoke-test.sh && ./tests/smoke-test-verification.sh",
     "test:cleanup": "vitest run tests/unit/claude-client.test.ts tests/integration/process-cleanup.test.ts",
     "test:quick": "vitest run tests/unit/claude-client.test.ts",
     "test:watch": "vitest",

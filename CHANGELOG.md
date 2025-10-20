@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Work Completion Verification**: Intelligent verification to ensure Claude actually completes tasks
+  - New `verify` command checks workspace completion against original instructions
+  - Mode-aware verification prompts for loop (item-by-item) and iterative (requirement-based) modes
+  - Three depth levels: `quick` (~500-1K tokens), `standard` (~2-4K tokens), `deep` (~5-10K tokens)
+  - Evidence-based verification requiring Claude to cite specific files and locations
+  - Structured verification reports in Markdown format
+  - Quality checks: tests, error handling, edge cases, documentation, TODOs/FIXMEs
+  - Verification metadata tracking in `.metadata.json`: attempts, status, timestamps, cycles
+  - Exit codes: 0 = verified complete, 1 = incomplete/needs review
+  - Usage: `claude-iterate verify <workspace> [--depth quick|standard|deep]`
+- **Verification Configuration**: Full configuration support across all layers
+  - Project config (`.claude-iterate.json`): `verification.autoVerify`, `verification.depth`, etc.
+  - User config (`~/.config/claude-iterate/config.json`): global verification defaults
+  - CLI flags: `--depth` to override verification depth
+  - Options: `autoVerify`, `resumeOnFail`, `maxAttempts`, `reportFilename`, `depth`, `notifyOnVerification`
+  - Opt-in by default (`autoVerify: false`) to respect token budgets
+- **VerificationService**: Core service for running workspace verification
+  - Mode-aware prompt generation using existing mode strategy pattern
+  - Intelligent report parsing to extract status, issues, confidence, and recommendations
+  - Resume instruction generation for failed verifications
+  - Full integration with `ClaudeClient` and existing workspace infrastructure
+- **Verification Prompts**: Specialized prompts for completion checking
+  - `loop/verify-completion.md`: Item-by-item verification for loop mode
+  - `iterative/verify-completion.md`: Requirement-based verification for iterative mode
+  - Depth-specific instructions added dynamically
+  - Structured output format for machine parsing
+  - **Impact**: New verification capability without affecting existing workflows
+  - **Compatibility**: 100% backward compatible, all existing tests passing (228 tests)
+
 ### Fixed
 
 - **Prompt Clarity - Optional Files**: Removed incorrect assumptions about TODO.md from iteration prompts

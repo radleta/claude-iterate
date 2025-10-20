@@ -1,0 +1,9 @@
+{
+  "name": "test-verification",
+  "description": "Verification smoke test - creates 3 files for verification testing",
+  "tags": ["test", "smoke", "verification"],
+  "created": "2025-10-20T17:50:00.000Z",
+  "mode": "loop",
+  "maxIterations": 5,
+  "delay": 1
+}

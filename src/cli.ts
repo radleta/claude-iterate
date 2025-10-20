@@ -4,6 +4,7 @@ import { initCommand } from './commands/init.js';
 import { setupCommand } from './commands/setup.js';
 import { editCommand } from './commands/edit.js';
 import { validateCommand } from './commands/validate.js';
+import { verifyCommand } from './commands/verify.js';
 import { runCommand } from './commands/run.js';
 import { listCommand } from './commands/list.js';
 import { showCommand } from './commands/show.js';
@@ -41,6 +42,7 @@ export async function cli() {
   program.addCommand(setupCommand());
   program.addCommand(editCommand());
   program.addCommand(validateCommand());
+  program.addCommand(verifyCommand());
   program.addCommand(runCommand());
   program.addCommand(listCommand());
   program.addCommand(showCommand());

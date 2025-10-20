@@ -58,4 +58,18 @@ export interface ModePromptStrategy {
     workspacePath: string,
     projectRoot: string
   ): Promise<string>;
+
+  /**
+   * Generate verification prompt for completion checking
+   * @param workspaceName - Name of the workspace
+   * @param reportPath - Absolute path where verification report should be written
+   * @param workspacePath - Absolute path to workspace directory
+   * @param depth - Verification depth level
+   */
+  getVerificationPrompt(
+    workspaceName: string,
+    reportPath: string,
+    workspacePath: string,
+    depth: 'quick' | 'standard' | 'deep'
+  ): Promise<string>;
 }

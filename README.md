@@ -61,6 +61,7 @@ npx claude-iterate init my-task
 ### Workspaces
 
 Isolated task environments with:
+
 - `INSTRUCTIONS.md` - What Claude should do
 - `TODO.md` - Progress tracking (human-readable)
 - `.status.json` - Completion status (machine-readable)
@@ -93,12 +94,14 @@ Claude updates `.status.json` each iteration. When `complete: true`, the task is
 ### Execution Modes
 
 **Loop Mode (Default)**
+
 - Incremental progress with explicit step tracking
 - Complete one item per iteration
 - Best for tasks with discrete steps
 - Default max: 50 iterations
 
 **Iterative Mode**
+
 - Autonomous work sessions completing multiple items
 - Complete as many items as possible per iteration
 - Best for complex tasks requiring sustained focus
@@ -150,29 +153,51 @@ claude-iterate config --global notifyUrl https://ntfy.sh/my-topic
 
 ### Workspace Operations
 
-| Command | Description |
-|---------|-------------|
-| `init <name>` | Initialize a new workspace |
-| `list` | List all workspaces with status |
-| `show <name>` | Show workspace details |
-| `clean <name> --force` | Archive and delete workspace |
-| `reset <name>` | Reset iteration counts |
+| Command                | Description                     |
+| ---------------------- | ------------------------------- |
+| `init <name>`          | Initialize a new workspace      |
+| `list`                 | List all workspaces with status |
+| `show <name>`          | Show workspace details          |
+| `clean <name> --force` | Archive and delete workspace    |
+| `reset <name>`         | Reset iteration counts          |
 
 ### Instructions
 
-| Command | Description |
-|---------|-------------|
-| `setup <name>` | Create instructions interactively |
-| `edit <name>` | Modify instructions interactively |
-| `validate <name>` | Validate instruction quality |
+| Command           | Description                       |
+| ----------------- | --------------------------------- |
+| `setup <name>`    | Create instructions interactively |
+| `edit <name>`     | Modify instructions interactively |
+| `validate <name>` | Validate instruction quality      |
+
+### Verification
+
+| Command         | Description                      |
+| --------------- | -------------------------------- |
+| `verify <name>` | Verify workspace work completion |
+
+**Options:**
+
+- `--depth <level>` - Verification depth: quick, standard, deep
+- `--report-path <path>` - Custom report path
+- `--json` - Output JSON results
+- `--show-report` - Show full report in console
+
+**Depth Levels:**
+
+- `quick` (~500-1K tokens): File existence and basic count verification
+- `standard` (~2-4K tokens): Balanced deliverable review with quality checks (default)
+- `deep` (~5-10K tokens): Comprehensive code quality, edge cases, and documentation analysis
+
+**Exit codes:** 0 = verified complete, 1 = incomplete/needs review
 
 ### Execution
 
-| Command | Description |
-|---------|-------------|
+| Command      | Description                       |
+| ------------ | --------------------------------- |
 | `run <name>` | Run the autonomous iteration loop |
 
 **Options:**
+
 - `-m, --max-iterations <n>` - Override iteration limit
 - `-d, --delay <seconds>` - Delay between iterations
 - `--no-delay` - Skip delays
@@ -184,37 +209,39 @@ claude-iterate config --global notifyUrl https://ntfy.sh/my-topic
 
 ### Templates
 
-| Command | Description |
-|---------|-------------|
-| `template save <workspace> <name>` | Save workspace as template |
-| `template use <name> <workspace>` | Create workspace from template |
-| `template list` | List available templates |
-| `template show <name>` | Show template details |
+| Command                            | Description                    |
+| ---------------------------------- | ------------------------------ |
+| `template save <workspace> <name>` | Save workspace as template     |
+| `template use <name> <workspace>`  | Create workspace from template |
+| `template list`                    | List available templates       |
+| `template show <name>`             | Show template details          |
 
 **Options for `save`:**
+
 - `-d, --description <text>` - Template description
 - `-t, --tags <tags>` - Comma-separated tags
 - `-g, --global` - Save to global templates
 
 ### Archives
 
-| Command | Description |
-|---------|-------------|
-| `archive save <name>` | Archive a workspace |
-| `archive list` | List all archives |
-| `archive restore <archive> [name]` | Restore an archive |
-| `archive show <name>` | Show archive details |
-| `archive delete <name> --force` | Delete an archive |
+| Command                            | Description          |
+| ---------------------------------- | -------------------- |
+| `archive save <name>`              | Archive a workspace  |
+| `archive list`                     | List all archives    |
+| `archive restore <archive> [name]` | Restore an archive   |
+| `archive show <name>`              | Show archive details |
+| `archive delete <name> --force`    | Delete an archive    |
 
 ### Configuration
 
-| Command | Description |
-|---------|-------------|
-| `config [key] [value]` | Get or set configuration |
-| `config --list` | List all configuration |
-| `config --global [key] [value]` | Manage user config |
+| Command                         | Description              |
+| ------------------------------- | ------------------------ |
+| `config [key] [value]`          | Get or set configuration |
+| `config --list`                 | List all configuration   |
+| `config --global [key] [value]` | Manage user config       |
 
 **Array operations:**
+
 ```bash
 claude-iterate config claude.args --add --dangerously-skip-permissions
 claude-iterate config claude.args --remove --dangerously-skip-permissions
@@ -237,7 +264,15 @@ Create `.claude-iterate.json` in your project root:
   "defaultStagnationThreshold": 2,
   "outputLevel": "progress",
   "notifyUrl": "https://ntfy.sh/my-project",
-  "notifyEvents": ["completion", "error"]
+  "notifyEvents": ["completion", "error"],
+  "verification": {
+    "autoVerify": false,
+    "resumeOnFail": false,
+    "maxAttempts": 2,
+    "reportFilename": "verification-report.md",
+    "depth": "standard",
+    "notifyOnVerification": true
+  }
 }
 ```
 
@@ -256,7 +291,13 @@ Create `~/.config/claude-iterate/config.json`:
     "command": "claude",
     "args": []
   },
-  "colors": true
+  "colors": true,
+  "verification": {
+    "autoVerify": false,
+    "resumeOnFail": false,
+    "maxAttempts": 2,
+    "depth": "standard"
+  }
 }
 ```
 
@@ -330,6 +371,7 @@ claude-iterate run my-task --output verbose
 ```
 
 Helpful for:
+
 - Debugging issues
 - Monitoring Claude's reasoning
 - Understanding detailed progress
@@ -343,6 +385,7 @@ claude-iterate run my-task --output quiet
 ```
 
 Ideal for:
+
 - CI/CD pipelines
 - Background tasks
 - Minimal logging
@@ -373,6 +416,7 @@ grep "error" claude-iterate/workspaces/my-task/iterate-*.log
 **Log file naming:** `iterate-YYYYMMDD-HHMMSS.log` (e.g., `iterate-20251015-142345.log`)
 
 Each log file contains:
+
 - Run metadata (workspace, mode, max iterations) - logged once
 - Instructions and system prompts - logged once at start for efficiency
 - Iteration timestamps and Claude output
@@ -391,14 +435,42 @@ claude-iterate init frontend-pages
 # 2. Create instructions interactively
 claude-iterate setup frontend-pages
 
-# 3. Validate
+# 3. Validate instructions
 claude-iterate validate frontend-pages
 
 # 4. Run
 claude-iterate run frontend-pages
 
-# 5. Save as template for reuse
+# 5. Verify completion
+claude-iterate verify frontend-pages
+
+# 6. Save as template for reuse
 claude-iterate template save frontend-pages page-generator
+```
+
+### Verification Workflow
+
+```bash
+# Run a task
+claude-iterate run api-migration
+
+# Task claims completion - verify it's actually done
+claude-iterate verify api-migration
+
+# If verification passes:
+# ✅ VERIFICATION PASSED
+
+# If verification fails:
+# ❌ VERIFICATION FAILED
+# Issues found: 5
+# Full report: claude-iterate/workspaces/api-migration/verification-report.md
+
+# Use different depth levels
+claude-iterate verify api-migration --depth quick    # Fast check
+claude-iterate verify api-migration --depth deep     # Thorough review
+
+# Get JSON output for automation
+claude-iterate verify api-migration --json
 ```
 
 ### Using Templates

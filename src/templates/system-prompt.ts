@@ -52,6 +52,25 @@ export async function getValidationPrompt(
 }
 
 /**
+ * Generate verification prompt (mode-aware, depth-aware)
+ */
+export async function getVerificationPrompt(
+  workspaceName: string,
+  reportPath: string,
+  workspacePath: string,
+  mode: ExecutionMode = ExecutionMode.LOOP,
+  depth: 'quick' | 'standard' | 'deep' = 'standard'
+): Promise<string> {
+  const strategy = ModeFactory.getStrategy(mode);
+  return strategy.getVerificationPrompt(
+    workspaceName,
+    reportPath,
+    workspacePath,
+    depth
+  );
+}
+
+/**
  * Generate iteration system prompt (mode-aware)
  */
 export async function getIterationSystemPrompt(

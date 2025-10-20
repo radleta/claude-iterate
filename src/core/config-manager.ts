@@ -124,7 +124,7 @@ export class ConfigManager {
       outputLevel = 'progress';
     }
 
-    return {
+    const merged: RuntimeConfig = {
       ...config,
       globalTemplatesDir: userConfig.globalTemplatesDir,
       maxIterations: userConfig.defaultMaxIterations,
@@ -137,6 +137,29 @@ export class ConfigManager {
       colors: userConfig.colors,
       verbose: userConfig.verbose,
     };
+
+    // Merge verification config if present
+    if (userConfig.verification) {
+      merged.verification = {
+        autoVerify:
+          userConfig.verification.autoVerify ?? config.verification.autoVerify,
+        resumeOnFail:
+          userConfig.verification.resumeOnFail ??
+          config.verification.resumeOnFail,
+        maxAttempts:
+          userConfig.verification.maxAttempts ??
+          config.verification.maxAttempts,
+        reportFilename:
+          userConfig.verification.reportFilename ??
+          config.verification.reportFilename,
+        depth: userConfig.verification.depth ?? config.verification.depth,
+        notifyOnVerification:
+          userConfig.verification.notifyOnVerification ??
+          config.verification.notifyOnVerification,
+      };
+    }
+
+    return merged;
   }
 
   /**
@@ -163,6 +186,28 @@ export class ConfigManager {
     if (projectConfig.claude) {
       merged.claudeCommand = projectConfig.claude.command;
       merged.claudeArgs = projectConfig.claude.args;
+    }
+
+    // Merge verification config if present (project overrides user)
+    if (projectConfig.verification) {
+      merged.verification = {
+        autoVerify:
+          projectConfig.verification.autoVerify ??
+          config.verification.autoVerify,
+        resumeOnFail:
+          projectConfig.verification.resumeOnFail ??
+          config.verification.resumeOnFail,
+        maxAttempts:
+          projectConfig.verification.maxAttempts ??
+          config.verification.maxAttempts,
+        reportFilename:
+          projectConfig.verification.reportFilename ??
+          config.verification.reportFilename,
+        depth: projectConfig.verification.depth ?? config.verification.depth,
+        notifyOnVerification:
+          projectConfig.verification.notifyOnVerification ??
+          config.verification.notifyOnVerification,
+      };
     }
 
     return merged;
@@ -210,7 +255,10 @@ export class ConfigManager {
     // Handle output level with priority: --output > --verbose/--quiet > config
     if (cliOptions.output !== undefined) {
       if (['quiet', 'progress', 'verbose'].includes(cliOptions.output)) {
-        merged.outputLevel = cliOptions.output as 'quiet' | 'progress' | 'verbose';
+        merged.outputLevel = cliOptions.output as
+          | 'quiet'
+          | 'progress'
+          | 'verbose';
         // Also set verbose for backward compatibility
         merged.verbose = cliOptions.output === 'verbose';
       }
