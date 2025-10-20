@@ -44,11 +44,15 @@ describe('IterativeModeStrategy', () => {
   });
 
   it('should generate iteration system prompt focused on completing work', async () => {
-    const prompt = await strategy.getIterationSystemPrompt('/path/to/workspace');
+    const prompt = await strategy.getIterationSystemPrompt(
+      '/path/to/workspace',
+      '/path/to/project'
+    );
     expect(prompt).toContain('Complete as much');
     expect(prompt).toContain('stop early');
     expect(prompt).not.toContain('NO memory of previous iterations');
     expect(prompt).toContain('[ ]'); // Checkbox format
+    expect(prompt).toContain('/path/to/project');
   });
 
   it('should generate iteration prompt for work session', async () => {

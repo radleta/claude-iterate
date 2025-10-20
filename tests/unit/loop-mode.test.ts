@@ -42,11 +42,15 @@ describe('LoopModeStrategy', () => {
   });
 
   it('should generate iteration system prompt with state management', async () => {
-    const prompt = await strategy.getIterationSystemPrompt('/path/to/workspace');
+    const prompt = await strategy.getIterationSystemPrompt(
+      '/path/to/workspace',
+      '/path/to/project'
+    );
     expect(prompt).toContain('NO memory of previous iterations');
     expect(prompt).toContain('Your state is tracked in TODO.md');
     expect(prompt).toContain('Iteration Protocol');
     expect(prompt).toContain('/path/to/workspace');
+    expect(prompt).toContain('/path/to/project');
   });
 
   it('should generate iteration prompt', async () => {

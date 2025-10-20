@@ -5,8 +5,13 @@ import { loadTemplate } from '../utils/template.js';
 /**
  * Generate system prompt for workspace operations (mode-agnostic)
  */
-export async function getWorkspaceSystemPrompt(workspacePath: string): Promise<string> {
-  return loadTemplate('workspace-system.md', { workspacePath });
+export async function getWorkspaceSystemPrompt(
+  workspacePath: string
+): Promise<string> {
+  return loadTemplate('workspace-system.md', {
+    workspacePath,
+    projectRoot: process.cwd(),
+  });
 }
 
 /**
@@ -54,7 +59,7 @@ export async function getIterationSystemPrompt(
   mode: ExecutionMode = ExecutionMode.LOOP
 ): Promise<string> {
   const strategy = ModeFactory.getStrategy(mode);
-  return strategy.getIterationSystemPrompt(workspacePath);
+  return strategy.getIterationSystemPrompt(workspacePath, process.cwd());
 }
 
 /**
@@ -69,11 +74,17 @@ export async function getIterationPrompt(
   const strategy = ModeFactory.getStrategy(mode);
 
   // Get base iteration prompt
-  const basePrompt = await strategy.getIterationPrompt(instructionsContent, iterationNumber);
+  const basePrompt = await strategy.getIterationPrompt(
+    instructionsContent,
+    iterationNumber
+  );
 
   // If workspace path provided, append status instructions
   if (workspacePath) {
-    const statusInstructions = await strategy.getStatusInstructions(workspacePath);
+    const statusInstructions = await strategy.getStatusInstructions(
+      workspacePath,
+      process.cwd()
+    );
     return `${basePrompt}\n\n---\n\n${statusInstructions}`;
   }
 

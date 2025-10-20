@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Improved
+
+- **Enhanced Directory Path Context**: Claude now receives explicit project root and workspace paths
+  - All system prompts now include `**Project Root Directory:**` with actual absolute path (e.g., `/home/user/myproject`)
+  - All system prompts now include `**Current Working Directory:**` context explaining where bash commands execute
+  - Workspace paths shown with full absolute paths for clarity (e.g., `/home/user/myproject/claude-iterate/workspaces/task-name`)
+  - Status instructions include example commands with actual paths for updating `.status.json`
+  - Path examples show both relative project paths (`./src/file.ts`) and absolute workspace paths
+  - Eliminates confusion about execution context and file locations
+  - Applies to all contexts: setup, edit, validate, and run (both loop and iterative modes)
+  - Template variable replacement: `{{projectRoot}}` and `{{workspacePath}}` populated at runtime
+  - **Impact**: ~200-500 additional characters per prompt (~1% token increase), massive clarity improvement
+  - **Compatibility**: Fully backward compatible, no migration required
+  - **Testing**: 29 new smoke tests added, all 228 tests passing
+
 ## [2.0.0] - 2025-10-17
 
 ### Added

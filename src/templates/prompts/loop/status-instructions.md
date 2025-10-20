@@ -1,10 +1,26 @@
 **IMPORTANT: Status Tracking**
 
-After completing work this iteration, you MUST update the `.status.json` file in the workspace directory.
+After completing work this iteration, you MUST update the status file.
 
-**File Location:** `{{workspacePath}}/.status.json`
+**Status File Location:** `{{workspacePath}}/.status.json`
+
+**Your Current Directory:** `{{projectRoot}}`
+
+**Example Update Command:**
+
+```bash
+cat > {{workspacePath}}/.status.json <<'EOF'
+{
+  "complete": false,
+  "progress": { "completed": 35, "total": 60 },
+  "summary": "Brief status update",
+  "lastUpdated": "2025-10-16T14:30:00Z"
+}
+EOF
+```
 
 **Required Format:**
+
 ```json
 {
   "complete": false,
@@ -18,17 +34,20 @@ After completing work this iteration, you MUST update the `.status.json` file in
 ```
 
 **Required Fields:**
+
 - `complete` (boolean): Set to `true` ONLY when ALL work is finished
 - `progress.completed` (number): Count of items you've completed so far
 - `progress.total` (number): Total count of items to complete
 
 **Loop Mode Tracking:**
+
 - Increment `progress.completed` by 1 each iteration as you complete items
 - Keep `progress.total` constant (the full scope)
 - Update TODO.md with "Remaining: N" for human readability (optional)
 - Update `summary` with what you just completed
 
 **Optional Fields:**
+
 - `summary` (string): Brief human-readable status - RECOMMENDED for loop mode
 - `lastUpdated` (string): ISO 8601 timestamp
 - `phase` (string): Current phase/stage if working in phases
@@ -37,11 +56,13 @@ After completing work this iteration, you MUST update the `.status.json` file in
 
 **Completion Criteria:**
 Set `complete: true` when:
+
 - All tasks in TODO.md are finished
 - `progress.completed === progress.total`
 - No remaining work or blockers
 
 **Example - In Progress (Loop Mode):**
+
 ```json
 {
   "complete": false,
@@ -56,6 +77,7 @@ Set `complete: true` when:
 ```
 
 **Example - Complete:**
+
 ```json
 {
   "complete": true,

@@ -8,7 +8,10 @@ import { loadTemplate } from '../../utils/template.js';
 export class LoopModeStrategy implements ModePromptStrategy {
   mode = ExecutionMode.LOOP;
 
-  async getSetupPrompt(workspaceName: string, workspacePath: string): Promise<string> {
+  async getSetupPrompt(
+    workspaceName: string,
+    workspacePath: string
+  ): Promise<string> {
     const validationCriteria = await this.getValidationCriteria();
     return loadTemplate('loop/setup.md', {
       workspaceName,
@@ -17,7 +20,10 @@ export class LoopModeStrategy implements ModePromptStrategy {
     });
   }
 
-  async getEditPrompt(workspaceName: string, workspacePath: string): Promise<string> {
+  async getEditPrompt(
+    workspaceName: string,
+    workspacePath: string
+  ): Promise<string> {
     const validationCriteria = await this.getValidationCriteria();
     return loadTemplate('loop/edit.md', {
       workspaceName,
@@ -40,9 +46,13 @@ export class LoopModeStrategy implements ModePromptStrategy {
     });
   }
 
-  async getIterationSystemPrompt(workspacePath: string): Promise<string> {
+  async getIterationSystemPrompt(
+    workspacePath: string,
+    projectRoot: string
+  ): Promise<string> {
     return loadTemplate('loop/iteration-system.md', {
       workspacePath,
+      projectRoot,
     });
   }
 
@@ -60,9 +70,13 @@ export class LoopModeStrategy implements ModePromptStrategy {
     return loadTemplate('loop/validation-criteria.md', {});
   }
 
-  async getStatusInstructions(workspacePath: string): Promise<string> {
+  async getStatusInstructions(
+    workspacePath: string,
+    projectRoot: string
+  ): Promise<string> {
     return loadTemplate('loop/status-instructions.md', {
       workspacePath,
+      projectRoot,
     });
   }
 }
