@@ -51,7 +51,8 @@ describe('IterativeModeStrategy', () => {
     expect(prompt).toContain('Complete as much');
     expect(prompt).toContain('stop early');
     expect(prompt).not.toContain('NO memory of previous iterations');
-    expect(prompt).toContain('[ ]'); // Checkbox format
+    expect(prompt).toContain('INSTRUCTIONS.md');
+    expect(prompt).toContain('.status.json');
     expect(prompt).toContain('/path/to/project');
   });
 

@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Prompt Clarity - Optional Files**: Removed incorrect assumptions about TODO.md from iteration prompts
+  - TODO.md is now correctly treated as user-optional, not system-required
+  - Iteration prompts focus on INSTRUCTIONS.md (what to do) and .status.json (completion tracking)
+  - TODO.md only mentioned in setup/edit prompts as a recommended pattern, not a requirement
+  - System-managed files: INSTRUCTIONS.md, .status.json, .metadata.json (guaranteed to exist)
+  - User-managed files: TODO.md, working/_, reports/_ (created only if instructions specify)
+  - Removed confusing "Read INSTRUCTIONS.md" from iteration prompts (content already embedded via {{instructionsContent}})
+  - Setup prompts now clarify: "The system provides your instructions to Claude each iteration"
+  - **Impact**: Fixes architectural flaw where optional user files were treated as system dependencies
+  - **Testing**: Updated 2 test assertions, all 228 tests passing
+
 ### Improved
 
 - **Enhanced Directory Path Context**: Claude now receives explicit project root and workspace paths

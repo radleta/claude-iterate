@@ -43,8 +43,8 @@ EOF
 
 - Increment `progress.completed` by 1 each iteration as you complete items
 - Keep `progress.total` constant (the full scope)
-- Update TODO.md with "Remaining: N" for human readability (optional)
 - Update `summary` with what you just completed
+- Update any tracking files your instructions specify (e.g., TODO.md if mentioned)
 
 **Optional Fields:**
 
@@ -57,7 +57,7 @@ EOF
 **Completion Criteria:**
 Set `complete: true` when:
 
-- All tasks in TODO.md are finished
+- All tasks from your instructions are finished
 - `progress.completed === progress.total`
 - No remaining work or blockers
 

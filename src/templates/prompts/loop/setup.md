@@ -3,19 +3,21 @@
 <task>Create a comprehensive INSTRUCTIONS.md file at {{workspacePath}}/INSTRUCTIONS.md for workspace: {{workspaceName}}</task>
 
 <context>
-These instructions guide Claude in autonomous task execution. Claude will read INSTRUCTIONS.md and TODO.md, complete work, and track progress until the task is complete.
+These instructions guide Claude in autonomous task execution. The system provides your instructions to Claude each iteration, who then completes work and tracks progress until the task is complete.
 </context>
 
 <critical_principle>
 Instructions must describe WHAT to accomplish (the task), NOT HOW the system works (iteration mechanics).
 
 ❌ NEVER include in user instructions:
+
 - "You'll be called in a loop"
 - "Update Remaining count each iteration"
 - "You have no memory between iterations"
 - "Read TODO.md each time"
 
 ✅ ALWAYS focus on:
+
 - Clear task goals and deliverables
 - Work breakdown and approach
 - Progress tracking in TODO.md

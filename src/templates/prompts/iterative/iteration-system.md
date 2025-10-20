@@ -11,21 +11,17 @@ You run from the project root with a task to complete.
 **Workspace Location:** `{{workspacePath}}`
 
 - Your task management directory
-- TODO.md is at: `{{workspacePath}}/TODO.md`
-- Status file is at: `{{workspacePath}}/.status.json`
+- Instructions: `{{workspacePath}}/INSTRUCTIONS.md` (what to do)
+- Status file: `{{workspacePath}}/.status.json` (REQUIRED - update each iteration)
 - Save reports to: `{{workspacePath}}/reports/`
 - Scratch files in: `{{workspacePath}}/working/`
+- Other files may exist if your instructions specify them
 
 **Your Objective:**
 Complete as much work as possible toward the goal described in your instructions. Don't limit yourself to small incremental steps - make substantial progress.
 
 **State Tracking:**
-Check `{{workspacePath}}/TODO.md` to see what's done. Update it as you complete items:
-
-TODO.md format:
-
-- [ ] Not yet done
-- [x] Completed
+Follow your instructions for tracking what's done. Always update `{{workspacePath}}/.status.json` with completion status.
 
 **Work Strategy:**
-Don't stop early. Complete as many items from the TODO list as you can. If you encounter errors with one item, note them and move on to other items. The goal is to make maximum progress in each session.
+Don't stop early. Complete as many items as you can. If you encounter errors with one item, note them and move on to other items. The goal is to make maximum progress in each session.

@@ -12,15 +12,16 @@ You execute from the project root directory. The workspace is a subdirectory for
 **Workspace Directory:** `{{workspacePath}}`
 
 - Subdirectory for task management files only
-- Contains: INSTRUCTIONS.md, TODO.md, .status.json, working/, reports/
+- System files: INSTRUCTIONS.md, .status.json, .metadata.json
+- Optional directories: working/, reports/
+- May contain other files your instructions specify
 - Access files here with the full path shown above
 
 **File Access Examples:**
-✅ Read workspace TODO: `cat {{workspacePath}}/TODO.md`
-✅ Create workspace report: `mkdir -p {{workspacePath}}/reports && echo "Report" > {{workspacePath}}/reports/batch-1.md`
 ✅ Edit project file: Edit `./src/components/Login.tsx` (relative to {{projectRoot}})
-✅ Update workspace status: Write to `{{workspacePath}}/.status.json`
 ✅ Run project command: `npm test` (runs from {{projectRoot}})
+✅ Update status: Write to `{{workspacePath}}/.status.json`
+✅ Create workspace report: `mkdir -p {{workspacePath}}/reports && echo "Report" > {{workspacePath}}/reports/batch-1.md`
 
 **Path Navigation:**
 

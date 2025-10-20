@@ -4,4 +4,4 @@
 
 ---
 
-**Current Objective**: Review TODO.md and complete as many outstanding items as possible. Update TODO.md as you go.
+**Current Objective**: Complete as many outstanding items from your instructions as possible. Update `.status.json` as you work.

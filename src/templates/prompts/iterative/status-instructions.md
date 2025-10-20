@@ -78,7 +78,7 @@ EOF
 
 **When to set complete: true:**
 
-- All tasks in TODO.md are finished
+- All tasks from your instructions are finished
 - No remaining work to do
 - You've accomplished everything in the instructions
 
