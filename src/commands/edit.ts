@@ -4,7 +4,10 @@ import { ConfigManager } from '../core/config-manager.js';
 import { ClaudeClient } from '../services/claude-client.js';
 import { Logger } from '../utils/logger.js';
 import { getWorkspacePath } from '../utils/paths.js';
-import { getEditPrompt, getWorkspaceSystemPrompt } from '../templates/system-prompt.js';
+import {
+  getEditPrompt,
+  getWorkspaceSystemPrompt,
+} from '../templates/system-prompt.js';
 
 /**
  * Edit workspace instructions interactively
@@ -17,19 +20,25 @@ export function editCommand(): Command {
       const logger = new Logger(command.optsWithGlobals().colors !== false);
 
       try {
-        // Load config
-        const config = await ConfigManager.load(command.optsWithGlobals());
-        const runtimeConfig = config.getConfig();
-
-        // Get workspace path
+        // Load config to get workspacesDir
+        const configForPath = await ConfigManager.load(
+          command.optsWithGlobals()
+        );
         const workspacePath = getWorkspacePath(
           name,
-          runtimeConfig.workspacesDir
+          configForPath.get('workspacesDir')
         );
 
-        // Load workspace
+        // Load workspace to get metadata
         const workspace = await Workspace.load(name, workspacePath);
         const metadata = await workspace.getMetadata();
+
+        // Reload config with workspace metadata for workspace-level overrides
+        const config = await ConfigManager.load(
+          command.optsWithGlobals(),
+          metadata
+        );
+        const runtimeConfig = config.getConfig();
 
         // Check if instructions exist
         if (!(await workspace.hasInstructions())) {

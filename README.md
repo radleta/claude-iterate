@@ -301,6 +301,73 @@ Create `~/.config/claude-iterate/config.json`:
 }
 ```
 
+### Per-Workspace Configuration
+
+Configure workspace-specific settings that override project and user defaults. This allows different workspaces to have different verification depths, output levels, or Claude settings.
+
+**Priority order**: CLI flags > Workspace config > Project config > User config > Defaults
+
+```bash
+# Set verification depth for a specific workspace
+claude-iterate config --workspace my-task verification.depth deep
+
+# Set output level for a workspace
+claude-iterate config --workspace my-task outputLevel verbose
+
+# Set Claude args for a workspace
+claude-iterate config --workspace my-task claude.args --add --dangerously-skip-permissions
+
+# View workspace config
+claude-iterate config --workspace my-task --list
+
+# Remove override (fall back to project/user config)
+claude-iterate config --workspace my-task verification.depth --unset
+```
+
+**Available workspace config settings**:
+
+- `verification.depth` - Verification depth (quick, standard, deep)
+- `verification.autoVerify` - Auto-verify on completion (true/false)
+- `verification.resumeOnFail` - Resume iterations on failed verification (true/false)
+- `verification.maxAttempts` - Max verification attempts (1-10)
+- `verification.reportFilename` - Custom report filename
+- `verification.notifyOnVerification` - Send verification notifications (true/false)
+- `outputLevel` - Console output level (quiet, progress, verbose)
+- `claude.command` - Override Claude CLI command
+- `claude.args` - Override Claude CLI arguments (use --add/--remove for arrays)
+
+**Example use cases**:
+
+```bash
+# Critical task - use deep verification
+claude-iterate init api-migration
+claude-iterate config --workspace api-migration verification.depth deep
+
+# Debug task - verbose output
+claude-iterate init debug-task
+claude-iterate config --workspace debug-task outputLevel verbose
+
+# Simple task - quick verification
+claude-iterate init docs-update
+claude-iterate config --workspace docs-update verification.depth quick
+
+# Now run without CLI flags (uses workspace config)
+claude-iterate verify api-migration  # Uses deep
+claude-iterate run debug-task        # Uses verbose output
+claude-iterate verify docs-update    # Uses quick
+```
+
+Workspace configuration is stored in `.metadata.json` under the `config` field and can be copied via templates:
+
+```bash
+# Create template with workspace config
+claude-iterate config --workspace my-task verification.depth deep
+claude-iterate template save my-task my-template
+
+# New workspaces from template inherit config
+claude-iterate template use my-template new-task
+```
+
 ### Security: Permission Prompts
 
 By default, `claude.args` is empty, meaning Claude Code will prompt for permissions during execution. This is the **safe default**.

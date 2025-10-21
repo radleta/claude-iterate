@@ -20,16 +20,25 @@ export function verifyCommand(): Command {
       const logger = new Logger(command.optsWithGlobals().colors !== false);
 
       try {
-        // Load config
-        const config = await ConfigManager.load(command.optsWithGlobals());
-        const runtimeConfig = config.getConfig();
-
-        // Get workspace
+        // Load config to get workspacesDir
+        const configForPath = await ConfigManager.load(
+          command.optsWithGlobals()
+        );
         const workspacePath = getWorkspacePath(
           name,
-          runtimeConfig.workspacesDir
+          configForPath.get('workspacesDir')
         );
+
+        // Load workspace to get metadata
         const workspace = await Workspace.load(name, workspacePath);
+        const metadata = await workspace.getMetadata();
+
+        // Reload config with workspace metadata for workspace-level overrides
+        const config = await ConfigManager.load(
+          command.optsWithGlobals(),
+          metadata
+        );
+        const runtimeConfig = config.getConfig();
 
         // Check instructions exist
         if (!(await workspace.hasInstructions())) {

@@ -5,7 +5,10 @@ import { ClaudeClient } from '../services/claude-client.js';
 import { NotificationService } from '../services/notification-service.js';
 import { Logger } from '../utils/logger.js';
 import { getWorkspacePath } from '../utils/paths.js';
-import { getSetupPrompt, getWorkspaceSystemPrompt } from '../templates/system-prompt.js';
+import {
+  getSetupPrompt,
+  getWorkspaceSystemPrompt,
+} from '../templates/system-prompt.js';
 
 /**
  * Set up workspace instructions interactively
@@ -18,19 +21,25 @@ export function setupCommand(): Command {
       const logger = new Logger(command.optsWithGlobals().colors !== false);
 
       try {
-        // Load config
-        const config = await ConfigManager.load(command.optsWithGlobals());
-        const runtimeConfig = config.getConfig();
-
-        // Get workspace path
+        // Load config to get workspacesDir
+        const configForPath = await ConfigManager.load(
+          command.optsWithGlobals()
+        );
         const workspacePath = getWorkspacePath(
           name,
-          runtimeConfig.workspacesDir
+          configForPath.get('workspacesDir')
         );
 
-        // Load workspace
+        // Load workspace to get metadata
         const workspace = await Workspace.load(name, workspacePath);
         const metadata = await workspace.getMetadata();
+
+        // Reload config with workspace metadata for workspace-level overrides
+        const config = await ConfigManager.load(
+          command.optsWithGlobals(),
+          metadata
+        );
+        const runtimeConfig = config.getConfig();
 
         logger.header(`Setting up instructions: ${name}`);
         logger.info('Launching interactive Claude session...');
@@ -53,7 +62,11 @@ export function setupCommand(): Command {
 
         // Generate prompts (mode-aware)
         const systemPrompt = await getWorkspaceSystemPrompt(workspace.path);
-        const prompt = await getSetupPrompt(name, workspace.path, metadata.mode);
+        const prompt = await getSetupPrompt(
+          name,
+          workspace.path,
+          metadata.mode
+        );
 
         // Execute Claude interactively from project root with system context
         await client.executeInteractive(prompt, systemPrompt);
@@ -68,13 +81,23 @@ export function setupCommand(): Command {
 
           // Send notification if configured
           const updatedMetadata = await workspace.getMetadata();
-          const config = await ConfigManager.load(command.optsWithGlobals());
-          const runtimeConfig = config.getConfig();
-          const notificationService = new NotificationService(logger, runtimeConfig.verbose);
+          // Reload config with updated metadata
+          const updatedConfig = await ConfigManager.load(
+            command.optsWithGlobals(),
+            updatedMetadata
+          );
+          const updatedRuntimeConfig = updatedConfig.getConfig();
+          const notificationService = new NotificationService(
+            logger,
+            updatedRuntimeConfig.verbose
+          );
 
           if (
             notificationService.isConfigured(updatedMetadata) &&
-            notificationService.shouldNotify('setup_complete', updatedMetadata) &&
+            notificationService.shouldNotify(
+              'setup_complete',
+              updatedMetadata
+            ) &&
             updatedMetadata.notifyUrl
           ) {
             await notificationService.send(

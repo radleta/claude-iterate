@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Per-Workspace Configuration**: Workspace-level config overrides for verification, output, and Claude settings
+  - New `--workspace` flag for `config` command to manage per-workspace settings
+  - Workspace config stored in `.metadata.json` under `config` field
+  - Priority resolution: CLI > Workspace > Project > User > Defaults
+  - Supported settings: `verification.*`, `outputLevel`, `claude.command`, `claude.args`
+  - Usage examples:
+    - `claude-iterate config --workspace my-task verification.depth deep`
+    - `claude-iterate config --workspace my-task outputLevel verbose`
+    - `claude-iterate config --workspace my-task --list`
+  - Workspace config automatically copied via templates
+  - **Impact**: Allows different verification depths, output levels, and permissions per workspace
+  - **Compatibility**: 100% backward compatible (optional field, existing workspaces work unchanged)
 - **Work Completion Verification**: Intelligent verification to ensure Claude actually completes tasks
   - New `verify` command checks workspace completion against original instructions
   - Mode-aware verification prompts for loop (item-by-item) and iterative (requirement-based) modes

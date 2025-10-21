@@ -6,6 +6,7 @@ import {
   UserConfigSchema,
   DEFAULT_CONFIG,
 } from '../types/config.js';
+import { Metadata } from '../types/metadata.js';
 import {
   getProjectConfigPath,
   getUserConfigPath,
@@ -16,7 +17,7 @@ import { InvalidConfigError } from '../utils/errors.js';
 
 /**
  * Configuration manager with layered config resolution
- * Priority: CLI flags → Project config → User config → Defaults
+ * Priority: CLI flags → Workspace config → Project config → User config → Defaults
  */
 export class ConfigManager {
   private runtimeConfig: RuntimeConfig;
@@ -27,19 +28,24 @@ export class ConfigManager {
 
   /**
    * Load configuration from all sources
+   * @param cliOptions Optional CLI options (highest priority)
+   * @param workspaceMetadata Optional workspace metadata for workspace-level config
    */
-  static async load(cliOptions?: {
-    workspacesDir?: string;
-    templatesDir?: string;
-    archiveDir?: string;
-    maxIterations?: number;
-    delay?: number;
-    notifyUrl?: string;
-    verbose?: boolean;
-    quiet?: boolean;
-    output?: string;
-    colors?: boolean;
-  }): Promise<ConfigManager> {
+  static async load(
+    cliOptions?: {
+      workspacesDir?: string;
+      templatesDir?: string;
+      archiveDir?: string;
+      maxIterations?: number;
+      delay?: number;
+      notifyUrl?: string;
+      verbose?: boolean;
+      quiet?: boolean;
+      output?: string;
+      colors?: boolean;
+    },
+    workspaceMetadata?: Metadata
+  ): Promise<ConfigManager> {
     // Start with defaults
     let config: RuntimeConfig = { ...DEFAULT_CONFIG };
 
@@ -55,7 +61,12 @@ export class ConfigManager {
       config = ConfigManager.mergeProjectConfig(config, projectConfig);
     }
 
-    // Layer 3: CLI options (highest priority)
+    // Layer 3: Workspace config (from .metadata.json)
+    if (workspaceMetadata) {
+      config = ConfigManager.mergeWorkspaceConfig(config, workspaceMetadata);
+    }
+
+    // Layer 4: CLI options (highest priority)
     if (cliOptions) {
       config = ConfigManager.mergeCliOptions(config, cliOptions);
     }
@@ -208,6 +219,72 @@ export class ConfigManager {
           projectConfig.verification.notifyOnVerification ??
           config.verification.notifyOnVerification,
       };
+    }
+
+    return merged;
+  }
+
+  /**
+   * Merge workspace config into runtime config
+   * Applies workspace-level overrides from .metadata.json
+   */
+  private static mergeWorkspaceConfig(
+    config: RuntimeConfig,
+    metadata: Metadata
+  ): RuntimeConfig {
+    const merged = { ...config };
+
+    // Backward compat: Top-level execution settings from metadata
+    merged.maxIterations = metadata.maxIterations;
+    merged.delay = metadata.delay;
+    merged.stagnationThreshold = metadata.stagnationThreshold;
+    if (metadata.notifyUrl) {
+      merged.notifyUrl = metadata.notifyUrl;
+    }
+    if (metadata.notifyEvents) {
+      merged.notifyEvents = metadata.notifyEvents;
+    }
+
+    // Workspace config overrides (if present)
+    if (metadata.config) {
+      // Output level override
+      if (metadata.config.outputLevel) {
+        merged.outputLevel = metadata.config.outputLevel;
+        merged.verbose = metadata.config.outputLevel === 'verbose';
+      }
+
+      // Claude settings override
+      if (metadata.config.claude) {
+        if (metadata.config.claude.command) {
+          merged.claudeCommand = metadata.config.claude.command;
+        }
+        if (metadata.config.claude.args) {
+          merged.claudeArgs = metadata.config.claude.args;
+        }
+      }
+
+      // Verification settings override
+      if (metadata.config.verification) {
+        merged.verification = {
+          depth:
+            metadata.config.verification.depth ?? merged.verification.depth,
+          autoVerify:
+            metadata.config.verification.autoVerify ??
+            merged.verification.autoVerify,
+          resumeOnFail:
+            metadata.config.verification.resumeOnFail ??
+            merged.verification.resumeOnFail,
+          maxAttempts:
+            metadata.config.verification.maxAttempts ??
+            merged.verification.maxAttempts,
+          reportFilename:
+            metadata.config.verification.reportFilename ??
+            merged.verification.reportFilename,
+          notifyOnVerification:
+            metadata.config.verification.notifyOnVerification ??
+            merged.verification.notifyOnVerification,
+        };
+      }
     }
 
     return merged;
