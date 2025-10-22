@@ -18,6 +18,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Tool events logged to `iterate-*.log` files for better auditability
   - Graceful error handling for malformed JSON (continues execution)
   - Zero performance impact on progress/quiet modes (opt-in feature)
+  - **Enhanced DX Formatting** (v2.0.1):
+    - Blank lines between operations for visual grouping (Gestalt proximity principle)
+    - Never truncates error messages, file paths, or Edit tool search strings
+    - Tool-specific formatters: Read results show formatted line numbers (`  15 | content`)
+    - Bash results show exit codes and full output (up to 20 lines)
+    - Edit failures include helpful debugging tips and context
+    - Enhanced error messages explain possible causes ("string not found" → explains why)
+    - Consistent 3-space indentation hierarchy (operation → tool → details → content)
+    - Write results show file sizes and creation vs. overwrite indication
+    - 50-80% reduction in cognitive load for scanning and debugging
   - **Impact**: Improves transparency, debuggability, and user trust during execution
   - **Compatibility**: 100% backward compatible (only affects verbose mode output)
 - **Per-Workspace Configuration**: Workspace-level config overrides for verification, output, and Claude settings

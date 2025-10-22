@@ -27,8 +27,8 @@ describe('StreamJsonFormatter', () => {
       // Access private method via any cast for testing
       const formatted = (StreamJsonFormatter as any).formatEvent(event);
 
-      expect(formatted).toContain('🔧 Using Read tool');
-      expect(formatted).toContain('File: /workspace/repo/TODO.md');
+      expect(formatted).toContain('🔧 Read tool');
+      expect(formatted).toContain('   File: /workspace/repo/TODO.md');
     });
 
     it('should format tool_use event for Write tool', () => {
@@ -50,8 +50,9 @@ describe('StreamJsonFormatter', () => {
 
       const formatted = (StreamJsonFormatter as any).formatEvent(event);
 
-      expect(formatted).toContain('🔧 Using Write tool');
-      expect(formatted).toContain('File: /workspace/repo/test.txt');
+      expect(formatted).toContain('🔧 Write tool');
+      expect(formatted).toContain('   File: /workspace/repo/test.txt');
+      expect(formatted).toContain('   Content size:');
     });
 
     it('should format tool_use event for Bash tool', () => {
@@ -72,8 +73,8 @@ describe('StreamJsonFormatter', () => {
 
       const formatted = (StreamJsonFormatter as any).formatEvent(event);
 
-      expect(formatted).toContain('🔧 Using Bash tool');
-      expect(formatted).toContain('Command: npm test');
+      expect(formatted).toContain('🔧 Bash tool');
+      expect(formatted).toContain('   Command: npm test');
     });
 
     it('should format tool_use event for Edit tool', () => {
@@ -96,9 +97,10 @@ describe('StreamJsonFormatter', () => {
 
       const formatted = (StreamJsonFormatter as any).formatEvent(event);
 
-      expect(formatted).toContain('🔧 Using Edit tool');
-      expect(formatted).toContain('File: /workspace/repo/TODO.md');
-      expect(formatted).toContain('Replacing: "- [ ] Task 1"');
+      expect(formatted).toContain('🔧 Edit tool');
+      expect(formatted).toContain('   File: /workspace/repo/TODO.md');
+      expect(formatted).toContain('   Replacing: "- [ ] Task 1"');
+      expect(formatted).toContain('   With: "- [x] Task 1"');
     });
 
     it('should format tool_use event for Grep tool', () => {
@@ -120,12 +122,13 @@ describe('StreamJsonFormatter', () => {
 
       const formatted = (StreamJsonFormatter as any).formatEvent(event);
 
-      expect(formatted).toContain('🔧 Using Grep tool');
-      expect(formatted).toContain('Pattern: TODO');
+      expect(formatted).toContain('🔧 Grep tool');
+      expect(formatted).toContain('   Pattern: TODO');
+      expect(formatted).toContain('   Path: /workspace/repo');
     });
 
-    it('should truncate long commands', () => {
-      const longCommand = 'a'.repeat(100);
+    it('should format multi-line commands with proper indentation', () => {
+      const multiLineCommand = 'echo "line 1"\necho "line 2"\necho "line 3"';
       const event = {
         type: 'assistant',
         message: {
@@ -133,7 +136,7 @@ describe('StreamJsonFormatter', () => {
             {
               type: 'tool_use',
               name: 'Bash',
-              input: { command: longCommand },
+              input: { command: multiLineCommand },
             },
           ],
         },
@@ -141,12 +144,15 @@ describe('StreamJsonFormatter', () => {
 
       const formatted = (StreamJsonFormatter as any).formatEvent(event);
 
-      expect(formatted).toContain('...');
-      expect(formatted.length).toBeLessThan(longCommand.length + 50);
+      expect(formatted).toContain('🔧 Bash tool');
+      expect(formatted).toContain('   Command:');
+      expect(formatted).toContain('     echo "line 1"');
+      expect(formatted).toContain('     echo "line 2"');
+      expect(formatted).toContain('     echo "line 3"');
     });
 
-    it('should truncate long old_string in Edit tool', () => {
-      const longString = 'x'.repeat(100);
+    it('should format multi-line Edit strings without truncation', () => {
+      const multiLineString = 'line 1\nline 2\nline 3';
       const event = {
         type: 'assistant',
         message: {
@@ -156,8 +162,8 @@ describe('StreamJsonFormatter', () => {
               name: 'Edit',
               input: {
                 file_path: '/test.txt',
-                old_string: longString,
-                new_string: 'replacement',
+                old_string: multiLineString,
+                new_string: 'replacement\ntext',
               },
             },
           ],
@@ -166,18 +172,24 @@ describe('StreamJsonFormatter', () => {
 
       const formatted = (StreamJsonFormatter as any).formatEvent(event);
 
-      expect(formatted).toContain('...');
-      expect(formatted).toContain('Replacing:');
+      expect(formatted).toContain('🔧 Edit tool');
+      expect(formatted).toContain('   Searching for:');
+      expect(formatted).toContain('     "line 1"');
+      expect(formatted).toContain('     "line 2"');
+      expect(formatted).toContain('     "line 3"');
+      expect(formatted).toContain('   Replacing with:');
+      expect(formatted).toContain('     "replacement"');
+      expect(formatted).toContain('     "text"');
     });
 
-    it('should format tool_result success', () => {
+    it('should format tool_result success with generic message', () => {
       const event = {
         type: 'user',
         message: {
           content: [
             {
               type: 'tool_result',
-              content: 'File read successfully: 45 lines',
+              content: 'Operation completed',
             },
           ],
         },
@@ -186,10 +198,10 @@ describe('StreamJsonFormatter', () => {
       const formatted = (StreamJsonFormatter as any).formatEvent(event);
 
       expect(formatted).toContain('✓');
-      expect(formatted).toContain('File read successfully');
+      expect(formatted).toContain('Operation completed');
     });
 
-    it('should format tool_result error', () => {
+    it('should format tool_result error with full message', () => {
       const event = {
         type: 'user',
         message: {
@@ -218,7 +230,7 @@ describe('StreamJsonFormatter', () => {
               content: [
                 {
                   type: 'text',
-                  text: 'Operation completed successfully',
+                  text: 'Operation completed',
                 },
               ],
             },
@@ -229,18 +241,18 @@ describe('StreamJsonFormatter', () => {
       const formatted = (StreamJsonFormatter as any).formatEvent(event);
 
       expect(formatted).toContain('✓');
-      expect(formatted).toContain('Operation completed successfully');
+      expect(formatted).toContain('Operation completed');
     });
 
-    it('should truncate long tool results', () => {
-      const longResult = 'x'.repeat(150);
+    it('should format Read result with line numbers', () => {
+      const readResult = '     1→# Header\n     2→\n     3→Content line';
       const event = {
         type: 'user',
         message: {
           content: [
             {
               type: 'tool_result',
-              content: longResult,
+              content: readResult,
             },
           ],
         },
@@ -248,8 +260,10 @@ describe('StreamJsonFormatter', () => {
 
       const formatted = (StreamJsonFormatter as any).formatEvent(event);
 
-      expect(formatted).toContain('...');
-      expect(formatted.length).toBeLessThan(longResult.length);
+      expect(formatted).toContain('✓ Read successfully');
+      expect(formatted).toContain('Showing');
+      expect(formatted).toContain('|'); // Line number separator
+      expect(formatted).toMatch(/\d+ \|/); // Format: "  15 | content"
     });
 
     it('should format text response', () => {
@@ -294,6 +308,146 @@ describe('StreamJsonFormatter', () => {
 
       expect(formatted).toBeNull();
     });
+
+    it('should format Edit failure with helpful tips', () => {
+      const event = {
+        type: 'user',
+        message: {
+          content: [
+            {
+              type: 'tool_result',
+              content: 'String to replace not found in file',
+            },
+          ],
+        },
+      };
+
+      const formatted = (StreamJsonFormatter as any).formatEvent(event);
+
+      expect(formatted).toContain('❌ Edit failed: String not found in file');
+      expect(formatted).toContain('Tip: Use the Read tool');
+    });
+
+    it('should format Bash result with exit code', () => {
+      const event = {
+        type: 'user',
+        message: {
+          content: [
+            {
+              type: 'tool_result',
+              content: 'Command output\nexit code: 0',
+            },
+          ],
+        },
+      };
+
+      const formatted = (StreamJsonFormatter as any).formatEvent(event);
+
+      expect(formatted).toContain('✓ Command completed successfully');
+      expect(formatted).toContain('Exit code: 0');
+      expect(formatted).toContain('Output');
+    });
+
+    it('should format Write result with success message', () => {
+      const event = {
+        type: 'user',
+        message: {
+          content: [
+            {
+              type: 'tool_result',
+              content: 'File created successfully at: /test.txt',
+            },
+          ],
+        },
+      };
+
+      const formatted = (StreamJsonFormatter as any).formatEvent(event);
+
+      expect(formatted).toContain('✓ File created successfully');
+    });
+
+    it('should add blank lines between operations when state changes', () => {
+      // Reset state before this test
+      (StreamJsonFormatter as any).lastEventType = null;
+
+      // First operation: tool_use
+      const toolUseEvent = {
+        type: 'assistant',
+        message: {
+          content: [
+            {
+              type: 'tool_use',
+              name: 'Read',
+              input: { file_path: '/test.txt' },
+            },
+          ],
+        },
+      };
+
+      const firstFormatted = (StreamJsonFormatter as any).formatEvent(
+        toolUseEvent
+      );
+      expect(firstFormatted).toContain('🔧 Read tool');
+      expect(firstFormatted?.startsWith('\n\n')).toBe(false); // First operation, no double blank line
+
+      // Second operation: tool_result
+      const toolResultEvent = {
+        type: 'user',
+        message: {
+          content: [
+            {
+              type: 'tool_result',
+              content: 'Success',
+            },
+          ],
+        },
+      };
+
+      const secondFormatted = (StreamJsonFormatter as any).formatEvent(
+        toolResultEvent
+      );
+      expect(secondFormatted).toContain('✓');
+
+      // Third operation: tool_use (should have blank line after tool_result)
+      const thirdFormatted = (StreamJsonFormatter as any).formatEvent(
+        toolUseEvent
+      );
+      expect(thirdFormatted?.startsWith('\n\n')).toBe(true); // Should have blank line
+    });
+
+    it('should add blank line before text response after tool_result', () => {
+      // Tool result
+      const toolResultEvent = {
+        type: 'user',
+        message: {
+          content: [
+            {
+              type: 'tool_result',
+              content: 'Success',
+            },
+          ],
+        },
+      };
+
+      (StreamJsonFormatter as any).formatEvent(toolResultEvent);
+
+      // Text response after tool_result
+      const textEvent = {
+        type: 'assistant',
+        message: {
+          content: [
+            {
+              type: 'text',
+              text: 'Now let me do the next step',
+            },
+          ],
+        },
+      };
+
+      const formatted = (StreamJsonFormatter as any).formatEvent(textEvent);
+      expect(formatted).toContain('📝');
+      expect(formatted?.startsWith('\n\n')).toBe(true); // Should have blank line
+    });
   });
 
   describe('attach', () => {
@@ -326,8 +480,8 @@ describe('StreamJsonFormatter', () => {
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       expect(onToolEvent).toHaveBeenCalledTimes(2);
-      expect(toolEvents[0]).toContain('Using Read tool');
-      expect(toolEvents[1]).toContain('✓ Success');
+      expect(toolEvents[0]).toContain('Read tool');
+      expect(toolEvents[1]).toContain('✓');
     });
 
     it('should handle malformed JSON gracefully', async () => {
@@ -367,7 +521,7 @@ describe('StreamJsonFormatter', () => {
       // The key behavior is that it doesn't crash and continues processing
       // So we just verify valid events were processed
       expect(toolEvents.length).toBeGreaterThan(0);
-      expect(toolEvents[0]).toContain('Using Write tool');
+      expect(toolEvents[0]).toContain('Write tool');
     });
 
     it('should handle no stdout gracefully', () => {

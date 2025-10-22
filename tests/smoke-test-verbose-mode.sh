@@ -89,8 +89,8 @@ OUTPUT_FILE=$(mktemp)
 # Run with dry-run (mock) and verbose mode
 node dist/src/index.js run "$WORKSPACE_NAME" --dry-run --no-delay --verbose > "$OUTPUT_FILE" 2>&1
 
-# Check for tool event indicators
-if grep -q "🔧 Using" "$OUTPUT_FILE"; then
+# Check for tool event indicators (new format is "🔧 Read tool" not "🔧 Using Read tool")
+if grep -q "🔧" "$OUTPUT_FILE"; then
     pass "tool usage indicator found"
 else
     fail "tool usage indicator not found"
@@ -113,7 +113,7 @@ LOG_FILE=$(ls -t "$WORKSPACE_PATH"/iterate-*.log 2>/dev/null | head -1)
 if [ -f "$LOG_FILE" ]; then
     pass "log file created"
 
-    if grep -q "🔧 Using" "$LOG_FILE"; then
+    if grep -q "🔧" "$LOG_FILE"; then
         pass "tool events logged to file"
     else
         fail "tool events not found in log file"
@@ -136,7 +136,7 @@ OUTPUT_FILE2=$(mktemp)
 node dist/src/index.js run "$WORKSPACE_NAME2" --dry-run --no-delay --output progress > "$OUTPUT_FILE2" 2>&1
 
 # Progress mode should NOT show tool events in console
-if grep -q "🔧 Using" "$OUTPUT_FILE2"; then
+if grep -q "🔧" "$OUTPUT_FILE2"; then
     fail "progress mode should not show tool events in console"
 else
     pass "progress mode correctly omits tool events from console"
