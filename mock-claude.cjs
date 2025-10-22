@@ -17,11 +17,98 @@ function log(message) {
   fs.appendFileSync(logFile, message + '\n', 'utf8');
 }
 
+// Emit NDJSON event for stream-json format
+function emitEvent(event) {
+  console.log(JSON.stringify(event));
+}
+
+// Emit tool events for stream-json format
+function emitStreamJsonResponse(textResponse) {
+  // Emit tool_use for Read
+  emitEvent({
+    type: 'assistant',
+    message: {
+      content: [
+        {
+          type: 'tool_use',
+          name: 'Read',
+          input: {
+            file_path: '/workspace/repo/TODO.md',
+          },
+        },
+      ],
+    },
+  });
+
+  // Emit tool_result for Read
+  emitEvent({
+    type: 'user',
+    message: {
+      content: [
+        {
+          type: 'tool_result',
+          content: 'File read successfully',
+        },
+      ],
+    },
+  });
+
+  // Emit tool_use for Write
+  emitEvent({
+    type: 'assistant',
+    message: {
+      content: [
+        {
+          type: 'tool_use',
+          name: 'Write',
+          input: {
+            file_path: '/workspace/repo/.status.json',
+          },
+        },
+      ],
+    },
+  });
+
+  // Emit tool_result for Write
+  emitEvent({
+    type: 'user',
+    message: {
+      content: [
+        {
+          type: 'tool_result',
+          content: 'File created successfully',
+        },
+      ],
+    },
+  });
+
+  // Emit text response
+  emitEvent({
+    type: 'assistant',
+    message: {
+      content: [
+        {
+          type: 'text',
+          text: textResponse,
+        },
+      ],
+    },
+  });
+
+  // Emit final result
+  emitEvent({
+    type: 'result',
+    result: textResponse,
+  });
+}
+
 // Parse command line arguments
 let printMode = false;
 let systemPrompt = '';
 let userPrompt = '';
 let skipPerms = false;
+let outputFormat = 'text';
+let verboseMode = false;
 
 log('=== Mock Claude Called ===');
 log(`Timestamp: ${new Date().toISOString()}`);
@@ -49,6 +136,18 @@ while (i < args.length) {
     case '--dangerously-skip-permissions':
       skipPerms = true;
       log(`Arg ${i}: --dangerously-skip-permissions`);
+      break;
+
+    case '--output-format':
+      i++;
+      outputFormat = args[i];
+      log(`Arg ${i - 1}: --output-format`);
+      log(`Arg ${i}: ${outputFormat}`);
+      break;
+
+    case '--verbose':
+      verboseMode = true;
+      log(`Arg ${i}: --verbose`);
       break;
 
     case '--append-system-prompt':
@@ -95,6 +194,8 @@ log('');
 log('Parsed values:');
 log(`  PRINT_MODE: ${printMode}`);
 log(`  SKIP_PERMS: ${skipPerms}`);
+log(`  OUTPUT_FORMAT: ${outputFormat}`);
+log(`  VERBOSE_MODE: ${verboseMode}`);
 log(`  SYSTEM_PROMPT length: ${systemPrompt.length}`);
 log(`  USER_PROMPT length: ${userPrompt.length}`);
 log('');
@@ -205,7 +306,11 @@ if (printMode) {
       fs.writeFileSync(statusPath, JSON.stringify(statusContent, null, 2));
       fs.writeFileSync(todoPath, todoContent);
 
-      console.log(response);
+      if (outputFormat === 'stream-json') {
+        emitStreamJsonResponse(response);
+      } else {
+        console.log(response);
+      }
       log(`Wrote status: ${JSON.stringify(statusContent)}`);
       log('SUCCESS');
       process.exit(0);
@@ -271,11 +376,20 @@ Let me update the TODO to mark everything complete:
 EOF</bash>
 
 Task complete! All items have been checked off.`);
+
+      if (outputFormat === 'stream-json') {
+        emitStreamJsonResponse(
+          'Task complete! All items have been checked off.'
+        );
+      }
     } else {
-      console.log(`Mock response for: ${userPrompt.slice(0, 50)}...`);
-      console.log('');
-      console.log(`System prompt received: ${systemPrompt.length} characters`);
-      console.log('This is a mock Claude response.');
+      const response = `Mock response for: ${userPrompt.slice(0, 50)}...\n\nSystem prompt received: ${systemPrompt.length} characters\nThis is a mock Claude response.`;
+
+      if (outputFormat === 'stream-json') {
+        emitStreamJsonResponse(response);
+      } else {
+        console.log(response);
+      }
     }
 
     log('SUCCESS');

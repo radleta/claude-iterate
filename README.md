@@ -429,7 +429,7 @@ claude-iterate run my-task
 # ✓ Task completed successfully after 5 iterations
 ```
 
-**Verbose** - Shows full Claude output in real-time:
+**Verbose** - Shows full Claude output with real-time tool visibility:
 
 ```bash
 claude-iterate run my-task --verbose
@@ -437,11 +437,51 @@ claude-iterate run my-task --verbose
 claude-iterate run my-task --output verbose
 ```
 
+Verbose mode displays Claude's tool usage as it happens:
+
+```bash
+Running iteration 1...
+
+🔧 Using Read tool
+   File: /workspace/repo/TODO.md
+✓ File read successfully (45 lines)
+
+🔧 Using Edit tool
+   File: TODO.md
+   Replacing: "- [ ] Task 1"
+✓ Edit successful
+
+🔧 Using Write tool
+   File: /workspace/repo/.status.json
+✓ File created successfully
+
+📝 Claude's response:
+✅ Iteration 1 Complete
+
+I've successfully completed one task as instructed:
+
+**Changes made:**
+- ✓ Checked Task 1 in TODO.md
+- ✓ Updated .status.json
+
+✓ Iteration 1 complete (4 items remaining)
+```
+
+**Tool visibility features:**
+
+- 🔧 Tool name displayed (Read, Edit, Write, Bash, Grep, etc.)
+- 📄 File paths shown for file operations
+- 💻 Commands shown for Bash tool
+- 🔍 Patterns shown for Grep tool
+- ✓/❌ Success/error indicators for tool results
+- 📝 Claude's text responses and reasoning
+
 Helpful for:
 
-- Debugging issues
-- Monitoring Claude's reasoning
-- Understanding detailed progress
+- Debugging issues - See which tool failed and why
+- Monitoring Claude's reasoning - Watch the step-by-step process
+- Understanding detailed progress - Know exactly what files are being modified
+- Building trust - Full transparency into Claude's actions
 
 **Quiet** - Silent execution, only errors/warnings:
 
@@ -487,9 +527,10 @@ Each log file contains:
 - Run metadata (workspace, mode, max iterations) - logged once
 - Instructions and system prompts - logged once at start for efficiency
 - Iteration timestamps and Claude output
+- Tool usage events (when running with --verbose)
 - Completion status and remaining counts
 
-**Note:** Log files use a deduplicated format that logs static content (instructions, system prompts) once at the start instead of repeating them for each iteration. This reduces log file size by ~60% while maintaining full auditability. Log files are created regardless of the output level.
+**Note:** Log files use a deduplicated format that logs static content (instructions, system prompts) once at the start instead of repeating them for each iteration. This reduces log file size by ~60% while maintaining full auditability. Log files are created regardless of the output level. Tool events are logged when using verbose mode for better debugging and auditability.
 
 ## Examples
 

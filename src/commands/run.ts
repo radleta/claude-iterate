@@ -293,29 +293,56 @@ export function runCommand(): Command {
               // Log iteration start (no longer includes prompt - logged once at run start)
               await fileLogger.logIterationStart(iterationCount, new Date());
 
-              // Execute Claude non-interactively from project root with iteration context
-              // Stream output to file and console (based on output level)
-              await client.executeNonInteractive(
-                prompt,
-                systemPrompt,
-                undefined,
-                {
-                  onStdout: (chunk) => {
-                    // Always log to file (async, but don't await in callback)
-                    fileLogger.appendOutput(chunk);
+              // Execute Claude with appropriate method based on output level
+              // Verbose mode: Show tool usage in real-time
+              // Progress/Quiet: Use standard non-interactive mode
+              if (reporter.getLevel() === 'verbose') {
+                await client.executeWithToolVisibility(
+                  prompt,
+                  systemPrompt,
+                  undefined,
+                  {
+                    onToolEvent: (formatted) => {
+                      // Show tool events in console (verbose level)
+                      reporter.verbose(formatted);
 
-                    // Stream to console based on output level
-                    reporter.stream(chunk);
-                  },
-                  onStderr: (chunk) => {
-                    // Always log to file
-                    fileLogger.appendOutput(chunk);
+                      // Always log to file
+                      fileLogger.appendOutput(formatted + '\n');
+                    },
+                    onRawOutput: (chunk) => {
+                      // Log raw output to file for debugging
+                      fileLogger.appendOutput(chunk);
+                    },
+                    onError: (err) => {
+                      // Parse errors logged but don't show to user
+                      logger.debug(`Stream parse error: ${err.message}`, true);
+                    },
+                  }
+                );
+              } else {
+                // Progress/Quiet mode: Use existing non-interactive (no tool visibility)
+                await client.executeNonInteractive(
+                  prompt,
+                  systemPrompt,
+                  undefined,
+                  {
+                    onStdout: (chunk) => {
+                      // Always log to file (async, but don't await in callback)
+                      fileLogger.appendOutput(chunk);
 
-                    // Stream to console based on output level
-                    reporter.stream(chunk);
-                  },
-                }
-              );
+                      // Stream to console based on output level
+                      reporter.stream(chunk);
+                    },
+                    onStderr: (chunk) => {
+                      // Always log to file
+                      fileLogger.appendOutput(chunk);
+
+                      // Stream to console based on output level
+                      reporter.stream(chunk);
+                    },
+                  }
+                );
+              }
 
               // Increment iteration count and update metadata
               const updatedMetadata =

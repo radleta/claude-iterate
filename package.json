@@ -23,7 +23,8 @@
     "test:integration": "vitest run tests/integration",
     "test:smoke": "./tests/smoke-test.sh",
     "test:smoke:verify": "./tests/smoke-test-verification.sh",
-    "test:smoke:all": "./tests/smoke-test.sh && ./tests/smoke-test-verification.sh",
+    "test:smoke:verbose": "./tests/smoke-test-verbose-mode.sh",
+    "test:smoke:all": "./tests/smoke-test.sh && ./tests/smoke-test-verification.sh && ./tests/smoke-test-verbose-mode.sh",
     "test:cleanup": "vitest run tests/unit/claude-client.test.ts tests/integration/process-cleanup.test.ts",
     "test:quick": "vitest run tests/unit/claude-client.test.ts",
     "test:watch": "vitest",
@@ -79,9 +80,11 @@
   "dependencies": {
     "chalk": "^5.4.1",
     "commander": "^12.1.0",
+    "ndjson": "^2.0.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@types/ndjson": "^2.0.4",
     "@types/node": "^22.10.5",
     "@typescript-eslint/eslint-plugin": "^8.20.0",
     "@typescript-eslint/parser": "^8.20.0",

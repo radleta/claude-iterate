@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Tool Visibility in Verbose Mode**: Real-time display of Claude's tool usage when running with `--verbose` flag
+  - New `executeWithToolVisibility()` method in ClaudeClient for streaming NDJSON events
+  - StreamJsonFormatter utility class for parsing Claude CLI's `--output-format stream-json` output
+  - Shows tool names (Read, Edit, Write, Bash, Grep, etc.), file paths, commands, patterns
+  - Success/error indicators (✓/❌) for tool results
+  - Text responses displayed with 📝 prefix
+  - Tool events logged to `iterate-*.log` files for better auditability
+  - Graceful error handling for malformed JSON (continues execution)
+  - Zero performance impact on progress/quiet modes (opt-in feature)
+  - **Impact**: Improves transparency, debuggability, and user trust during execution
+  - **Compatibility**: 100% backward compatible (only affects verbose mode output)
 - **Per-Workspace Configuration**: Workspace-level config overrides for verification, output, and Claude settings
   - New `--workspace` flag for `config` command to manage per-workspace settings
   - Workspace config stored in `.metadata.json` under `config` field
@@ -77,6 +88,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Impact**: ~200-500 additional characters per prompt (~1% token increase), massive clarity improvement
   - **Compatibility**: Fully backward compatible, no migration required
   - **Testing**: 29 new smoke tests added, all 228 tests passing
+
+### Dependencies
+
+- Added `ndjson@^2.0.0` - NDJSON stream parser for Claude CLI stream-json format (~10KB)
+- Added `@types/ndjson@^2.0.4` - TypeScript definitions for ndjson
 
 ## [2.0.0] - 2025-10-17
 

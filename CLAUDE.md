@@ -67,6 +67,10 @@ Spawns `claude` CLI (not API) to reuse installation, avoid key management, lever
 
 No real Claude calls. Fast, deterministic, CI-friendly. See `tests/mocks/claude-client.mock.ts`.
 
+### Tool Visibility (Verbose Mode)
+
+Verbose mode uses Claude CLI's `--output-format stream-json --verbose` to show real-time tool usage. `StreamJsonFormatter` (`src/utils/stream-json-formatter.ts`) parses NDJSON events from stdout, formats tool_use/tool_result events with emojis (🔧, ✓, ❌, 📝). `ClaudeClient.executeWithToolVisibility()` attaches formatter, provides callbacks. Progress/quiet modes use `executeNonInteractive()` (no overhead). Deps: `ndjson` (~10KB) for robust parsing. Graceful error handling via `strict: false`.
+
 ### Prompt Templates
 
 Prompts are `.md` files in `src/templates/prompts/` using `{{token}}` replacement (see `src/utils/template.ts`). Key tokens: `{{projectRoot}}` (process.cwd()), `{{workspacePath}}` (absolute). Templates are mode-specific (loop vs iterative). When modifying: update both modes, add tests, verify token replacement. See `src/templates/modes/` for strategy pattern.

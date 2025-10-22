@@ -1,6 +1,7 @@
 import { spawn, SpawnOptions, ChildProcess } from 'child_process';
 import { ClaudeExecutionError } from '../utils/errors.js';
 import { Logger } from '../utils/logger.js';
+import { StreamJsonFormatter } from '../utils/stream-json-formatter.js';
 
 /**
  * Claude CLI client wrapper with proper process lifecycle management
@@ -49,7 +50,10 @@ export class ClaudeClient {
         shell: false, // Don't use shell - we're passing args directly
       };
 
-      this.logger.debug(`Executing: ${this.command} with ${allArgs.length} args`, true);
+      this.logger.debug(
+        `Executing: ${this.command} with ${allArgs.length} args`,
+        true
+      );
 
       const child = spawn(this.command, allArgs, options);
       this.currentChild = child;
@@ -121,7 +125,10 @@ export class ClaudeClient {
         stdio: ['ignore', 'pipe', 'pipe'], // Close stdin, pipe stdout/stderr
       };
 
-      this.logger.debug(`Executing: ${this.command} with ${allArgs.length} args`, true);
+      this.logger.debug(
+        `Executing: ${this.command} with ${allArgs.length} args`,
+        true
+      );
 
       const child = spawn(this.command, allArgs, spawnOptions);
       this.currentChild = child;
@@ -173,6 +180,141 @@ export class ClaudeClient {
   }
 
   /**
+   * Execute Claude with tool visibility (stream-json format).
+   * Provides real-time callbacks for tool usage events.
+   *
+   * Used by verbose mode to show what Claude is doing.
+   *
+   * @param prompt - The user prompt
+   * @param systemPrompt - Optional system prompt
+   * @param cwd - Working directory (defaults to process.cwd())
+   * @param callbacks - Event handlers for tool events, raw output, errors
+   * @returns Promise resolving with final Claude response
+   */
+  async executeWithToolVisibility(
+    prompt: string,
+    systemPrompt?: string,
+    cwd?: string,
+    callbacks?: {
+      onToolEvent?: (msg: string) => void;
+      onRawOutput?: (chunk: string) => void;
+      onError?: (err: Error) => void;
+    }
+  ): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+      if (this.isShuttingDown) {
+        reject(new ClaudeExecutionError('Client is shutting down'));
+        return;
+      }
+
+      // Build args with stream-json format
+      const allArgs = [
+        ...this.args,
+        '--print',
+        '--output-format',
+        'stream-json',
+        '--verbose',
+      ];
+
+      if (systemPrompt) {
+        allArgs.push('--append-system-prompt', systemPrompt);
+      }
+      allArgs.push(prompt);
+
+      this.logger.debug(
+        `Executing (with tool visibility): ${this.command} ${allArgs.join(' ')}`,
+        true
+      );
+
+      const child = spawn(this.command, allArgs, {
+        cwd: cwd || process.cwd(),
+        stdio: ['ignore', 'pipe', 'pipe'],
+        shell: false,
+      });
+
+      this.currentChild = child;
+      let finalResult = '';
+      let stdoutBuffer = '';
+      let stderrBuffer = '';
+
+      // Attach stream parser for tool events
+      StreamJsonFormatter.attach(child, {
+        onToolEvent: (formatted) => {
+          if (callbacks?.onToolEvent) {
+            callbacks.onToolEvent(formatted);
+          }
+        },
+        onError: (err) => {
+          this.logger.debug(`Stream parse error: ${err.message}`, true);
+          if (callbacks?.onError) {
+            callbacks.onError(err);
+          }
+        },
+      });
+
+      // Also capture raw output for final result extraction
+      child.stdout?.on('data', (chunk: Buffer) => {
+        const text = chunk.toString('utf-8');
+        stdoutBuffer += text;
+
+        if (callbacks?.onRawOutput) {
+          callbacks.onRawOutput(text);
+        }
+
+        // Try to extract final result from each chunk
+        const lines = text.split('\n');
+        for (const line of lines) {
+          if (!line.trim()) continue;
+
+          try {
+            const obj = JSON.parse(line);
+            const result = StreamJsonFormatter.extractFinalResult(obj);
+            if (result) {
+              finalResult = result;
+            }
+          } catch {
+            // Not JSON or incomplete line, ignore
+          }
+        }
+      });
+
+      child.stderr?.on('data', (chunk: Buffer) => {
+        stderrBuffer += chunk.toString('utf-8');
+        if (callbacks?.onRawOutput) {
+          callbacks.onRawOutput(chunk.toString('utf-8'));
+        }
+      });
+
+      child.on('error', (error: Error) => {
+        this.currentChild = null;
+        this.logger.debug(`Child process error: ${error.message}`, true);
+        reject(new ClaudeExecutionError(`Spawn error: ${error.message}`));
+      });
+
+      child.on('exit', (code: number | null, signal: NodeJS.Signals | null) => {
+        this.currentChild = null;
+
+        if (this.isShuttingDown) {
+          reject(
+            new ClaudeExecutionError('Execution cancelled during shutdown')
+          );
+          return;
+        }
+
+        if (code === 0) {
+          // Success - return final result
+          resolve(finalResult || stdoutBuffer);
+        } else {
+          const exitInfo = signal ? `signal ${signal}` : `code ${code}`;
+          const errorMsg = `Claude CLI exited with ${exitInfo}`;
+          this.logger.debug(`${errorMsg}\nstderr: ${stderrBuffer}`, true);
+          reject(new ClaudeExecutionError(errorMsg, code || undefined));
+        }
+      });
+    });
+  }
+
+  /**
    * Check if Claude CLI is available
    */
   async isAvailable(): Promise<boolean> {
@@ -214,7 +356,10 @@ export class ClaudeClient {
    */
   kill(signal: NodeJS.Signals = 'SIGTERM'): boolean {
     if (this.currentChild && !this.currentChild.killed) {
-      this.logger.debug(`Killing child process (PID: ${this.currentChild.pid}) with ${signal}`, true);
+      this.logger.debug(
+        `Killing child process (PID: ${this.currentChild.pid}) with ${signal}`,
+        true
+      );
       this.currentChild.kill(signal);
       return true;
     }
@@ -263,7 +408,9 @@ export class ClaudeClient {
       // Force kill after grace period
       setTimeout(() => {
         if (!resolved && child && !child.killed) {
-          this.logger.warn(`Grace period expired, sending SIGKILL to child process (PID: ${pid})`);
+          this.logger.warn(
+            `Grace period expired, sending SIGKILL to child process (PID: ${pid})`
+          );
           child.kill('SIGKILL');
 
           // Give SIGKILL a moment to work
