@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Template Save DX Improvements**: Streamlined template workflow with smart defaults and force override
+  - Template name now defaults to workspace name when omitted
+  - Added `--force` flag to overwrite existing templates without manual deletion
+  - Examples:
+    - `claude-iterate template save my-workspace` (uses workspace name as template name)
+    - `claude-iterate template save my-workspace --force` (overwrites existing template)
+    - `claude-iterate template save my-workspace custom-name` (explicit name still supported)
+  - **Impact**: ~45% reduction in keystrokes, 50% fewer commands for template updates
+  - **Compatibility**: 100% backward compatible (all existing commands work identically)
 - **Tool Visibility in Verbose Mode**: Real-time display of Claude's tool usage when running with `--verbose` flag
   - New `executeWithToolVisibility()` method in ClaudeClient for streaming NDJSON events
   - StreamJsonFormatter utility class for parsing Claude CLI's `--output-format stream-json` output

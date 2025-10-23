@@ -124,8 +124,17 @@ claude-iterate init my-task --mode iterative --stagnation-threshold 0
 Save successful workflows as reusable templates:
 
 ```bash
-# Save a template
-claude-iterate template save my-task api-migration --global
+# Save workspace as template (uses workspace name)
+claude-iterate template save my-task
+
+# Save with custom template name
+claude-iterate template save my-task api-migration
+
+# Save to global templates
+claude-iterate template save my-task --global
+
+# Update existing template
+claude-iterate template save my-task --force
 
 # Use a template
 claude-iterate template use api-migration new-service
@@ -211,16 +220,18 @@ claude-iterate config --global notifyUrl https://ntfy.sh/my-topic
 
 | Command                            | Description                    |
 | ---------------------------------- | ------------------------------ |
-| `template save <workspace> <name>` | Save workspace as template     |
+| `template save <workspace> [name]` | Save workspace as template     |
 | `template use <name> <workspace>`  | Create workspace from template |
 | `template list`                    | List available templates       |
 | `template show <name>`             | Show template details          |
 
 **Options for `save`:**
 
+- `[name]` - Template name (defaults to workspace name if omitted)
 - `-d, --description <text>` - Template description
 - `-t, --tags <tags>` - Comma-separated tags
 - `-g, --global` - Save to global templates
+- `-f, --force` - Overwrite existing template
 
 ### Archives
 
@@ -553,7 +564,7 @@ claude-iterate run frontend-pages
 claude-iterate verify frontend-pages
 
 # 6. Save as template for reuse
-claude-iterate template save frontend-pages page-generator
+claude-iterate template save frontend-pages
 ```
 
 ### Verification Workflow
@@ -584,8 +595,17 @@ claude-iterate verify api-migration --json
 ### Using Templates
 
 ```bash
+# Save workspace as template (defaults to workspace name)
+claude-iterate template save frontend-pages
+
+# Save with custom name
+claude-iterate template save frontend-pages page-generator
+
+# Update existing template
+claude-iterate template save frontend-pages --force
+
 # Use existing template
-claude-iterate template use api-migration user-service
+claude-iterate template use page-generator user-service
 
 # Customize if needed
 claude-iterate edit user-service

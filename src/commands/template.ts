@@ -14,68 +14,95 @@ export function templateCommand(): Command {
     .alias('tpl')
     .description('Template management');
 
-  // template save <workspace> <name>
+  // template save <workspace> [name]
   cmd
     .command('save')
     .description('Save workspace as template')
     .argument('<workspace>', 'Workspace name')
-    .argument('<template>', 'Template name')
+    .argument('[template]', 'Template name (defaults to workspace name)')
     .option('-d, --description <text>', 'Template description')
     .option('-t, --tags <tags>', 'Comma-separated tags')
-    .option('-e, --estimated-iterations <number>', 'Estimated iterations', parseInt)
+    .option(
+      '-e, --estimated-iterations <number>',
+      'Estimated iterations',
+      parseInt
+    )
     .option('-g, --global', 'Save to global templates')
-    .action(async (workspaceName: string, templateName: string, options: {
-      description?: string;
-      tags?: string;
-      estimatedIterations?: number;
-      global?: boolean;
-    }, command: Command) => {
-      const logger = new Logger(command.optsWithGlobals().colors !== false);
+    .option('-f, --force', 'Overwrite existing template')
+    .action(
+      async (
+        workspaceName: string,
+        templateName: string | undefined,
+        options: {
+          description?: string;
+          tags?: string;
+          estimatedIterations?: number;
+          global?: boolean;
+          force?: boolean;
+        },
+        command: Command
+      ) => {
+        const logger = new Logger(command.optsWithGlobals().colors !== false);
 
-      try {
-        // Load config
-        const config = await ConfigManager.load(command.optsWithGlobals());
-        const runtimeConfig = config.getConfig();
+        try {
+          // Default template name to workspace name if not provided
+          const actualTemplateName = templateName || workspaceName;
 
-        // Get workspace path
-        const workspacePath = getWorkspacePath(workspaceName, runtimeConfig.workspacesDir);
+          // Load config
+          const config = await ConfigManager.load(command.optsWithGlobals());
+          const runtimeConfig = config.getConfig();
 
-        // Load workspace
-        const workspace = await Workspace.load(workspaceName, workspacePath);
+          // Get workspace path
+          const workspacePath = getWorkspacePath(
+            workspaceName,
+            runtimeConfig.workspacesDir
+          );
 
-        // Check if instructions exist
-        if (!(await workspace.hasInstructions())) {
-          logger.error('Workspace must have instructions to save as template');
+          // Load workspace
+          const workspace = await Workspace.load(workspaceName, workspacePath);
+
+          // Check if instructions exist
+          if (!(await workspace.hasInstructions())) {
+            logger.error(
+              'Workspace must have instructions to save as template'
+            );
+            process.exit(1);
+          }
+
+          logger.info(`Saving workspace as template: ${actualTemplateName}`);
+
+          // Create template manager
+          const templateManager = new TemplateManager(
+            runtimeConfig.templatesDir,
+            runtimeConfig.globalTemplatesDir
+          );
+
+          // Save template
+          await templateManager.saveTemplate(
+            workspace.path,
+            actualTemplateName,
+            {
+              description: options.description,
+              tags: options.tags?.split(',').map((t) => t.trim()),
+              estimatedIterations: options.estimatedIterations,
+              global: options.global,
+              force: options.force,
+            }
+          );
+
+          const location = options.global ? 'global' : 'project';
+          logger.success(`Template saved: ${actualTemplateName} (${location})`);
+          logger.line();
+          logger.info('Use template:');
+          logger.log(
+            `  claude-iterate template use ${actualTemplateName} <new-workspace>`
+          );
+        } catch (error) {
+          logger.error('Failed to save template', error as Error);
           process.exit(1);
         }
-
-        logger.info(`Saving workspace as template: ${templateName}`);
-
-        // Create template manager
-        const templateManager = new TemplateManager(
-          runtimeConfig.templatesDir,
-          runtimeConfig.globalTemplatesDir
-        );
-
-        // Save template
-        await templateManager.saveTemplate(workspace.path, templateName, {
-          description: options.description,
-          tags: options.tags?.split(',').map(t => t.trim()),
-          estimatedIterations: options.estimatedIterations,
-          global: options.global,
-        });
-
-        const location = options.global ? 'global' : 'project';
-        logger.success(`Template saved: ${templateName} (${location})`);
-        logger.line();
-        logger.info('Use template:');
-        logger.log(`  claude-iterate template use ${templateName} <new-workspace>`);
-
-      } catch (error) {
-        logger.error('Failed to save template', error as Error);
-        process.exit(1);
       }
-    });
+    );
 
   // template use <name> <workspace>
   cmd
@@ -83,60 +110,72 @@ export function templateCommand(): Command {
     .description('Create workspace from template')
     .argument('<template>', 'Template name')
     .argument('<workspace>', 'New workspace name')
-    .action(async (templateName: string, workspaceName: string, _options: unknown, command: Command) => {
-      const logger = new Logger(command.optsWithGlobals().colors !== false);
+    .action(
+      async (
+        templateName: string,
+        workspaceName: string,
+        _options: unknown,
+        command: Command
+      ) => {
+        const logger = new Logger(command.optsWithGlobals().colors !== false);
 
-      try {
-        // Load config
-        const config = await ConfigManager.load(command.optsWithGlobals());
-        const runtimeConfig = config.getConfig();
+        try {
+          // Load config
+          const config = await ConfigManager.load(command.optsWithGlobals());
+          const runtimeConfig = config.getConfig();
 
-        // Get workspace path
-        const workspacePath = getWorkspacePath(workspaceName, runtimeConfig.workspacesDir);
+          // Get workspace path
+          const workspacePath = getWorkspacePath(
+            workspaceName,
+            runtimeConfig.workspacesDir
+          );
 
-        // Create template manager
-        const templateManager = new TemplateManager(
-          runtimeConfig.templatesDir,
-          runtimeConfig.globalTemplatesDir
-        );
+          // Create template manager
+          const templateManager = new TemplateManager(
+            runtimeConfig.templatesDir,
+            runtimeConfig.globalTemplatesDir
+          );
 
-        // Check if template exists
-        if (!(await templateManager.exists(templateName))) {
-          logger.error(`Template not found: ${templateName}`);
-          logger.log('  List templates: claude-iterate template list');
+          // Check if template exists
+          if (!(await templateManager.exists(templateName))) {
+            logger.error(`Template not found: ${templateName}`);
+            logger.log('  List templates: claude-iterate template list');
+            process.exit(1);
+          }
+
+          logger.info(`Creating workspace from template: ${templateName}`);
+
+          // Get template information
+          const templateInfo =
+            await templateManager.getTemplateForInit(templateName);
+
+          // Initialize workspace with template configuration
+          await Workspace.init(workspaceName, workspacePath, {
+            mode: templateInfo.metadata?.mode,
+            maxIterations: templateInfo.metadata?.maxIterations,
+            delay: templateInfo.metadata?.delay,
+          });
+
+          // Copy INSTRUCTIONS.md from template
+          const { copyFile } = await import('../utils/fs.js');
+          const { join } = await import('path');
+          const instructionsDest = join(workspacePath, 'INSTRUCTIONS.md');
+          await copyFile(templateInfo.instructionsPath, instructionsDest);
+
+          logger.success(`Workspace created: ${workspaceName}`);
+          logger.line();
+          logger.info('Next steps:');
+          logger.log(`  • Validate: claude-iterate validate ${workspaceName}`);
+          logger.log(
+            `  • Edit (optional): claude-iterate edit ${workspaceName}`
+          );
+          logger.log(`  • Run: claude-iterate run ${workspaceName}`);
+        } catch (error) {
+          logger.error('Failed to use template', error as Error);
           process.exit(1);
         }
-
-        logger.info(`Creating workspace from template: ${templateName}`);
-
-        // Get template information
-        const templateInfo = await templateManager.getTemplateForInit(templateName);
-
-        // Initialize workspace with template configuration
-        await Workspace.init(workspaceName, workspacePath, {
-          mode: templateInfo.metadata?.mode,
-          maxIterations: templateInfo.metadata?.maxIterations,
-          delay: templateInfo.metadata?.delay,
-        });
-
-        // Copy INSTRUCTIONS.md from template
-        const { copyFile } = await import('../utils/fs.js');
-        const { join } = await import('path');
-        const instructionsDest = join(workspacePath, 'INSTRUCTIONS.md');
-        await copyFile(templateInfo.instructionsPath, instructionsDest);
-
-        logger.success(`Workspace created: ${workspaceName}`);
-        logger.line();
-        logger.info('Next steps:');
-        logger.log(`  • Validate: claude-iterate validate ${workspaceName}`);
-        logger.log(`  • Edit (optional): claude-iterate edit ${workspaceName}`);
-        logger.log(`  • Run: claude-iterate run ${workspaceName}`);
-
-      } catch (error) {
-        logger.error('Failed to use template', error as Error);
-        process.exit(1);
       }
-    });
+    );
 
   // template list
   cmd
@@ -162,15 +201,19 @@ export function templateCommand(): Command {
 
         if (templates.length === 0) {
           logger.info('No templates found');
-          logger.log('  Save a template: claude-iterate template save <workspace> <template-name>');
+          logger.log(
+            '  Save a template: claude-iterate template save <workspace> <template-name>'
+          );
           return;
         }
 
         logger.header('Available Templates');
 
         // Group by source
-        const projectTemplates = templates.filter(t => t.source === 'project');
-        const globalTemplates = templates.filter(t => t.source === 'global');
+        const projectTemplates = templates.filter(
+          (t) => t.source === 'project'
+        );
+        const globalTemplates = templates.filter((t) => t.source === 'global');
 
         if (projectTemplates.length > 0) {
           logger.log('📁 Project Templates:');
@@ -184,7 +227,9 @@ export function templateCommand(): Command {
               logger.log(`    Tags: ${tpl.tags.join(', ')}`);
             }
             if (tpl.estimatedIterations) {
-              logger.log(`    Estimated iterations: ${tpl.estimatedIterations}`);
+              logger.log(
+                `    Estimated iterations: ${tpl.estimatedIterations}`
+              );
             }
             logger.line();
           }
@@ -202,14 +247,15 @@ export function templateCommand(): Command {
               logger.log(`    Tags: ${tpl.tags.join(', ')}`);
             }
             if (tpl.estimatedIterations) {
-              logger.log(`    Estimated iterations: ${tpl.estimatedIterations}`);
+              logger.log(
+                `    Estimated iterations: ${tpl.estimatedIterations}`
+              );
             }
             logger.line();
           }
         }
 
         logger.info(`Total: ${templates.length} template(s)`);
-
       } catch (error) {
         logger.error('Failed to list templates', error as Error);
         process.exit(1);
@@ -264,7 +310,9 @@ export function templateCommand(): Command {
             logger.log(`   Author: ${meta.author}`);
           }
           if (meta.created) {
-            logger.log(`   Created: ${new Date(meta.created).toLocaleString()}`);
+            logger.log(
+              `   Created: ${new Date(meta.created).toLocaleString()}`
+            );
           }
           logger.line();
         }
@@ -284,7 +332,6 @@ export function templateCommand(): Command {
 
         logger.info('Use template:');
         logger.log(`  claude-iterate template use ${name} <new-workspace>`);
-
       } catch (error) {
         logger.error('Failed to show template', error as Error);
         process.exit(1);
@@ -299,38 +346,45 @@ export function templateCommand(): Command {
     .argument('<name>', 'Template name')
     .option('-g, --global', 'Delete from global templates')
     .option('-f, --force', 'Skip confirmation')
-    .action(async (name: string, options: { global?: boolean; force?: boolean }, command: Command) => {
-      const logger = new Logger(command.optsWithGlobals().colors !== false);
+    .action(
+      async (
+        name: string,
+        options: { global?: boolean; force?: boolean },
+        command: Command
+      ) => {
+        const logger = new Logger(command.optsWithGlobals().colors !== false);
 
-      try {
-        // Confirm unless --force
-        if (!options.force) {
+        try {
+          // Confirm unless --force
+          if (!options.force) {
+            const location = options.global ? 'global' : 'project';
+            logger.warn(
+              `This will permanently delete template: ${name} (${location})`
+            );
+            logger.log('Use --force to skip this confirmation');
+            process.exit(0);
+          }
+
+          // Load config
+          const config = await ConfigManager.load(command.optsWithGlobals());
+          const runtimeConfig = config.getConfig();
+
+          // Create template manager
+          const templateManager = new TemplateManager(
+            runtimeConfig.templatesDir,
+            runtimeConfig.globalTemplatesDir
+          );
+
+          await templateManager.delete(name, options.global);
+
           const location = options.global ? 'global' : 'project';
-          logger.warn(`This will permanently delete template: ${name} (${location})`);
-          logger.log('Use --force to skip this confirmation');
-          process.exit(0);
+          logger.success(`Template deleted (${location}): ${name}`);
+        } catch (error) {
+          logger.error('Failed to delete template', error as Error);
+          process.exit(1);
         }
-
-        // Load config
-        const config = await ConfigManager.load(command.optsWithGlobals());
-        const runtimeConfig = config.getConfig();
-
-        // Create template manager
-        const templateManager = new TemplateManager(
-          runtimeConfig.templatesDir,
-          runtimeConfig.globalTemplatesDir
-        );
-
-        await templateManager.delete(name, options.global);
-
-        const location = options.global ? 'global' : 'project';
-        logger.success(`Template deleted (${location}): ${name}`);
-
-      } catch (error) {
-        logger.error('Failed to delete template', error as Error);
-        process.exit(1);
       }
-    });
+    );
 
   return cmd;
 }
