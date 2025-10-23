@@ -221,6 +221,19 @@ export class ConfigManager {
       };
     }
 
+    // Merge notification config if present (project overrides user)
+    if (projectConfig.notification?.statusWatch) {
+      merged.notification = {
+        ...merged.notification,
+        statusWatch: {
+          enabled: projectConfig.notification.statusWatch.enabled ?? true,
+          debounceMs: projectConfig.notification.statusWatch.debounceMs ?? 2000,
+          notifyOnlyMeaningful:
+            projectConfig.notification.statusWatch.notifyOnlyMeaningful ?? true,
+        },
+      };
+    }
+
     return merged;
   }
 

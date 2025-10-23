@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Status File Watcher Notifications**: Real-time notifications for `.status.json` changes during execution
+  - New `StatusFileWatcher` service monitors `.status.json` for changes using fs.watch
+  - Automatically sends `status_update` notifications when progress, completion, or summary changes
+  - Added to default notification events (`iteration`, `completion`, `error`, `status_update`)
+  - Configurable via `notification.statusWatch` in config (debounce, meaningful-only filtering)
+  - Meaningful change detection filters timestamp-only updates to prevent spam
+  - 2-second debouncing prevents rapid-fire notifications during file updates
+  - Notification format includes progress (`35/60 items (+5)`), summary, completion status
+  - Graceful error handling ensures watcher failures never break iteration loops
+  - Comprehensive unit tests (18 test cases) with fs.watch mocking
+  - **Impact**: Provides real-time progress updates for long-running tasks without polling
+  - **Compatibility**: 100% backward compatible (opt-in via notification config)
 - **Template Save DX Improvements**: Streamlined template workflow with smart defaults and force override
   - Template name now defaults to workspace name when omitted
   - Added `--force` flag to overwrite existing templates without manual deletion

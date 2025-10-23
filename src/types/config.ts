@@ -13,7 +13,18 @@ export const ProjectConfigSchema = z.object({
   outputLevel: z.enum(['quiet', 'progress', 'verbose']).default('progress'),
   notifyUrl: z.string().url().optional(),
   notifyEvents: z
-    .array(z.enum(['completion', 'error', 'iteration']))
+    .array(z.enum(['completion', 'error', 'iteration', 'status_update', 'all']))
+    .optional(),
+  notification: z
+    .object({
+      statusWatch: z
+        .object({
+          enabled: z.boolean().default(true),
+          debounceMs: z.number().int().min(500).max(10000).default(2000),
+          notifyOnlyMeaningful: z.boolean().default(true),
+        })
+        .optional(),
+    })
     .optional(),
   claude: z
     .object({
@@ -81,6 +92,13 @@ export interface RuntimeConfig {
   outputLevel: 'quiet' | 'progress' | 'verbose';
   notifyUrl?: string;
   notifyEvents?: string[];
+  notification?: {
+    statusWatch?: {
+      enabled: boolean;
+      debounceMs: number;
+      notifyOnlyMeaningful: boolean;
+    };
+  };
   claudeCommand: string;
   claudeArgs: string[];
   colors: boolean;

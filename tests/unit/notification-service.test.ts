@@ -46,7 +46,7 @@ describe('NotificationService', () => {
         expect.any(String),
         expect.objectContaining({
           headers: expect.objectContaining({
-            'Title': 'My Title',
+            Title: 'My Title',
           }),
         })
       );
@@ -64,7 +64,7 @@ describe('NotificationService', () => {
         expect.any(String),
         expect.objectContaining({
           headers: expect.objectContaining({
-            'Priority': 'high',
+            Priority: 'high',
           }),
         })
       );
@@ -82,7 +82,7 @@ describe('NotificationService', () => {
         expect.any(String),
         expect.objectContaining({
           headers: expect.objectContaining({
-            'Tags': 'tag1,tag2',
+            Tags: 'tag1,tag2',
           }),
         })
       );
@@ -102,9 +102,9 @@ describe('NotificationService', () => {
         expect.any(String),
         expect.objectContaining({
           headers: expect.objectContaining({
-            'Title': 'My Title',
-            'Priority': 'urgent',
-            'Tags': 'tag1,tag2',
+            Title: 'My Title',
+            Priority: 'urgent',
+            Tags: 'tag1,tag2',
           }),
         })
       );
@@ -191,6 +191,7 @@ describe('NotificationService', () => {
       expect(service.shouldNotify('iteration', metadata)).toBe(true);
       expect(service.shouldNotify('completion', metadata)).toBe(true);
       expect(service.shouldNotify('error', metadata)).toBe(true);
+      expect(service.shouldNotify('status_update', metadata)).toBe(true);
       expect(service.shouldNotify('execution_start', metadata)).toBe(false);
       expect(service.shouldNotify('setup_complete', metadata)).toBe(false);
       expect(service.shouldNotify('iteration_milestone', metadata)).toBe(false);
@@ -242,7 +243,14 @@ describe('NotificationService', () => {
 
     it('should handle multiple specific events', () => {
       const metadata = {
-        notifyEvents: ['setup_complete', 'execution_start', 'iteration', 'iteration_milestone', 'completion', 'error'],
+        notifyEvents: [
+          'setup_complete',
+          'execution_start',
+          'iteration',
+          'iteration_milestone',
+          'completion',
+          'error',
+        ],
       } as Metadata;
 
       expect(service.shouldNotify('setup_complete', metadata)).toBe(true);

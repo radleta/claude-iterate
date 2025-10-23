@@ -275,7 +275,14 @@ Create `.claude-iterate.json` in your project root:
   "defaultStagnationThreshold": 2,
   "outputLevel": "progress",
   "notifyUrl": "https://ntfy.sh/my-project",
-  "notifyEvents": ["completion", "error"],
+  "notifyEvents": ["completion", "error", "status_update"],
+  "notification": {
+    "statusWatch": {
+      "enabled": true,
+      "debounceMs": 2000,
+      "notifyOnlyMeaningful": true
+    }
+  },
   "verification": {
     "autoVerify": false,
     "resumeOnFail": false,
@@ -412,9 +419,11 @@ claude-iterate init my-task \
 claude-iterate config notifyUrl https://ntfy.sh/my-topic
 ```
 
-**Available events:** `setup_complete`, `execution_start`, `iteration`, `iteration_milestone`, `completion`, `error`, `all`
+**Available events:** `setup_complete`, `execution_start`, `iteration`, `iteration_milestone`, `completion`, `error`, `status_update`, `all`
 
-**Default events:** `iteration`, `completion`, `error`
+**Default events:** `iteration`, `completion`, `error`, `status_update`
+
+**Status Update Events:** The `status_update` event is triggered automatically when Claude updates the `.status.json` file during execution. This provides real-time progress notifications without polling. The watcher uses 2-second debouncing and filters out timestamp-only changes to prevent notification spam. Status updates include progress deltas (e.g., "35/60 items (+5)"), summary text, and completion status.
 
 ## Viewing Claude Output
 

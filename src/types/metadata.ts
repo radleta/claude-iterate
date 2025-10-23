@@ -57,6 +57,7 @@ export const MetadataSchema = z.object({
         'iteration_milestone',
         'completion',
         'error',
+        'status_update',
         'all',
       ])
     )
