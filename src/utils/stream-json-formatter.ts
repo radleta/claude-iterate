@@ -62,8 +62,8 @@ export class StreamJsonFormatter {
   private static formatEvent(obj: any): string | null {
     // Tool use event - Claude is calling a tool
     if (obj.type === 'assistant' && obj.message?.content) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const toolUse = obj.message.content.find(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (c: any) => c.type === 'tool_use'
       );
       if (toolUse) {
@@ -71,8 +71,8 @@ export class StreamJsonFormatter {
       }
 
       // Text response - Claude's thinking/explanation
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const textContent = obj.message.content.find(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (c: any) => c.type === 'text'
       );
       if (textContent?.text) {
@@ -86,8 +86,8 @@ export class StreamJsonFormatter {
 
     // Tool result event - Result from tool execution
     if (obj.type === 'user' && obj.message?.content) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const result = obj.message.content.find(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (c: any) => c.type === 'tool_result'
       );
       if (result) {
