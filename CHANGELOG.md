@@ -65,6 +65,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - All tests pass with updated version
   - **Impact**: Improved security posture, clean security audits
   - **Compatibility**: 100% compatible (dev dependency only)
+- **CI workflow paths**: Fixed GitHub Actions CI failure after package optimization
+  - Updated build verification to check `dist/index.js` instead of `dist/src/index.js`
+  - Updated CLI verification to run `dist/index.js` instead of `dist/src/index.js`
+  - Aligns with new dist structure from test exclusion changes
+  - **Impact**: CI now passes on all platforms (Ubuntu, macOS, Windows)
+  - **Compatibility**: No user impact (CI infrastructure only)
 
 ### Changed
 
