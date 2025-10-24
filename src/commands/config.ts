@@ -767,10 +767,33 @@ async function handleShowKeys(
   // Get descriptions for this scope
   const descriptions = getDescriptions(scope);
 
-  // Merge schema fields with descriptions
+  // Resolve current values
+  const configManager = await ConfigManager.load();
+  let workspaceMetadata = null;
+
+  if (options.workspace) {
+    try {
+      const workspacePath = getWorkspacePath(options.workspace);
+      const workspace = new Workspace(options.workspace, workspacePath);
+      workspaceMetadata = await workspace['metadataManager'].read();
+    } catch (error) {
+      // Workspace doesn't exist or can't be loaded - continue without metadata
+      logger.debug(
+        `Could not load workspace metadata: ${(error as Error).message}`
+      );
+    }
+  }
+
+  const currentValues = await configManager.resolveEffectiveValues(
+    scope,
+    workspaceMetadata
+  );
+
+  // Merge schema fields with descriptions and current values
   const keys: ConfigKey[] = fields.map((field) => ({
     ...field,
     ...descriptions[field.key],
+    current: currentValues.get(field.key),
   }));
 
   // Format output

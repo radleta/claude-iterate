@@ -14,6 +14,7 @@ import {
 } from '../utils/paths.js';
 import { fileExists, readJson } from '../utils/fs.js';
 import { InvalidConfigError } from '../utils/errors.js';
+import { flattenConfig } from '../utils/config-value-flattener.js';
 
 /**
  * Configuration manager with layered config resolution
@@ -379,5 +380,113 @@ export class ConfigManager {
    */
   get<K extends keyof RuntimeConfig>(key: K): RuntimeConfig[K] {
     return this.runtimeConfig[key];
+  }
+
+  /**
+   * Get user config (layer 1)
+   */
+  async getUserConfig(): Promise<UserConfig> {
+    const userConfig = await ConfigManager.loadUserConfig();
+    return userConfig ?? ({} as UserConfig);
+  }
+
+  /**
+   * Get project config (layer 2)
+   */
+  async getProjectConfig(): Promise<ProjectConfig> {
+    const projectConfig = await ConfigManager.loadProjectConfig();
+    return projectConfig ?? ({} as ProjectConfig);
+  }
+
+  /**
+   * Get workspace config (layer 3)
+   * Returns the config field from workspace metadata
+   */
+  getWorkspaceConfig(metadata: Metadata | null): Record<string, unknown> {
+    return metadata?.config ?? {};
+  }
+
+  /**
+   * Resolves the effective value and source for all keys in the given scope.
+   *
+   * For each key:
+   * 1. Check workspace config (if workspace scope)
+   * 2. Check project config
+   * 3. Check user config
+   * 4. Fall back to default
+   *
+   * @param scope - The scope to resolve values for
+   * @param workspaceMetadata - Required if scope is 'workspace'
+   * @returns Map of key paths to {value, source}
+   */
+  async resolveEffectiveValues(
+    scope: 'project' | 'user' | 'workspace',
+    workspaceMetadata?: Metadata | null
+  ): Promise<
+    Map<
+      string,
+      { value: unknown; source: 'default' | 'user' | 'project' | 'workspace' }
+    >
+  > {
+    const result = new Map<
+      string,
+      { value: unknown; source: 'default' | 'user' | 'project' | 'workspace' }
+    >();
+
+    // Get all config layers
+    const userConfig = await this.getUserConfig();
+    const projectConfig = await this.getProjectConfig();
+    const workspaceConfig = this.getWorkspaceConfig(workspaceMetadata ?? null);
+
+    // Flatten all configs to dot notation
+    const flatUser = flattenConfig(
+      userConfig as unknown as Record<string, unknown>
+    );
+    const flatProject = flattenConfig(
+      projectConfig as unknown as Record<string, unknown>
+    );
+    const flatWorkspace = flattenConfig(
+      workspaceConfig as Record<string, unknown>
+    );
+
+    // Parse the schema to get defaults for this scope
+    let schemaDefaults: Record<string, unknown>;
+    if (scope === 'user') {
+      schemaDefaults = UserConfigSchema.parse({});
+    } else {
+      // For project and workspace scopes, use ProjectConfigSchema defaults
+      schemaDefaults = ProjectConfigSchema.parse({});
+    }
+    const flatDefault = flattenConfig(schemaDefaults);
+
+    // Get all keys from the default config (these are all possible keys)
+    const allKeys = Object.keys(flatDefault);
+
+    for (const key of allKeys) {
+      let value: unknown;
+      let source: 'default' | 'user' | 'project' | 'workspace' = 'default';
+
+      // Resolution order depends on scope
+      if (scope === 'workspace' && flatWorkspace[key] !== undefined) {
+        value = flatWorkspace[key];
+        source = 'workspace';
+      } else if (
+        (scope === 'workspace' || scope === 'project') &&
+        flatProject[key] !== undefined
+      ) {
+        value = flatProject[key];
+        source = 'project';
+      } else if (flatUser[key] !== undefined) {
+        value = flatUser[key];
+        source = 'user';
+      } else {
+        value = flatDefault[key];
+        source = 'default';
+      }
+
+      result.set(key, { value, source });
+    }
+
+    return result;
   }
 }

@@ -20,6 +20,12 @@ export interface ConfigKey extends SchemaField {
 
   /** Category for grouping */
   category?: string;
+
+  /** Current effective value and source */
+  current?: {
+    value: unknown;
+    source: 'default' | 'user' | 'project' | 'workspace';
+  };
 }
 
 /**
@@ -97,7 +103,63 @@ export class ConfigKeysFormatter {
    * Format keys as JSON
    */
   toJSON(keys: ConfigKey[], scope: string): string {
-    return JSON.stringify({ scope, keys }, null, 2);
+    // Map keys to include current value if present
+    const mappedKeys = keys.map((key) => {
+      const result: Record<string, unknown> = {
+        key: key.key,
+        type: key.type,
+        default: key.default,
+      };
+
+      // Include optional fields from SchemaField
+      if (key.optional !== undefined) {
+        result.optional = key.optional;
+      }
+
+      if (key.nested) {
+        result.nested = key.nested;
+      }
+
+      if (key.description) {
+        result.description = key.description;
+      }
+
+      if (key.example) {
+        result.example = key.example;
+      }
+
+      if (key.notes) {
+        result.notes = key.notes;
+      }
+
+      if (key.relatedKeys) {
+        result.relatedKeys = key.relatedKeys;
+      }
+
+      if (key.category) {
+        result.category = key.category;
+      }
+
+      if (key.enumValues) {
+        result.enumValues = key.enumValues;
+      }
+
+      if (key.constraints) {
+        result.constraints = key.constraints;
+      }
+
+      // Add current value if present
+      if (key.current) {
+        result.current = {
+          value: key.current.value,
+          source: key.current.source,
+        };
+      }
+
+      return result;
+    });
+
+    return JSON.stringify({ scope, keys: mappedKeys }, null, 2);
   }
 
   /**
@@ -155,7 +217,15 @@ export class ConfigKeysFormatter {
     const typeDisplay = chalk.dim(key.type.padEnd(8));
     const defaultDisplay = this.formatDefault(key.default);
 
-    this.logger.log(`${prefix}${keyDisplay} ${typeDisplay} ${defaultDisplay}`);
+    // Build first line with current value if present and not default
+    let firstLine = `${prefix}${keyDisplay} ${typeDisplay} ${defaultDisplay}`;
+
+    if (key.current && key.current.source !== 'default') {
+      const currentDisplay = this.formatCurrentValue(key.current);
+      firstLine += `  ${currentDisplay}`;
+    }
+
+    this.logger.log(firstLine);
 
     // Description
     if (key.description) {
@@ -262,5 +332,46 @@ export class ConfigKeysFormatter {
     }
 
     return parts.join(', ');
+  }
+
+  /**
+   * Format current value for display
+   */
+  private formatCurrentValue(current: {
+    value: unknown;
+    source: 'default' | 'user' | 'project' | 'workspace';
+  }): string {
+    const { value, source } = current;
+
+    // Format the value for display
+    let displayValue: string;
+    if (Array.isArray(value)) {
+      // Format arrays compactly
+      displayValue =
+        value.length <= 3 ? JSON.stringify(value) : `[Array(${value.length})]`;
+    } else if (typeof value === 'object' && value !== null) {
+      // Don't show objects (too complex)
+      displayValue = '[Object]';
+    } else {
+      displayValue = String(value);
+    }
+
+    // Color code by source
+    let colorFn: (text: string) => string;
+    switch (source) {
+      case 'user':
+        colorFn = chalk.yellow;
+        break;
+      case 'project':
+        colorFn = chalk.cyan;
+        break;
+      case 'workspace':
+        colorFn = chalk.magenta;
+        break;
+      default:
+        colorFn = (text: string) => text;
+    }
+
+    return colorFn(`# Current: ${displayValue} (${source})`);
   }
 }

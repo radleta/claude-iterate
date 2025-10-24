@@ -164,6 +164,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Config Keys Display**: Enhanced `config --keys` to show current effective values
+  - Now displays the actual current value for each configuration key along with its source
+  - Sources indicated: `(default)`, `(user)`, `(project)`, or `(workspace)`
+  - Color-coded by source: yellow (user), cyan (project), magenta (workspace)
+  - Format: `# Current: <value> (<source>)` appended to each key line
+  - JSON output includes `current: { value, source }` field when using `--json`
+  - Improves UX by showing which settings are actually in use and where they come from
+  - Helps debug configuration hierarchy issues at a glance
+  - **Compatibility**: 100% backward compatible (additive enhancement, existing behavior unchanged)
 - **Default Console Output**: Changed from silent to progress mode for better UX
   - Users now see real-time progress without needing `--verbose`
   - Silent execution still available via `--quiet` flag

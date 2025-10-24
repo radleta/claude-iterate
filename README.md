@@ -262,7 +262,7 @@ claude-iterate config claude.args --unset
 
 ### Discovering Configuration Keys
 
-To see all available configuration keys with descriptions, types, and defaults:
+To see all available configuration keys with descriptions, types, defaults, and current values:
 
 ```bash
 # Show project config keys
@@ -283,8 +283,11 @@ Output includes:
 - Key name (with dot notation)
 - Type (string, number, boolean, array, enum, object)
 - Default value
+- **Current effective value and source** (user, project, or workspace) - color-coded for easy identification
 - Description and examples
 - Related keys and notes
+
+The `--keys` command shows the current effective value for each setting along with its source, making it easy to understand which configuration is actually being used and where it comes from in the hierarchy (User → Project → Workspace).
 
 ## Configuration
 
