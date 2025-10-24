@@ -10,6 +10,12 @@ import { ProjectConfigSchema, UserConfigSchema } from '../types/config.js';
 import { Workspace } from '../core/workspace.js';
 import { ConfigManager } from '../core/config-manager.js';
 import { WorkspaceConfigSchema } from '../types/metadata.js';
+import { SchemaInspector } from '../utils/schema-inspector.js';
+import {
+  ConfigKeysFormatter,
+  ConfigKey,
+} from '../utils/config-keys-formatter.js';
+import { getDescriptions } from '../config/key-descriptions.js';
 
 /**
  * Config command - git-style configuration management
@@ -33,6 +39,8 @@ export function configCommand(): Command {
     .option('-g, --global', 'Use global user config instead of project config')
     .option('-w, --workspace <name>', 'Manage workspace-level config')
     .option('-l, --list', 'List all configuration values')
+    .option('-k, --keys', 'Show available configuration keys')
+    .option('--json', 'Output as JSON (for use with --keys)')
     .option('--add <value>', 'Add value to array (for array-type configs)')
     .option(
       '--remove <value>',
@@ -47,6 +55,8 @@ export function configCommand(): Command {
           global?: boolean;
           workspace?: string;
           list?: boolean;
+          keys?: boolean;
+          json?: boolean;
           add?: string;
           remove?: string;
           unset?: boolean;
@@ -56,6 +66,12 @@ export function configCommand(): Command {
         const logger = new Logger(command.optsWithGlobals().colors !== false);
 
         try {
+          // Handle --keys flag
+          if (options.keys) {
+            await handleShowKeys(options, logger);
+            return;
+          }
+
           // Handle workspace config
           if (options.workspace) {
             await handleWorkspaceConfig(
@@ -715,4 +731,54 @@ async function saveConfig(
 
   // Write to file
   await writeJson(configPath, config);
+}
+
+/**
+ * Handle --keys flag: show available configuration keys
+ */
+async function handleShowKeys(
+  options: {
+    global?: boolean;
+    workspace?: string;
+    json?: boolean;
+  },
+  logger: Logger
+): Promise<void> {
+  // Determine scope and schema
+  let scope: 'project' | 'user' | 'workspace';
+  let schema;
+
+  if (options.workspace) {
+    scope = 'workspace';
+    // Unwrap the optional wrapper to get the actual object schema
+    schema = WorkspaceConfigSchema._def.innerType;
+  } else if (options.global) {
+    scope = 'user';
+    schema = UserConfigSchema;
+  } else {
+    scope = 'project';
+    schema = ProjectConfigSchema;
+  }
+
+  // Inspect schema to extract fields
+  const inspector = new SchemaInspector();
+  const fields = inspector.inspect(schema);
+
+  // Get descriptions for this scope
+  const descriptions = getDescriptions(scope);
+
+  // Merge schema fields with descriptions
+  const keys: ConfigKey[] = fields.map((field) => ({
+    ...field,
+    ...descriptions[field.key],
+  }));
+
+  // Format output
+  if (options.json) {
+    const formatter = new ConfigKeysFormatter(logger);
+    logger.log(formatter.toJSON(keys, scope));
+  } else {
+    const formatter = new ConfigKeysFormatter(logger);
+    formatter.displayKeys(keys, scope);
+  }
 }

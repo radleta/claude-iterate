@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Config Key Discovery**: New `--keys` flag for config command to show all available configuration keys
+  - Shows all available configuration keys with types, defaults, descriptions, examples
+  - Supports `--keys --global` for user config keys
+  - Supports `--keys --workspace <name>` for workspace config keys
+  - JSON output via `--keys --json` for scripting/automation
+  - Category grouping (paths, execution, notifications, verification, claude)
+  - Displays enum values, constraints (min/max), related keys
+  - Warnings for dangerous options (e.g., --dangerously-skip-permissions)
+  - New utilities: `SchemaInspector` (Zod introspection), `ConfigKeysFormatter` (output formatting)
+  - New config module: `key-descriptions.ts` (human-readable descriptions for all keys)
+  - Comprehensive test coverage (54 new tests: schema inspection, description validation, formatting)
+  - **Impact**: Improves config discoverability, reduces documentation lookups, prevents typos
+  - **Compatibility**: 100% backward compatible (additive feature, no breaking changes)
 - **Status File Watcher Notifications**: Real-time notifications for `.status.json` changes during execution
   - New `StatusFileWatcher` service monitors `.status.json` for changes using fs.watch
   - Automatically sends `status_update` notifications when progress, completion, or summary changes

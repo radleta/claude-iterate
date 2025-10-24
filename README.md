@@ -245,11 +245,12 @@ claude-iterate config --global notifyUrl https://ntfy.sh/my-topic
 
 ### Configuration
 
-| Command                         | Description              |
-| ------------------------------- | ------------------------ |
-| `config [key] [value]`          | Get or set configuration |
-| `config --list`                 | List all configuration   |
-| `config --global [key] [value]` | Manage user config       |
+| Command                         | Description                |
+| ------------------------------- | -------------------------- |
+| `config [key] [value]`          | Get or set configuration   |
+| `config --list`                 | List all configuration     |
+| `config --keys`                 | Show available config keys |
+| `config --global [key] [value]` | Manage user config         |
 
 **Array operations:**
 
@@ -258,6 +259,32 @@ claude-iterate config claude.args --add --dangerously-skip-permissions
 claude-iterate config claude.args --remove --dangerously-skip-permissions
 claude-iterate config claude.args --unset
 ```
+
+### Discovering Configuration Keys
+
+To see all available configuration keys with descriptions, types, and defaults:
+
+```bash
+# Show project config keys
+claude-iterate config --keys
+
+# Show user config keys
+claude-iterate config --keys --global
+
+# Show workspace config keys
+claude-iterate config --keys --workspace my-task
+
+# Get JSON output for scripting
+claude-iterate config --keys --json
+```
+
+Output includes:
+
+- Key name (with dot notation)
+- Type (string, number, boolean, array, enum, object)
+- Default value
+- Description and examples
+- Related keys and notes
 
 ## Configuration
 
