@@ -91,9 +91,18 @@ Prompts are `.md` files in `src/templates/prompts/` using `{{token}}` replacemen
 
 **Pre-release:** Update CHANGELOG [Unreleased] section → `npm run validate` → `npm run pack:dry`
 
-**Release:** `npm version [patch|minor|major]` (auto-updates CHANGELOG via `scripts/update-changelog.js`, creates tag) → `git push && git push --tags` (triggers GitHub Actions CI/CD → npm publish with OIDC)
+**Release (MUST be on main branch):**
 
-**No auto-push** - Manual push required (container permissions)
+1. Ensure you're on `main` branch: `git checkout main`
+2. Pull latest: `git pull origin main`
+3. Run version bump: `npm version [patch|minor|major]` (auto-updates CHANGELOG via `scripts/update-changelog.js`, creates tag)
+4. Push changes and tags: `git push && git push --tags` (triggers GitHub Actions CI/CD → npm publish with OIDC)
+
+**IMPORTANT:**
+
+- Always create releases from `main` branch only
+- Release workflow will fail if tag is not on `main` branch (prevents accidental publish from `develop`)
+- No auto-push - Manual push required (container permissions)
 
 ## Common Issues
 
