@@ -335,6 +335,70 @@ describe('MyFeature', () => {
 - Add JSDoc comments for public APIs
 - Keep CHANGELOG.md updated under `[Unreleased]`
 
+## Dependency Management
+
+This project uses **manual dependency management** rather than automated tools like Dependabot.
+
+### Rationale
+
+While Dependabot provides automated dependency updates, we've chosen manual management for this project because:
+
+1. **Notification Noise**: Dependabot creates weekly PRs for all dependencies, generating significant GitHub notification volume for maintainers.
+
+2. **Small Team Scale**: As a solo/small-team maintained project, manual dependency reviews are manageable and allow for more thoughtful evaluation of updates.
+
+3. **Deliberate Update Cycles**: Manual updates allow batching dependency changes with feature releases, reducing CI churn.
+
+4. **Security Coverage**: Security vulnerabilities are still monitored via:
+   - Manual `npm audit` runs before releases
+   - GitHub security alerts (enabled in repository settings)
+   - Security-conscious dependency selection
+
+### Updating Dependencies
+
+**Before releases**:
+
+```bash
+# Check for vulnerabilities
+npm audit --audit-level=high
+
+# Fix any high/critical issues
+npm audit fix
+
+# Check for outdated packages (informational)
+npm outdated
+```
+
+**Regular maintenance** (monthly or quarterly):
+
+```bash
+# Review all outdated packages
+npm outdated
+
+# Update dependencies as needed
+npm update <package-name>
+
+# Test thoroughly
+npm run validate
+```
+
+### Security Vulnerabilities
+
+**If a security vulnerability is discovered**:
+
+1. Fix immediately: `npm audit fix`
+2. Test: `npm test`
+3. Commit: `git commit -m "fix: resolve CVE-XXXX-XXXX vulnerability"`
+4. Create patch release if in production
+
+### When to Reconsider
+
+This decision should be revisited if:
+
+- Project has multiple active maintainers
+- Dependencies fall significantly behind
+- Security vulnerabilities are repeatedly missed
+
 ## Release Process
 
 (For maintainers only)

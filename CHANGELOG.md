@@ -48,6 +48,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     ```
   - **Rationale**: Aligns with "autonomous iteration" philosophy - Claude can fix its own mistakes
 
+### Fixed
+
+- **Excluded test files from npm package**: Test files are no longer compiled or included in the published package
+  - Modified `tsconfig.json` to exclude tests from compilation (removed `tests/**/*` from include array)
+  - Reduced package size from 168.6 KB to 116.7 KB (30.8% reduction)
+  - Reduced unpacked size from 1.0 MB to 584.1 KB (41.6% reduction)
+  - Reduced file count from 329 to 225 files (31.6% reduction)
+  - Tests still work via Vitest's independent compilation
+  - Updated package.json paths to point to `dist/index.js` instead of `dist/src/index.js`
+  - **Impact**: Faster installs, reduced bandwidth usage, more professional package
+  - **Compatibility**: 100% compatible (only affects package distribution, not functionality)
+- **Updated vite dependency**: Fixed moderate severity vulnerability (GHSA-93m4-6634-74q7)
+  - Updated vite from 7.1.0-7.1.10 to 7.1.12 (transitive dependency via vitest)
+  - Resolves server.fs.deny bypass vulnerability on Windows
+  - All tests pass with updated version
+  - **Impact**: Improved security posture, clean security audits
+  - **Compatibility**: 100% compatible (dev dependency only)
+
 ### Changed
 
 - Improved notification DX: All notification events enabled by default when `notifyUrl` is configured
@@ -91,6 +109,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `claude-iterate template save my-workspace custom-name` (explicit name still supported)
   - **Impact**: ~45% reduction in keystrokes, 50% fewer commands for template updates
   - **Compatibility**: 100% backward compatible (all existing commands work identically)
+- **Dependency Management Documentation**: Added comprehensive rationale for manual dependency management
+  - New "Dependency Management" section in CONTRIBUTING.md
+  - Documents decision to not use Dependabot (reduces GitHub notification noise)
+  - Provides security update process and maintenance guidelines
+  - Clarifies when to reconsider automation (team growth, security issues)
+  - **Impact**: Better contributor understanding of project maintenance approach
+  - **Compatibility**: Documentation only (no code changes)
 - **Tool Visibility in Verbose Mode**: Real-time display of Claude's tool usage when running with `--verbose` flag
   - New `executeWithToolVisibility()` method in ClaudeClient for streaming NDJSON events
   - StreamJsonFormatter utility class for parsing Claude CLI's `--output-format stream-json` output
