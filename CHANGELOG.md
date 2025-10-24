@@ -71,6 +71,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Aligns with new dist structure from test exclusion changes
   - **Impact**: CI now passes on all platforms (Ubuntu, macOS, Windows)
   - **Compatibility**: No user impact (CI infrastructure only)
+- **CLI package.json import path**: Fixed "Cannot find module" error in CLI
+  - Updated import from `../../package.json` to `../package.json`
+  - Aligns with new flat dist structure (dist/cli.js vs dist/src/cli.js)
+  - **Impact**: CLI --version and --help commands now work correctly
+  - **Compatibility**: 100% compatible (internal path fix only)
 
 ### Changed
 
