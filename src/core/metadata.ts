@@ -29,6 +29,7 @@ export class MetadataManager {
       maxIterations: 50,
       delay: 2,
       stagnationThreshold: 2,
+      notifyEvents: ['all'],
     };
   }
 

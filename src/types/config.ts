@@ -14,7 +14,7 @@ export const ProjectConfigSchema = z.object({
   notifyUrl: z.string().url().optional(),
   notifyEvents: z
     .array(z.enum(['completion', 'error', 'iteration', 'status_update', 'all']))
-    .optional(),
+    .default(['all']),
   notification: z
     .object({
       statusWatch: z
@@ -34,8 +34,8 @@ export const ProjectConfigSchema = z.object({
     .optional(),
   verification: z
     .object({
-      autoVerify: z.boolean().default(false),
-      resumeOnFail: z.boolean().default(false),
+      autoVerify: z.boolean().default(true),
+      resumeOnFail: z.boolean().default(true),
       maxAttempts: z.number().int().min(1).max(10).default(2),
       reportFilename: z.string().default('verification-report.md'),
       depth: z.enum(['quick', 'standard', 'deep']).default('standard'),
@@ -66,8 +66,8 @@ export const UserConfigSchema = z.object({
   verbose: z.boolean().default(false), // Deprecated - use outputLevel instead
   verification: z
     .object({
-      autoVerify: z.boolean().default(false),
-      resumeOnFail: z.boolean().default(false),
+      autoVerify: z.boolean().default(true),
+      resumeOnFail: z.boolean().default(true),
       maxAttempts: z.number().int().min(1).max(10).default(2),
       reportFilename: z.string().default('verification-report.md'),
       depth: z.enum(['quick', 'standard', 'deep']).default('standard'),
@@ -91,7 +91,7 @@ export interface RuntimeConfig {
   stagnationThreshold: number;
   outputLevel: 'quiet' | 'progress' | 'verbose';
   notifyUrl?: string;
-  notifyEvents?: string[];
+  notifyEvents: string[];
   notification?: {
     statusWatch?: {
       enabled: boolean;
@@ -125,13 +125,14 @@ export const DEFAULT_CONFIG: RuntimeConfig = {
   delay: 2,
   stagnationThreshold: 2,
   outputLevel: 'progress',
+  notifyEvents: ['all'],
   claudeCommand: 'claude',
   claudeArgs: [],
   colors: true,
   verbose: false, // Deprecated - use outputLevel instead
   verification: {
-    autoVerify: false,
-    resumeOnFail: false,
+    autoVerify: true,
+    resumeOnFail: true,
     maxAttempts: 2,
     reportFilename: 'verification-report.md',
     depth: 'standard',

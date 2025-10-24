@@ -85,7 +85,7 @@ export const PROJECT_CONFIG_DESCRIPTIONS: DescriptionMap = {
     description: 'Which events trigger notifications',
     example: '["completion", "error"]',
     notes:
-      'Options: setup_complete, execution_start, iteration, iteration_milestone, completion, error, status_update, all',
+      'Defaults to ["all"]. Options: setup_complete, execution_start, iteration, iteration_milestone, completion, error, status_update, all',
     category: 'notifications',
   },
 
@@ -149,15 +149,17 @@ export const PROJECT_CONFIG_DESCRIPTIONS: DescriptionMap = {
 
   'verification.autoVerify': {
     description: 'Automatically verify workspace on claimed completion',
-    example: 'true',
-    notes: 'Increases token usage but improves quality',
+    example: 'false',
+    notes:
+      'Defaults to true. Increases token usage (~2-4K per verification) but improves quality',
     category: 'verification',
   },
 
   'verification.resumeOnFail': {
     description: 'Resume iterations if verification fails',
-    example: 'true',
-    notes: 'Allows Claude to fix incomplete work',
+    example: 'false',
+    notes:
+      'Defaults to true. Allows Claude to fix incomplete work automatically',
     category: 'verification',
   },
 
@@ -275,13 +277,17 @@ export const USER_CONFIG_DESCRIPTIONS: DescriptionMap = {
 
   'verification.autoVerify': {
     description: 'Automatically verify workspace on claimed completion',
-    example: 'true',
+    example: 'false',
+    notes:
+      'Defaults to true. Increases token usage (~2-4K per verification) but improves quality',
     category: 'verification',
   },
 
   'verification.resumeOnFail': {
     description: 'Resume iterations if verification fails',
-    example: 'true',
+    example: 'false',
+    notes:
+      'Defaults to true. Allows Claude to fix incomplete work automatically',
     category: 'verification',
   },
 
@@ -331,15 +337,15 @@ export const WORKSPACE_CONFIG_DESCRIPTIONS: DescriptionMap = {
 
   'verification.autoVerify': {
     description: 'Automatically verify this workspace on claimed completion',
-    example: 'true',
-    notes: 'Overrides project/user config',
+    example: 'false',
+    notes: 'Overrides project/user config (defaults to true globally)',
     category: 'verification',
   },
 
   'verification.resumeOnFail': {
     description: 'Resume iterations if verification fails for this workspace',
-    example: 'true',
-    notes: 'Overrides project/user config',
+    example: 'false',
+    notes: 'Overrides project/user config (defaults to true globally)',
     category: 'verification',
   },
 

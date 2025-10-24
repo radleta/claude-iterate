@@ -14,19 +14,23 @@ describe('Notification Integration', () => {
   beforeEach(() => {
     // Mock fetch to capture notification calls
     fetchCalls = [];
-    fetchMock = vi.fn().mockImplementation((url: string, options: RequestInit) => {
-      fetchCalls.push({ url, options });
-      return Promise.resolve({
-        ok: true,
-        status: 200,
-        statusText: 'OK',
+    fetchMock = vi
+      .fn()
+      .mockImplementation((url: string, options: RequestInit) => {
+        fetchCalls.push({ url, options });
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+        });
       });
-    });
     global.fetch = fetchMock;
 
     // Mock ClaudeClient to avoid actual execution
     vi.spyOn(ClaudeClient.prototype, 'isAvailable').mockResolvedValue(true);
-    vi.spyOn(ClaudeClient.prototype, 'executeNonInteractive').mockResolvedValue('Mock response');
+    vi.spyOn(ClaudeClient.prototype, 'executeNonInteractive').mockResolvedValue(
+      'Mock response'
+    );
   });
 
   afterEach(() => {
@@ -39,11 +43,15 @@ describe('Notification Integration', () => {
       const workspacePath = join(testDir, 'workspaces', 'notify-exec-start');
 
       // Create workspace with notifyUrl and execution_start event
-      const workspace = await Workspace.init('notify-exec-start', workspacePath, {
-        notifyUrl: 'https://ntfy.sh/test-topic',
-        notifyEvents: ['execution_start'],
-        maxIterations: 1,
-      });
+      const workspace = await Workspace.init(
+        'notify-exec-start',
+        workspacePath,
+        {
+          notifyUrl: 'https://ntfy.sh/test-topic',
+          notifyEvents: ['execution_start'],
+          maxIterations: 1,
+        }
+      );
 
       await workspace.writeInstructions('Test instructions');
       await writeTestFile(join(workspacePath, 'TODO.md'), 'Remaining: 0');
@@ -71,12 +79,18 @@ describe('Notification Integration', () => {
       expect(fetchCalls).toHaveLength(1);
       expect(fetchCalls[0]!.url).toBe('https://ntfy.sh/test-topic');
       expect(fetchCalls[0]!.options.method).toBe('POST');
-      expect(fetchCalls[0]!.options.headers as Record<string, string>).toMatchObject({
-        'Title': 'Execution Started',
-        'Tags': 'claude-iterate,execution',
+      expect(
+        fetchCalls[0]!.options.headers as Record<string, string>
+      ).toMatchObject({
+        Title: 'Execution Started',
+        Tags: 'claude-iterate,execution',
       });
-      expect(fetchCalls[0]!.options.body as string).toContain('EXECUTION STARTED');
-      expect(fetchCalls[0]!.options.body as string).toContain('notify-exec-start');
+      expect(fetchCalls[0]!.options.body as string).toContain(
+        'EXECUTION STARTED'
+      );
+      expect(fetchCalls[0]!.options.body as string).toContain(
+        'notify-exec-start'
+      );
     });
 
     it('should send completion notification', async () => {
@@ -114,10 +128,12 @@ describe('Notification Integration', () => {
 
       expect(fetchCalls).toHaveLength(1);
       expect(fetchCalls[0]!.url).toBe('https://ntfy.sh/test-topic');
-      expect(fetchCalls[0]!.options.headers as Record<string, string>).toMatchObject({
-        'Title': 'Task Complete',
-        'Priority': 'high',
-        'Tags': 'claude-iterate,completion',
+      expect(
+        fetchCalls[0]!.options.headers as Record<string, string>
+      ).toMatchObject({
+        Title: 'Task Complete',
+        Priority: 'high',
+        Tags: 'claude-iterate,completion',
       });
       expect(fetchCalls[0]!.options.body as string).toContain('TASK COMPLETE');
     });
@@ -157,23 +173,31 @@ describe('Notification Integration', () => {
 
       expect(fetchCalls).toHaveLength(1);
       expect(fetchCalls[0]!.url).toBe('https://ntfy.sh/test-topic');
-      expect(fetchCalls[0]!.options.headers as Record<string, string>).toMatchObject({
-        'Title': 'Execution Error',
-        'Priority': 'urgent',
-        'Tags': 'claude-iterate,error',
+      expect(
+        fetchCalls[0]!.options.headers as Record<string, string>
+      ).toMatchObject({
+        Title: 'Execution Error',
+        Priority: 'urgent',
+        Tags: 'claude-iterate,error',
       });
-      expect(fetchCalls[0]!.options.body as string).toContain('ERROR ENCOUNTERED');
+      expect(fetchCalls[0]!.options.body as string).toContain(
+        'ERROR ENCOUNTERED'
+      );
     });
 
     it('should send iteration notification', async () => {
       const testDir = getTestDir();
       const workspacePath = join(testDir, 'workspaces', 'notify-iteration');
 
-      const workspace = await Workspace.init('notify-iteration', workspacePath, {
-        notifyUrl: 'https://ntfy.sh/test-topic',
-        notifyEvents: ['iteration'], // Only iteration notifications
-        maxIterations: 5,
-      });
+      const workspace = await Workspace.init(
+        'notify-iteration',
+        workspacePath,
+        {
+          notifyUrl: 'https://ntfy.sh/test-topic',
+          notifyEvents: ['iteration'], // Only iteration notifications
+          maxIterations: 5,
+        }
+      );
 
       await workspace.writeInstructions('Test instructions');
       await writeTestFile(join(workspacePath, 'TODO.md'), 'Remaining: 3');
@@ -201,9 +225,11 @@ describe('Notification Integration', () => {
 
       expect(fetchCalls).toHaveLength(1);
       expect(fetchCalls[0]!.url).toBe('https://ntfy.sh/test-topic');
-      expect(fetchCalls[0]!.options.headers as Record<string, string>).toMatchObject({
-        'Title': 'Iteration 3',
-        'Tags': 'claude-iterate,iteration',
+      expect(
+        fetchCalls[0]!.options.headers as Record<string, string>
+      ).toMatchObject({
+        Title: 'Iteration 3',
+        Tags: 'claude-iterate,iteration',
       });
       expect(fetchCalls[0]!.options.body as string).toContain('ITERATION 3/5');
       expect(fetchCalls[0]!.options.body as string).toContain('Remaining: 3');
@@ -213,11 +239,15 @@ describe('Notification Integration', () => {
       const testDir = getTestDir();
       const workspacePath = join(testDir, 'workspaces', 'notify-milestone');
 
-      const workspace = await Workspace.init('notify-milestone', workspacePath, {
-        notifyUrl: 'https://ntfy.sh/test-topic',
-        notifyEvents: ['iteration_milestone'],
-        maxIterations: 10,
-      });
+      const workspace = await Workspace.init(
+        'notify-milestone',
+        workspacePath,
+        {
+          notifyUrl: 'https://ntfy.sh/test-topic',
+          notifyEvents: ['iteration_milestone'],
+          maxIterations: 10,
+        }
+      );
 
       await workspace.writeInstructions('Test instructions');
       await writeTestFile(join(workspacePath, 'TODO.md'), 'Remaining: 5');
@@ -245,11 +275,15 @@ describe('Notification Integration', () => {
 
       expect(fetchCalls).toHaveLength(1);
       expect(fetchCalls[0]!.url).toBe('https://ntfy.sh/test-topic');
-      expect(fetchCalls[0]!.options.headers as Record<string, string>).toMatchObject({
-        'Title': 'Milestone Reached',
-        'Tags': 'claude-iterate,milestone',
+      expect(
+        fetchCalls[0]!.options.headers as Record<string, string>
+      ).toMatchObject({
+        Title: 'Milestone Reached',
+        Tags: 'claude-iterate,milestone',
       });
-      expect(fetchCalls[0]!.options.body as string).toContain('ITERATION MILESTONE');
+      expect(fetchCalls[0]!.options.body as string).toContain(
+        'ITERATION MILESTONE'
+      );
       expect(fetchCalls[0]!.options.body as string).toContain('10 iterations');
     });
 
@@ -267,32 +301,53 @@ describe('Notification Integration', () => {
       const notificationService = new NotificationService();
 
       // Test all event types
-      const events = ['execution_start', 'iteration_milestone', 'completion', 'error'];
+      const events = [
+        'execution_start',
+        'iteration_milestone',
+        'completion',
+        'error',
+      ];
       for (const event of events) {
         expect(notificationService.shouldNotify(event, metadata)).toBe(true);
       }
     });
 
-    it('should respect default events (iteration, completion, and error)', async () => {
+    it('should default to "all" events when notifyEvents not specified', async () => {
       const testDir = getTestDir();
       const workspacePath = join(testDir, 'workspaces', 'notify-defaults');
 
       const workspace = await Workspace.init('notify-defaults', workspacePath, {
         notifyUrl: 'https://ntfy.sh/test-topic',
-        // No notifyEvents specified - should use defaults
+        // No notifyEvents specified - should default to ['all']
         maxIterations: 1,
       });
 
       const metadata = await workspace.getMetadata();
       const notificationService = new NotificationService();
 
-      // Default events: iteration, completion, and error
-      expect(notificationService.shouldNotify('iteration', metadata)).toBe(true);
-      expect(notificationService.shouldNotify('completion', metadata)).toBe(true);
+      // Verify metadata has default
+      expect(metadata.notifyEvents).toEqual(['all']);
+
+      // ALL events should trigger
+      expect(notificationService.shouldNotify('iteration', metadata)).toBe(
+        true
+      );
+      expect(notificationService.shouldNotify('completion', metadata)).toBe(
+        true
+      );
       expect(notificationService.shouldNotify('error', metadata)).toBe(true);
-      expect(notificationService.shouldNotify('execution_start', metadata)).toBe(false);
-      expect(notificationService.shouldNotify('iteration_milestone', metadata)).toBe(false);
-      expect(notificationService.shouldNotify('setup_complete', metadata)).toBe(false);
+      expect(notificationService.shouldNotify('status_update', metadata)).toBe(
+        true
+      );
+      expect(notificationService.shouldNotify('setup_complete', metadata)).toBe(
+        true
+      );
+      expect(
+        notificationService.shouldNotify('execution_start', metadata)
+      ).toBe(true);
+      expect(
+        notificationService.shouldNotify('iteration_milestone', metadata)
+      ).toBe(true);
     });
 
     it('should not send notifications when notifyUrl is not configured', async () => {
@@ -341,6 +396,9 @@ describe('Notification Integration', () => {
       // Verify no notifyUrl in metadata
       expect(metadata.notifyUrl).toBeUndefined();
 
+      // Metadata now has default notifyEvents: ['all']
+      expect(metadata.notifyEvents).toEqual(['all']);
+
       // Simulate config fallback (as implemented in run.ts)
       const runtimeConfig = {
         notifyUrl: 'https://ntfy.sh/global-topic',
@@ -350,19 +408,20 @@ describe('Notification Integration', () => {
       if (!metadata.notifyUrl && runtimeConfig.notifyUrl) {
         metadata.notifyUrl = runtimeConfig.notifyUrl;
       }
-      if ((!metadata.notifyEvents || metadata.notifyEvents.length === 0) && runtimeConfig.notifyEvents) {
-        metadata.notifyEvents = runtimeConfig.notifyEvents as Array<'setup_complete' | 'execution_start' | 'iteration' | 'iteration_milestone' | 'completion' | 'error' | 'all'>;
-      }
+      // Metadata already has notifyEvents default, so this condition won't apply
+      // unless explicitly empty
 
-      // Now metadata should have config values
+      // Metadata should have notifyUrl from config but keep its own notifyEvents
       expect(metadata.notifyUrl).toBe('https://ntfy.sh/global-topic');
-      expect(metadata.notifyEvents).toEqual(['completion']);
+      expect(metadata.notifyEvents).toEqual(['all']);
 
       const notificationService = new NotificationService();
 
       // Should now be configured
       expect(notificationService.isConfigured(metadata)).toBe(true);
-      expect(notificationService.shouldNotify('completion', metadata)).toBe(true);
+      expect(notificationService.shouldNotify('completion', metadata)).toBe(
+        true
+      );
 
       // Send notification
       if (
@@ -385,11 +444,15 @@ describe('Notification Integration', () => {
       const workspacePath = join(testDir, 'workspaces', 'prefer-workspace');
 
       // Create workspace WITH notifyUrl
-      const workspace = await Workspace.init('prefer-workspace', workspacePath, {
-        notifyUrl: 'https://ntfy.sh/workspace-topic',
-        notifyEvents: ['completion'],
-        maxIterations: 1,
-      });
+      const workspace = await Workspace.init(
+        'prefer-workspace',
+        workspacePath,
+        {
+          notifyUrl: 'https://ntfy.sh/workspace-topic',
+          notifyEvents: ['completion'],
+          maxIterations: 1,
+        }
+      );
 
       const metadata = await workspace.getMetadata();
 
@@ -403,8 +466,19 @@ describe('Notification Integration', () => {
       if (!metadata.notifyUrl && runtimeConfig.notifyUrl) {
         metadata.notifyUrl = runtimeConfig.notifyUrl;
       }
-      if ((!metadata.notifyEvents || metadata.notifyEvents.length === 0) && runtimeConfig.notifyEvents) {
-        metadata.notifyEvents = runtimeConfig.notifyEvents as Array<'setup_complete' | 'execution_start' | 'iteration' | 'iteration_milestone' | 'completion' | 'error' | 'all'>;
+      if (
+        (!metadata.notifyEvents || metadata.notifyEvents.length === 0) &&
+        runtimeConfig.notifyEvents
+      ) {
+        metadata.notifyEvents = runtimeConfig.notifyEvents as Array<
+          | 'setup_complete'
+          | 'execution_start'
+          | 'iteration'
+          | 'iteration_milestone'
+          | 'completion'
+          | 'error'
+          | 'all'
+        >;
       }
 
       // Should still have workspace values
@@ -429,8 +503,19 @@ describe('Notification Integration', () => {
         notifyEvents: ['execution_start', 'completion'],
       };
 
-      if ((!metadata.notifyEvents || metadata.notifyEvents.length === 0) && runtimeConfig.notifyEvents) {
-        metadata.notifyEvents = runtimeConfig.notifyEvents as Array<'setup_complete' | 'execution_start' | 'iteration' | 'iteration_milestone' | 'completion' | 'error' | 'all'>;
+      if (
+        (!metadata.notifyEvents || metadata.notifyEvents.length === 0) &&
+        runtimeConfig.notifyEvents
+      ) {
+        metadata.notifyEvents = runtimeConfig.notifyEvents as Array<
+          | 'setup_complete'
+          | 'execution_start'
+          | 'iteration'
+          | 'iteration_milestone'
+          | 'completion'
+          | 'error'
+          | 'all'
+        >;
       }
 
       // Should now have config events
@@ -443,11 +528,15 @@ describe('Notification Integration', () => {
       const testDir = getTestDir();
       const workspacePath = join(testDir, 'workspaces', 'metadata-refresh');
 
-      const workspace = await Workspace.init('metadata-refresh', workspacePath, {
-        notifyUrl: 'https://ntfy.sh/test-topic',
-        notifyEvents: ['completion'],
-        maxIterations: 1,
-      });
+      const workspace = await Workspace.init(
+        'metadata-refresh',
+        workspacePath,
+        {
+          notifyUrl: 'https://ntfy.sh/test-topic',
+          notifyEvents: ['completion'],
+          maxIterations: 1,
+        }
+      );
 
       await workspace.writeInstructions('Test instructions');
       await writeTestFile(join(workspacePath, 'TODO.md'), 'Remaining: 0');
@@ -508,15 +597,22 @@ describe('Notification Integration', () => {
       const testDir = getTestDir();
       const workspacePath = join(testDir, 'workspaces', 'iterative-notify');
 
-      const workspace = await Workspace.init('iterative-notify', workspacePath, {
-        mode: ExecutionMode.ITERATIVE,
-        notifyUrl: 'https://ntfy.sh/iterative-topic',
-        notifyEvents: ['completion'],
-        maxIterations: 1,
-      });
+      const workspace = await Workspace.init(
+        'iterative-notify',
+        workspacePath,
+        {
+          mode: ExecutionMode.ITERATIVE,
+          notifyUrl: 'https://ntfy.sh/iterative-topic',
+          notifyEvents: ['completion'],
+          maxIterations: 1,
+        }
+      );
 
       await workspace.writeInstructions('Test instructions');
-      await writeTestFile(join(workspacePath, 'TODO.md'), '- [x] Task 1\n- [x] Task 2');
+      await writeTestFile(
+        join(workspacePath, 'TODO.md'),
+        '- [x] Task 1\n- [x] Task 2'
+      );
 
       const metadata = await workspace.getMetadata();
       const notificationService = new NotificationService();
@@ -571,11 +667,15 @@ describe('Notification Integration', () => {
       const testDir = getTestDir();
       const workspacePath = join(testDir, 'workspaces', 'notify-http-error');
 
-      const workspace = await Workspace.init('notify-http-error', workspacePath, {
-        notifyUrl: 'https://ntfy.sh/test-topic',
-        notifyEvents: ['completion'],
-        maxIterations: 1,
-      });
+      const workspace = await Workspace.init(
+        'notify-http-error',
+        workspacePath,
+        {
+          notifyUrl: 'https://ntfy.sh/test-topic',
+          notifyEvents: ['completion'],
+          maxIterations: 1,
+        }
+      );
 
       const metadata = await workspace.getMetadata();
       const notificationService = new NotificationService();

@@ -7,6 +7,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### ⚠️ Breaking Changes
+
+- **Notification Events Default to 'all'**: `notifyEvents` now defaults to `['all']` instead of a subset (`['iteration', 'completion', 'error', 'status_update']`)
+  - When you configure `notifyUrl`, you'll receive all event types by default
+  - This provides better discoverability and more intuitive behavior
+  - **Migration**: To revert to the old behavior, explicitly set:
+    ```json
+    {
+      "notifyEvents": ["iteration", "completion", "error", "status_update"]
+    }
+    ```
+  - **Impact**: Users who set `notifyUrl` but not `notifyEvents` will now receive all event types including `setup_complete`, `execution_start`, and `iteration_milestone`
+
+- **Auto-Verification Enabled by Default**: `verification.autoVerify` now defaults to `true`
+  - Tasks are automatically verified on completion for better quality assurance
+  - Increases token usage by approximately 2-4K tokens per verification (standard depth)
+  - Catches incomplete work automatically and provides immediate feedback
+  - **Migration**: To disable automatic verification, set:
+    ```json
+    {
+      "verification": {
+        "autoVerify": false
+      }
+    }
+    ```
+  - **Rationale**: Quality-first approach - false completions waste more time than token costs
+
+- **Auto-Resume on Verification Failure**: `verification.resumeOnFail` now defaults to `true`
+  - Claude automatically resumes iterations to fix issues when verification fails
+  - Enables more autonomous workflows with less manual intervention
+  - Safety: `maxAttempts` (default: 2) prevents infinite loops
+  - **Migration**: To require manual resumption, set:
+    ```json
+    {
+      "verification": {
+        "resumeOnFail": false
+      }
+    }
+    ```
+  - **Rationale**: Aligns with "autonomous iteration" philosophy - Claude can fix its own mistakes
+
+### Changed
+
+- Improved notification DX: All notification events enabled by default when `notifyUrl` is configured
+- Removed hardcoded fallback logic in `NotificationService` - now uses schema defaults for cleaner architecture
+- Enhanced verification defaults for quality-first autonomous execution
+- Updated configuration documentation to reflect new defaults and token usage implications
+
 ### Added
 
 - **Config Key Discovery**: New `--keys` flag for config command to show all available configuration keys

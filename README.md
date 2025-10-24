@@ -305,7 +305,7 @@ Create `.claude-iterate.json` in your project root:
   "defaultStagnationThreshold": 2,
   "outputLevel": "progress",
   "notifyUrl": "https://ntfy.sh/my-project",
-  "notifyEvents": ["completion", "error", "status_update"],
+  "notifyEvents": ["all"],
   "notification": {
     "statusWatch": {
       "enabled": true,
@@ -314,8 +314,8 @@ Create `.claude-iterate.json` in your project root:
     }
   },
   "verification": {
-    "autoVerify": false,
-    "resumeOnFail": false,
+    "autoVerify": true,
+    "resumeOnFail": true,
     "maxAttempts": 2,
     "reportFilename": "verification-report.md",
     "depth": "standard",
@@ -341,8 +341,8 @@ Create `~/.config/claude-iterate/config.json`:
   },
   "colors": true,
   "verification": {
-    "autoVerify": false,
-    "resumeOnFail": false,
+    "autoVerify": true,
+    "resumeOnFail": true,
     "maxAttempts": 2,
     "depth": "standard"
   }
@@ -374,10 +374,10 @@ claude-iterate config --workspace my-task verification.depth --unset
 
 **Available workspace config settings**:
 
-- `verification.depth` - Verification depth (quick, standard, deep)
-- `verification.autoVerify` - Auto-verify on completion (true/false)
-- `verification.resumeOnFail` - Resume iterations on failed verification (true/false)
-- `verification.maxAttempts` - Max verification attempts (1-10)
+- `verification.depth` - Verification depth (quick, standard, deep) - default: standard
+- `verification.autoVerify` - Auto-verify on completion (default: true, ~2-4K tokens per verification)
+- `verification.resumeOnFail` - Resume iterations on failed verification (default: true)
+- `verification.maxAttempts` - Max verification attempts (1-10) - default: 2
 - `verification.reportFilename` - Custom report filename
 - `verification.notifyOnVerification` - Send verification notifications (true/false)
 - `outputLevel` - Console output level (quiet, progress, verbose)
@@ -451,7 +451,7 @@ claude-iterate config notifyUrl https://ntfy.sh/my-topic
 
 **Available events:** `setup_complete`, `execution_start`, `iteration`, `iteration_milestone`, `completion`, `error`, `status_update`, `all`
 
-**Default events:** `iteration`, `completion`, `error`, `status_update`
+**Default events:** `all` (all event types)
 
 **Status Update Events:** The `status_update` event is triggered automatically when Claude updates the `.status.json` file during execution. This provides real-time progress notifications without polling. The watcher uses 2-second debouncing and filters out timestamp-only changes to prevent notification spam. Status updates include progress deltas (e.g., "35/60 items (+5)"), summary text, and completion status.
 

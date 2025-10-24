@@ -62,13 +62,6 @@ export class NotificationService {
    * Should notify for this event
    */
   shouldNotify(event: string, metadata: Metadata): boolean {
-    if (!metadata.notifyEvents || metadata.notifyEvents.length === 0) {
-      // Default events: iteration, completion, error, and status_update
-      return ['iteration', 'completion', 'error', 'status_update'].includes(
-        event
-      );
-    }
-
     // Check if 'all' is specified
     if (metadata.notifyEvents.includes('all')) {
       return true;

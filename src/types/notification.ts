@@ -14,16 +14,6 @@ export type NotificationEvent =
   | 'all';
 
 /**
- * Default notification events (enabled by default)
- */
-export const DEFAULT_NOTIFY_EVENTS: NotificationEvent[] = [
-  'iteration',
-  'completion',
-  'error',
-  'status_update',
-];
-
-/**
  * Status change delta information
  */
 export interface StatusDelta {

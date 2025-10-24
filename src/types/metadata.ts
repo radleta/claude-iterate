@@ -61,7 +61,7 @@ export const MetadataSchema = z.object({
         'all',
       ])
     )
-    .optional(),
+    .default(['all']),
 
   // === VERIFICATION TRACKING (state) ===
   verification: z
