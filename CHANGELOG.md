@@ -165,6 +165,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Setup prompts now clarify: "The system provides your instructions to Claude each iteration"
   - **Impact**: Fixes architectural flaw where optional user files were treated as system dependencies
   - **Testing**: Updated 2 test assertions, all 228 tests passing
+- **Config Keys Display for Optional Fields**: Fixed `--keys` command not showing values for optional configuration fields
+  - The `config --keys` command now correctly displays values for optional fields like `notifyUrl` when set in user or project configs
+  - Root cause: `resolveEffectiveValues()` only iterated over keys present in default schema; optional fields without defaults were excluded
+  - Solution: Collect keys from all config sources (default, user, project, workspace) instead of just defaults
+  - Affected fields: `notifyUrl`, `claude` (optional object), `notification` (optional object), `verification` (optional object)
+  - Example: `claude-iterate config --global notifyUrl https://ntfy.sh/test` → `claude-iterate config --keys --global` now shows the value with `[user]` source indicator
+  - **Impact**: Makes `--keys` actually useful for discovering configured values, not just available keys
+  - **Testing**: Added 10 new test cases in `config-manager.test.ts` covering optional field resolution, priority, and nested fields
 
 ### Improved
 

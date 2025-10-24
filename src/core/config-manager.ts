@@ -459,8 +459,14 @@ export class ConfigManager {
     }
     const flatDefault = flattenConfig(schemaDefaults);
 
-    // Get all keys from the default config (these are all possible keys)
-    const allKeys = Object.keys(flatDefault);
+    // Collect all unique keys from all config sources
+    // This ensures optional fields without defaults are included
+    const allKeys = new Set<string>([
+      ...Object.keys(flatDefault),
+      ...Object.keys(flatUser),
+      ...Object.keys(flatProject),
+      ...Object.keys(flatWorkspace),
+    ]);
 
     for (const key of allKeys) {
       let value: unknown;
