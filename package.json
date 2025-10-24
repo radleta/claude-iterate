@@ -3,19 +3,19 @@
   "version": "2.0.0",
   "description": "Task iteration system with Claude Code - workspace management, templates, and autonomous execution",
   "type": "module",
-  "main": "dist/src/index.js",
+  "main": "dist/index.js",
   "exports": {
     ".": {
-      "import": "./dist/src/index.js",
-      "types": "./dist/src/index.d.ts"
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
     }
   },
   "bin": {
-    "claude-iterate": "./dist/src/index.js"
+    "claude-iterate": "./dist/index.js"
   },
   "scripts": {
     "build": "tsc && npm run copy-package-files",
-    "postbuild": "chmod +x dist/src/index.js",
+    "postbuild": "chmod +x dist/index.js",
     "prepare": "husky && npm run build",
     "dev": "tsc --watch",
     "test": "vitest run",
