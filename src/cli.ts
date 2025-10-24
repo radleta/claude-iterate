@@ -16,7 +16,7 @@ import { configCommand } from './commands/config.js';
 
 // Import version from package.json
 const require = createRequire(import.meta.url);
-const { version: VERSION } = require('../../package.json');
+const { version: VERSION } = require('../package.json');
 
 /**
  * Main CLI setup
