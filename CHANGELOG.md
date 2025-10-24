@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.0] - 2025-10-24
+
 ### ⚠️ Breaking Changes
 
 - **Notification Events Default to 'all'**: `notifyEvents` now defaults to `['all']` instead of a subset (`['iteration', 'completion', 'error', 'status_update']`)
