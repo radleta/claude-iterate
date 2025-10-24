@@ -4,4 +4,4 @@
 
 ---
 
-**Your task now**: Follow the instructions above. Read TODO.md, do the work, update TODO.md with progress.
+**Your task now**: Follow the instructions above. Do the work and update `.status.json` with your progress.

@@ -6,6 +6,7 @@ import {
   UserConfigSchema,
   DEFAULT_CONFIG,
 } from '../types/config.js';
+import { Metadata } from '../types/metadata.js';
 import {
   getProjectConfigPath,
   getUserConfigPath,
@@ -13,10 +14,11 @@ import {
 } from '../utils/paths.js';
 import { fileExists, readJson } from '../utils/fs.js';
 import { InvalidConfigError } from '../utils/errors.js';
+import { flattenConfig } from '../utils/config-value-flattener.js';
 
 /**
  * Configuration manager with layered config resolution
- * Priority: CLI flags → Project config → User config → Defaults
+ * Priority: CLI flags → Workspace config → Project config → User config → Defaults
  */
 export class ConfigManager {
   private runtimeConfig: RuntimeConfig;
@@ -27,19 +29,24 @@ export class ConfigManager {
 
   /**
    * Load configuration from all sources
+   * @param cliOptions Optional CLI options (highest priority)
+   * @param workspaceMetadata Optional workspace metadata for workspace-level config
    */
-  static async load(cliOptions?: {
-    workspacesDir?: string;
-    templatesDir?: string;
-    archiveDir?: string;
-    maxIterations?: number;
-    delay?: number;
-    notifyUrl?: string;
-    verbose?: boolean;
-    quiet?: boolean;
-    output?: string;
-    colors?: boolean;
-  }): Promise<ConfigManager> {
+  static async load(
+    cliOptions?: {
+      workspacesDir?: string;
+      templatesDir?: string;
+      archiveDir?: string;
+      maxIterations?: number;
+      delay?: number;
+      notifyUrl?: string;
+      verbose?: boolean;
+      quiet?: boolean;
+      output?: string;
+      colors?: boolean;
+    },
+    workspaceMetadata?: Metadata
+  ): Promise<ConfigManager> {
     // Start with defaults
     let config: RuntimeConfig = { ...DEFAULT_CONFIG };
 
@@ -55,7 +62,12 @@ export class ConfigManager {
       config = ConfigManager.mergeProjectConfig(config, projectConfig);
     }
 
-    // Layer 3: CLI options (highest priority)
+    // Layer 3: Workspace config (from .metadata.json)
+    if (workspaceMetadata) {
+      config = ConfigManager.mergeWorkspaceConfig(config, workspaceMetadata);
+    }
+
+    // Layer 4: CLI options (highest priority)
     if (cliOptions) {
       config = ConfigManager.mergeCliOptions(config, cliOptions);
     }
@@ -124,7 +136,7 @@ export class ConfigManager {
       outputLevel = 'progress';
     }
 
-    return {
+    const merged: RuntimeConfig = {
       ...config,
       globalTemplatesDir: userConfig.globalTemplatesDir,
       maxIterations: userConfig.defaultMaxIterations,
@@ -137,6 +149,29 @@ export class ConfigManager {
       colors: userConfig.colors,
       verbose: userConfig.verbose,
     };
+
+    // Merge verification config if present
+    if (userConfig.verification) {
+      merged.verification = {
+        autoVerify:
+          userConfig.verification.autoVerify ?? config.verification.autoVerify,
+        resumeOnFail:
+          userConfig.verification.resumeOnFail ??
+          config.verification.resumeOnFail,
+        maxAttempts:
+          userConfig.verification.maxAttempts ??
+          config.verification.maxAttempts,
+        reportFilename:
+          userConfig.verification.reportFilename ??
+          config.verification.reportFilename,
+        depth: userConfig.verification.depth ?? config.verification.depth,
+        notifyOnVerification:
+          userConfig.verification.notifyOnVerification ??
+          config.verification.notifyOnVerification,
+      };
+    }
+
+    return merged;
   }
 
   /**
@@ -163,6 +198,107 @@ export class ConfigManager {
     if (projectConfig.claude) {
       merged.claudeCommand = projectConfig.claude.command;
       merged.claudeArgs = projectConfig.claude.args;
+    }
+
+    // Merge verification config if present (project overrides user)
+    if (projectConfig.verification) {
+      merged.verification = {
+        autoVerify:
+          projectConfig.verification.autoVerify ??
+          config.verification.autoVerify,
+        resumeOnFail:
+          projectConfig.verification.resumeOnFail ??
+          config.verification.resumeOnFail,
+        maxAttempts:
+          projectConfig.verification.maxAttempts ??
+          config.verification.maxAttempts,
+        reportFilename:
+          projectConfig.verification.reportFilename ??
+          config.verification.reportFilename,
+        depth: projectConfig.verification.depth ?? config.verification.depth,
+        notifyOnVerification:
+          projectConfig.verification.notifyOnVerification ??
+          config.verification.notifyOnVerification,
+      };
+    }
+
+    // Merge notification config if present (project overrides user)
+    if (projectConfig.notification?.statusWatch) {
+      merged.notification = {
+        ...merged.notification,
+        statusWatch: {
+          enabled: projectConfig.notification.statusWatch.enabled ?? true,
+          debounceMs: projectConfig.notification.statusWatch.debounceMs ?? 2000,
+          notifyOnlyMeaningful:
+            projectConfig.notification.statusWatch.notifyOnlyMeaningful ?? true,
+        },
+      };
+    }
+
+    return merged;
+  }
+
+  /**
+   * Merge workspace config into runtime config
+   * Applies workspace-level overrides from .metadata.json
+   */
+  private static mergeWorkspaceConfig(
+    config: RuntimeConfig,
+    metadata: Metadata
+  ): RuntimeConfig {
+    const merged = { ...config };
+
+    // Backward compat: Top-level execution settings from metadata
+    merged.maxIterations = metadata.maxIterations;
+    merged.delay = metadata.delay;
+    merged.stagnationThreshold = metadata.stagnationThreshold;
+    if (metadata.notifyUrl) {
+      merged.notifyUrl = metadata.notifyUrl;
+    }
+    if (metadata.notifyEvents) {
+      merged.notifyEvents = metadata.notifyEvents;
+    }
+
+    // Workspace config overrides (if present)
+    if (metadata.config) {
+      // Output level override
+      if (metadata.config.outputLevel) {
+        merged.outputLevel = metadata.config.outputLevel;
+        merged.verbose = metadata.config.outputLevel === 'verbose';
+      }
+
+      // Claude settings override
+      if (metadata.config.claude) {
+        if (metadata.config.claude.command) {
+          merged.claudeCommand = metadata.config.claude.command;
+        }
+        if (metadata.config.claude.args) {
+          merged.claudeArgs = metadata.config.claude.args;
+        }
+      }
+
+      // Verification settings override
+      if (metadata.config.verification) {
+        merged.verification = {
+          depth:
+            metadata.config.verification.depth ?? merged.verification.depth,
+          autoVerify:
+            metadata.config.verification.autoVerify ??
+            merged.verification.autoVerify,
+          resumeOnFail:
+            metadata.config.verification.resumeOnFail ??
+            merged.verification.resumeOnFail,
+          maxAttempts:
+            metadata.config.verification.maxAttempts ??
+            merged.verification.maxAttempts,
+          reportFilename:
+            metadata.config.verification.reportFilename ??
+            merged.verification.reportFilename,
+          notifyOnVerification:
+            metadata.config.verification.notifyOnVerification ??
+            merged.verification.notifyOnVerification,
+        };
+      }
     }
 
     return merged;
@@ -210,7 +346,10 @@ export class ConfigManager {
     // Handle output level with priority: --output > --verbose/--quiet > config
     if (cliOptions.output !== undefined) {
       if (['quiet', 'progress', 'verbose'].includes(cliOptions.output)) {
-        merged.outputLevel = cliOptions.output as 'quiet' | 'progress' | 'verbose';
+        merged.outputLevel = cliOptions.output as
+          | 'quiet'
+          | 'progress'
+          | 'verbose';
         // Also set verbose for backward compatibility
         merged.verbose = cliOptions.output === 'verbose';
       }
@@ -241,5 +380,119 @@ export class ConfigManager {
    */
   get<K extends keyof RuntimeConfig>(key: K): RuntimeConfig[K] {
     return this.runtimeConfig[key];
+  }
+
+  /**
+   * Get user config (layer 1)
+   */
+  async getUserConfig(): Promise<UserConfig> {
+    const userConfig = await ConfigManager.loadUserConfig();
+    return userConfig ?? ({} as UserConfig);
+  }
+
+  /**
+   * Get project config (layer 2)
+   */
+  async getProjectConfig(): Promise<ProjectConfig> {
+    const projectConfig = await ConfigManager.loadProjectConfig();
+    return projectConfig ?? ({} as ProjectConfig);
+  }
+
+  /**
+   * Get workspace config (layer 3)
+   * Returns the config field from workspace metadata
+   */
+  getWorkspaceConfig(metadata: Metadata | null): Record<string, unknown> {
+    return metadata?.config ?? {};
+  }
+
+  /**
+   * Resolves the effective value and source for all keys in the given scope.
+   *
+   * For each key:
+   * 1. Check workspace config (if workspace scope)
+   * 2. Check project config
+   * 3. Check user config
+   * 4. Fall back to default
+   *
+   * @param scope - The scope to resolve values for
+   * @param workspaceMetadata - Required if scope is 'workspace'
+   * @returns Map of key paths to {value, source}
+   */
+  async resolveEffectiveValues(
+    scope: 'project' | 'user' | 'workspace',
+    workspaceMetadata?: Metadata | null
+  ): Promise<
+    Map<
+      string,
+      { value: unknown; source: 'default' | 'user' | 'project' | 'workspace' }
+    >
+  > {
+    const result = new Map<
+      string,
+      { value: unknown; source: 'default' | 'user' | 'project' | 'workspace' }
+    >();
+
+    // Get all config layers
+    const userConfig = await this.getUserConfig();
+    const projectConfig = await this.getProjectConfig();
+    const workspaceConfig = this.getWorkspaceConfig(workspaceMetadata ?? null);
+
+    // Flatten all configs to dot notation
+    const flatUser = flattenConfig(
+      userConfig as unknown as Record<string, unknown>
+    );
+    const flatProject = flattenConfig(
+      projectConfig as unknown as Record<string, unknown>
+    );
+    const flatWorkspace = flattenConfig(
+      workspaceConfig as Record<string, unknown>
+    );
+
+    // Parse the schema to get defaults for this scope
+    let schemaDefaults: Record<string, unknown>;
+    if (scope === 'user') {
+      schemaDefaults = UserConfigSchema.parse({});
+    } else {
+      // For project and workspace scopes, use ProjectConfigSchema defaults
+      schemaDefaults = ProjectConfigSchema.parse({});
+    }
+    const flatDefault = flattenConfig(schemaDefaults);
+
+    // Collect all unique keys from all config sources
+    // This ensures optional fields without defaults are included
+    const allKeys = new Set<string>([
+      ...Object.keys(flatDefault),
+      ...Object.keys(flatUser),
+      ...Object.keys(flatProject),
+      ...Object.keys(flatWorkspace),
+    ]);
+
+    for (const key of allKeys) {
+      let value: unknown;
+      let source: 'default' | 'user' | 'project' | 'workspace' = 'default';
+
+      // Resolution order depends on scope
+      if (scope === 'workspace' && flatWorkspace[key] !== undefined) {
+        value = flatWorkspace[key];
+        source = 'workspace';
+      } else if (
+        (scope === 'workspace' || scope === 'project') &&
+        flatProject[key] !== undefined
+      ) {
+        value = flatProject[key];
+        source = 'project';
+      } else if (flatUser[key] !== undefined) {
+        value = flatUser[key];
+        source = 'user';
+      } else {
+        value = flatDefault[key];
+        source = 'default';
+      }
+
+      result.set(key, { value, source });
+    }
+
+    return result;
   }
 }

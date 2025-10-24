@@ -15,7 +15,10 @@ export interface NotificationOptions {
  * Service for sending notifications via HTTP POST (ntfy.sh compatible)
  */
 export class NotificationService {
-  constructor(private logger?: Logger, private verbose: boolean = false) {}
+  constructor(
+    private logger?: Logger,
+    private verbose: boolean = false
+  ) {}
 
   /**
    * Send notification via HTTP POST
@@ -26,21 +29,22 @@ export class NotificationService {
         method: 'POST',
         headers: {
           'Content-Type': 'text/plain',
-          ...(options.title && { 'Title': options.title }),
-          ...(options.priority && { 'Priority': options.priority }),
-          ...(options.tags && { 'Tags': options.tags.join(',') }),
+          ...(options.title && { Title: options.title }),
+          ...(options.priority && { Priority: options.priority }),
+          ...(options.tags && { Tags: options.tags.join(',') }),
         },
         body: message,
       });
 
       if (!response.ok) {
-        this.logger?.warn(`Notification failed: ${response.status} ${response.statusText}`);
+        this.logger?.warn(
+          `Notification failed: ${response.status} ${response.statusText}`
+        );
         return false;
       }
 
       this.logger?.debug('Notification sent successfully', this.verbose);
       return true;
-
     } catch (error) {
       this.logger?.warn(`Notification error: ${(error as Error).message}`);
       return false;
@@ -58,17 +62,22 @@ export class NotificationService {
    * Should notify for this event
    */
   shouldNotify(event: string, metadata: Metadata): boolean {
-    if (!metadata.notifyEvents || metadata.notifyEvents.length === 0) {
-      // Default events: iteration, completion, and error
-      return ['iteration', 'completion', 'error'].includes(event);
-    }
-
     // Check if 'all' is specified
     if (metadata.notifyEvents.includes('all')) {
       return true;
     }
 
     // Check if specific event is enabled
-    return metadata.notifyEvents.includes(event as 'setup_complete' | 'execution_start' | 'iteration' | 'iteration_milestone' | 'completion' | 'error' | 'all');
+    return metadata.notifyEvents.includes(
+      event as
+        | 'setup_complete'
+        | 'execution_start'
+        | 'iteration'
+        | 'iteration_milestone'
+        | 'completion'
+        | 'error'
+        | 'status_update'
+        | 'all'
+    );
   }
 }

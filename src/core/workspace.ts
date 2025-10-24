@@ -1,5 +1,5 @@
 import { join } from 'path';
-import { Metadata } from '../types/metadata.js';
+import { Metadata, WorkspaceConfig } from '../types/metadata.js';
 import { WorkspaceStatus } from '../types/status.js';
 import { MetadataManager } from './metadata.js';
 import { CompletionDetector } from './completion.js';
@@ -41,7 +41,15 @@ export class Workspace {
       stagnationThreshold?: number;
       mode?: import('../types/mode.js').ExecutionMode;
       notifyUrl?: string;
-      notifyEvents?: Array<'setup_complete' | 'execution_start' | 'iteration' | 'iteration_milestone' | 'completion' | 'error' | 'all'>;
+      notifyEvents?: Array<
+        | 'setup_complete'
+        | 'execution_start'
+        | 'iteration'
+        | 'iteration_milestone'
+        | 'completion'
+        | 'error'
+        | 'all'
+      >;
     }
   ): Promise<Workspace> {
     // Check if workspace already exists
@@ -102,9 +110,7 @@ export class Workspace {
 
     // Verify metadata exists
     if (!(await workspace.metadataManager.exists())) {
-      throw new WorkspaceNotFoundError(
-        `${name} (missing metadata file)`
-      );
+      throw new WorkspaceNotFoundError(`${name} (missing metadata file)`);
     }
 
     return workspace;
@@ -129,10 +135,7 @@ export class Workspace {
    */
   async isComplete(): Promise<boolean> {
     const metadata = await this.getMetadata();
-    return await CompletionDetector.isComplete(
-      this.path,
-      metadata.mode
-    );
+    return await CompletionDetector.isComplete(this.path, metadata.mode);
   }
 
   /**
@@ -140,10 +143,7 @@ export class Workspace {
    */
   async getCompletionStatus() {
     const metadata = await this.getMetadata();
-    return await CompletionDetector.getStatus(
-      this.path,
-      metadata.mode
-    );
+    return await CompletionDetector.getStatus(this.path, metadata.mode);
   }
 
   /**
@@ -202,9 +202,7 @@ export class Workspace {
   /**
    * Increment iteration count
    */
-  async incrementIterations(
-    type: 'setup' | 'execution'
-  ): Promise<Metadata> {
+  async incrementIterations(type: 'setup' | 'execution'): Promise<Metadata> {
     return await this.metadataManager.incrementIterations(type);
   }
 
@@ -256,6 +254,35 @@ export class Workspace {
     warnings?: string[];
   }> {
     return await StatusManager.validate(this.path);
+  }
+
+  /**
+   * Update workspace configuration
+   * Merges updates into existing config, preserving other settings
+   */
+  async updateConfig(configUpdates: {
+    verification?: Partial<
+      NonNullable<NonNullable<WorkspaceConfig>>['verification']
+    >;
+    outputLevel?: NonNullable<WorkspaceConfig>['outputLevel'];
+    claude?: Partial<NonNullable<NonNullable<WorkspaceConfig>>['claude']>;
+  }): Promise<Metadata> {
+    const metadata = await this.getMetadata();
+
+    // Deep merge config updates
+    const updatedConfig: WorkspaceConfig = {
+      verification: {
+        ...metadata.config?.verification,
+        ...configUpdates.verification,
+      },
+      outputLevel: configUpdates.outputLevel ?? metadata.config?.outputLevel,
+      claude: {
+        ...metadata.config?.claude,
+        ...configUpdates.claude,
+      },
+    };
+
+    return await this.updateMetadata({ config: updatedConfig });
   }
 
   /**

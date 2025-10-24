@@ -14,7 +14,10 @@ describe('TemplateManager', () => {
     const workspace = await Workspace.init('test-workspace', workspacePath);
     await workspace.writeInstructions('# Test Instructions');
 
-    const manager = new TemplateManager(projectTemplatesDir, globalTemplatesDir);
+    const manager = new TemplateManager(
+      projectTemplatesDir,
+      globalTemplatesDir
+    );
 
     await manager.saveTemplate(workspacePath, 'test-template', {
       description: 'Test template',
@@ -36,7 +39,10 @@ describe('TemplateManager', () => {
     const workspace = await Workspace.init('test-workspace', workspacePath);
     await workspace.writeInstructions('# Global Template');
 
-    const manager = new TemplateManager(projectTemplatesDir, globalTemplatesDir);
+    const manager = new TemplateManager(
+      projectTemplatesDir,
+      globalTemplatesDir
+    );
 
     await manager.saveTemplate(workspacePath, 'global-template', {
       description: 'Global test template',
@@ -56,7 +62,10 @@ describe('TemplateManager', () => {
 
     await Workspace.init('no-instructions', workspacePath);
 
-    const manager = new TemplateManager(projectTemplatesDir, globalTemplatesDir);
+    const manager = new TemplateManager(
+      projectTemplatesDir,
+      globalTemplatesDir
+    );
 
     await expect(
       manager.saveTemplate(workspacePath, 'test-template')
@@ -79,7 +88,10 @@ describe('TemplateManager', () => {
       JSON.stringify({ name: 'my-template', description: 'Test' })
     );
 
-    const manager = new TemplateManager(projectTemplatesDir, globalTemplatesDir);
+    const manager = new TemplateManager(
+      projectTemplatesDir,
+      globalTemplatesDir
+    );
 
     // Get template for init
     const templateInfo = await manager.getTemplateForInit('my-template');
@@ -125,7 +137,10 @@ describe('TemplateManager', () => {
       JSON.stringify({ name: 'global-tpl', description: 'Global template' })
     );
 
-    const manager = new TemplateManager(projectTemplatesDir, globalTemplatesDir);
+    const manager = new TemplateManager(
+      projectTemplatesDir,
+      globalTemplatesDir
+    );
 
     const templates = await manager.listTemplates();
 
@@ -149,7 +164,10 @@ describe('TemplateManager', () => {
       'Global version'
     );
 
-    const manager = new TemplateManager(projectTemplatesDir, globalTemplatesDir);
+    const manager = new TemplateManager(
+      projectTemplatesDir,
+      globalTemplatesDir
+    );
 
     const template = await manager.findTemplate('same-name');
 
@@ -176,7 +194,10 @@ describe('TemplateManager', () => {
       })
     );
 
-    const manager = new TemplateManager(projectTemplatesDir, globalTemplatesDir);
+    const manager = new TemplateManager(
+      projectTemplatesDir,
+      globalTemplatesDir
+    );
 
     const template = await manager.getTemplate('detailed');
 
@@ -196,7 +217,10 @@ describe('TemplateManager', () => {
       'Exists'
     );
 
-    const manager = new TemplateManager(projectTemplatesDir, globalTemplatesDir);
+    const manager = new TemplateManager(
+      projectTemplatesDir,
+      globalTemplatesDir
+    );
 
     expect(await manager.exists('exists')).toBe(true);
     expect(await manager.exists('does-not-exist')).toBe(false);
@@ -207,14 +231,17 @@ describe('TemplateManager', () => {
     const projectTemplatesDir = join(testDir, 'templates');
     const globalTemplatesDir = join(testDir, 'global-templates');
 
-    const manager = new TemplateManager(projectTemplatesDir, globalTemplatesDir);
+    const manager = new TemplateManager(
+      projectTemplatesDir,
+      globalTemplatesDir
+    );
 
     await expect(manager.getTemplate('nonexistent')).rejects.toThrow(
       'not found'
     );
   });
 
-  it('should throw error if template already exists', async () => {
+  it('should throw error if template already exists without force', async () => {
     const testDir = getTestDir();
     const projectTemplatesDir = join(testDir, 'templates');
     const globalTemplatesDir = join(testDir, 'global-templates');
@@ -223,12 +250,111 @@ describe('TemplateManager', () => {
     const workspace = await Workspace.init('test-workspace', workspacePath);
     await workspace.writeInstructions('# Instructions');
 
-    const manager = new TemplateManager(projectTemplatesDir, globalTemplatesDir);
+    const manager = new TemplateManager(
+      projectTemplatesDir,
+      globalTemplatesDir
+    );
 
     await manager.saveTemplate(workspacePath, 'duplicate');
 
     await expect(
       manager.saveTemplate(workspacePath, 'duplicate')
     ).rejects.toThrow('already exists');
+  });
+
+  it('should overwrite template with force flag', async () => {
+    const testDir = getTestDir();
+    const projectTemplatesDir = join(testDir, 'templates');
+    const globalTemplatesDir = join(testDir, 'global-templates');
+    const workspacePath = join(testDir, 'workspaces', 'test-workspace');
+
+    const workspace = await Workspace.init('test-workspace', workspacePath);
+    await workspace.writeInstructions('# First version');
+
+    const manager = new TemplateManager(
+      projectTemplatesDir,
+      globalTemplatesDir
+    );
+
+    // Save initial template
+    await manager.saveTemplate(workspacePath, 'my-template', {
+      description: 'First version',
+    });
+
+    // Verify initial save
+    const template1 = await manager.getTemplate('my-template');
+    expect(template1.metadata?.description).toBe('First version');
+
+    // Update workspace instructions
+    await workspace.writeInstructions('# Second version');
+
+    // Overwrite with force
+    await manager.saveTemplate(workspacePath, 'my-template', {
+      description: 'Second version',
+      force: true,
+    });
+
+    // Verify overwrite
+    const template2 = await manager.getTemplate('my-template');
+    expect(template2.metadata?.description).toBe('Second version');
+
+    const { readText } = await import('../../src/utils/fs.js');
+    const instructions = await readText(template2.instructionsPath);
+    expect(instructions).toContain('Second version');
+  });
+
+  it('should handle force flag when template does not exist', async () => {
+    const testDir = getTestDir();
+    const projectTemplatesDir = join(testDir, 'templates');
+    const globalTemplatesDir = join(testDir, 'global-templates');
+    const workspacePath = join(testDir, 'workspaces', 'test-workspace');
+
+    const workspace = await Workspace.init('test-workspace', workspacePath);
+    await workspace.writeInstructions('# Instructions');
+
+    const manager = new TemplateManager(
+      projectTemplatesDir,
+      globalTemplatesDir
+    );
+
+    // Should succeed even with force when template doesn't exist
+    await manager.saveTemplate(workspacePath, 'new-template', {
+      force: true,
+    });
+
+    const template = await manager.getTemplate('new-template');
+    expect(template).toBeDefined();
+  });
+
+  it('should overwrite global template with force flag', async () => {
+    const testDir = getTestDir();
+    const projectTemplatesDir = join(testDir, 'templates');
+    const globalTemplatesDir = join(testDir, 'global-templates');
+    const workspacePath = join(testDir, 'workspaces', 'test-workspace');
+
+    const workspace = await Workspace.init('test-workspace', workspacePath);
+    await workspace.writeInstructions('# Global template v1');
+
+    const manager = new TemplateManager(
+      projectTemplatesDir,
+      globalTemplatesDir
+    );
+
+    // Save global template
+    await manager.saveTemplate(workspacePath, 'global-tpl', {
+      global: true,
+      description: 'Version 1',
+    });
+
+    // Update and overwrite
+    await workspace.writeInstructions('# Global template v2');
+    await manager.saveTemplate(workspacePath, 'global-tpl', {
+      global: true,
+      description: 'Version 2',
+      force: true,
+    });
+
+    const template = await manager.getTemplate('global-tpl');
+    expect(template.metadata?.description).toBe('Version 2');
   });
 });

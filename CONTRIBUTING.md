@@ -91,6 +91,7 @@ git checkout -b feature/my-awesome-feature
 ```
 
 Use descriptive branch names:
+
 - `feature/` - New features
 - `fix/` - Bug fixes
 - `docs/` - Documentation updates
@@ -134,6 +135,7 @@ Closes #123
 ```
 
 **Types:**
+
 - `feat:` - New feature
 - `fix:` - Bug fix
 - `docs:` - Documentation changes
@@ -169,6 +171,7 @@ git push origin feature/my-awesome-feature
 ```
 
 **PR Guidelines:**
+
 - Fill out the PR template completely
 - Reference related issues
 - Ensure all CI checks pass
@@ -197,6 +200,7 @@ claude-iterate/
 ```
 
 **Key files:**
+
 - `src/cli.ts` - Register new commands here
 - `src/types/*.ts` - Zod schemas for validation
 - `tests/mocks/claude-client.mock.ts` - Mock for testing (no real Claude calls)
@@ -239,6 +243,38 @@ import { myCommand } from './commands/my-command.js';
 // In cli() function:
 program.addCommand(myCommand());
 ```
+
+### Modifying Prompt Templates
+
+Prompt templates are located in `src/templates/prompts/` and use token replacement:
+
+**Template files:**
+
+- `workspace-system.md` - Used in setup/edit/validate commands
+- `loop/iteration-system.md` - Loop mode iteration context
+- `iterative/iteration-system.md` - Iterative mode iteration context
+- `loop/status-instructions.md` - Loop mode status tracking
+- `iterative/status-instructions.md` - Iterative mode status tracking
+
+**Token replacement:**
+
+- Use `{{tokenName}}` in templates
+- Tokens replaced at runtime via `loadTemplate()` function
+- Common tokens: `{{projectRoot}}`, `{{workspacePath}}`, `{{workspaceName}}`
+
+**Example:**
+
+```markdown
+**Current Working Directory:** `{{projectRoot}}`
+**Workspace Location:** `{{workspacePath}}`
+```
+
+**Important:**
+
+- Test token replacement (see `tests/unit/loop-mode.test.ts`)
+- Update both loop and iterative templates for consistency
+- Consider token impact on prompt size (~1% increase acceptable)
+- Verify no unreplaced tokens in generated prompts
 
 ### Adding a New Type/Schema
 
@@ -299,6 +335,70 @@ describe('MyFeature', () => {
 - Add JSDoc comments for public APIs
 - Keep CHANGELOG.md updated under `[Unreleased]`
 
+## Dependency Management
+
+This project uses **manual dependency management** rather than automated tools like Dependabot.
+
+### Rationale
+
+While Dependabot provides automated dependency updates, we've chosen manual management for this project because:
+
+1. **Notification Noise**: Dependabot creates weekly PRs for all dependencies, generating significant GitHub notification volume for maintainers.
+
+2. **Small Team Scale**: As a solo/small-team maintained project, manual dependency reviews are manageable and allow for more thoughtful evaluation of updates.
+
+3. **Deliberate Update Cycles**: Manual updates allow batching dependency changes with feature releases, reducing CI churn.
+
+4. **Security Coverage**: Security vulnerabilities are still monitored via:
+   - Manual `npm audit` runs before releases
+   - GitHub security alerts (enabled in repository settings)
+   - Security-conscious dependency selection
+
+### Updating Dependencies
+
+**Before releases**:
+
+```bash
+# Check for vulnerabilities
+npm audit --audit-level=high
+
+# Fix any high/critical issues
+npm audit fix
+
+# Check for outdated packages (informational)
+npm outdated
+```
+
+**Regular maintenance** (monthly or quarterly):
+
+```bash
+# Review all outdated packages
+npm outdated
+
+# Update dependencies as needed
+npm update <package-name>
+
+# Test thoroughly
+npm run validate
+```
+
+### Security Vulnerabilities
+
+**If a security vulnerability is discovered**:
+
+1. Fix immediately: `npm audit fix`
+2. Test: `npm test`
+3. Commit: `git commit -m "fix: resolve CVE-XXXX-XXXX vulnerability"`
+4. Create patch release if in production
+
+### When to Reconsider
+
+This decision should be revisited if:
+
+- Project has multiple active maintainers
+- Dependencies fall significantly behind
+- Security vulnerabilities are repeatedly missed
+
 ## Release Process
 
 (For maintainers only)
@@ -319,6 +419,7 @@ describe('MyFeature', () => {
 ## Questions?
 
 If something is unclear:
+
 1. Check existing issues and discussions
 2. Review the codebase (it's well-documented!)
 3. Ask in a new discussion or issue

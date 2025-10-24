@@ -3,19 +3,21 @@
 <task>Create a comprehensive INSTRUCTIONS.md file at {{workspacePath}}/INSTRUCTIONS.md for workspace: {{workspaceName}}</task>
 
 <context>
-These instructions guide Claude in autonomous task execution. Claude reads INSTRUCTIONS.md and TODO.md, completes work, and tracks progress until all items are done.
+These instructions guide Claude in autonomous task execution. The system provides your instructions to Claude each iteration, who then completes work and tracks progress until all items are done.
 </context>
 
 <critical_principle>
 Instructions must describe WHAT to accomplish (the task), NOT HOW the system works.
 
 ❌ NEVER include in user instructions:
+
 - "You'll work in sessions"
 - "Complete as many items as possible per iteration"
 - "Sessions continue until complete"
 - References to work cycles or iteration mechanics
 
 ✅ ALWAYS focus on:
+
 - Clear task goals and deliverables
 - Work breakdown into completable items
 - Progress tracking using checkboxes in TODO.md

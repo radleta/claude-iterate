@@ -17,10 +17,7 @@ import {
   listDir,
   remove,
 } from '../utils/fs.js';
-import {
-  TemplateNotFoundError,
-  TemplateExistsError,
-} from '../utils/errors.js';
+import { TemplateNotFoundError, TemplateExistsError } from '../utils/errors.js';
 
 /**
  * Template manager for reusable task patterns
@@ -42,6 +39,7 @@ export class TemplateManager {
       tags?: string[];
       estimatedIterations?: number;
       global?: boolean;
+      force?: boolean;
     }
   ): Promise<void> {
     const targetDir = options?.global
@@ -52,7 +50,11 @@ export class TemplateManager {
 
     // Check if template already exists
     if (await dirExists(templatePath)) {
-      throw new TemplateExistsError(templateName);
+      if (!options?.force) {
+        throw new TemplateExistsError(templateName);
+      }
+      // Remove existing template when force is enabled
+      await remove(templatePath);
     }
 
     // Create template directory
@@ -61,7 +63,9 @@ export class TemplateManager {
     // Copy INSTRUCTIONS.md
     const instructionsSource = join(workspacePath, 'INSTRUCTIONS.md');
     if (!(await fileExists(instructionsSource))) {
-      throw new Error('Workspace must have INSTRUCTIONS.md to save as template');
+      throw new Error(
+        'Workspace must have INSTRUCTIONS.md to save as template'
+      );
     }
 
     const instructionsDest = join(templatePath, 'INSTRUCTIONS.md');
