@@ -55,7 +55,7 @@ function copyDirRecursive(src, dest, filter = null) {
 
 // Copy template files to dist (only .md files, not .ts source files)
 const templatesSource = path.join(__dirname, '../src/templates');
-const templatesDest = path.join(distDir, 'src/templates');
+const templatesDest = path.join(distDir, 'templates');
 
 let totalCopied = 0;
 if (fs.existsSync(templatesSource)) {
@@ -63,7 +63,7 @@ if (fs.existsSync(templatesSource)) {
     // Only copy .md template files, not .ts source files
     return filename.endsWith('.md');
   });
-  console.log(`Copied ${copiedCount} .md template files to dist/src/templates/`);
+  console.log(`Copied ${copiedCount} .md template files to dist/templates/`);
   totalCopied += copiedCount;
 }
 
