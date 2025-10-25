@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.1] - 2025-10-25
+
 ### Fixed
 
 - **Fixed template file copy destination in build script**: Template files are now correctly copied to `dist/templates/` instead of `dist/src/templates/`
