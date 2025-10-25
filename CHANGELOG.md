@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Fixed template file copy destination in build script**: Template files are now correctly copied to `dist/templates/` instead of `dist/src/templates/`
+  - Resolves `ENOENT: no such file or directory` errors when running `claude-iterate run`, `setup`, `edit`, `validate`, and `verify` commands
+  - The runtime code expects templates at `dist/templates/prompts/` but the build script was copying them to `dist/src/templates/`
+  - **Impact**: All template-loading commands now work correctly in the built/published package
+  - **Compatibility**: 100% compatible - only fixes broken functionality, no API or behavior changes
+
 ## [2.1.0] - 2025-10-24
 
 ### ⚠️ Breaking Changes
