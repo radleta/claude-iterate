@@ -6,7 +6,8 @@ import {
   getVerificationPrompt,
   getWorkspaceSystemPrompt,
 } from '../templates/system-prompt.js';
-import { join } from 'path';
+import { join, resolve, dirname, isAbsolute } from 'path';
+import { mkdir } from 'fs/promises';
 import { readText, fileExists } from '../utils/fs.js';
 
 export interface VerificationOptions {
@@ -43,10 +44,29 @@ export class VerificationService {
     // Determine depth
     const depth = options.depth ?? this.config.verification.depth;
 
-    // Determine report path
-    const reportPath =
+    // Determine report path (ensure absolute)
+    let reportPath =
       options.reportPath ??
       join(workspace.path, this.config.verification.reportFilename);
+
+    // Ensure absolute path
+    if (!isAbsolute(reportPath)) {
+      reportPath = resolve(workspace.path, reportPath);
+    }
+
+    this.logger.debug(`Report path (absolute): ${reportPath}`, true);
+
+    // Ensure parent directory exists
+    const reportDir = dirname(reportPath);
+    try {
+      await mkdir(reportDir, { recursive: true });
+    } catch (error) {
+      // Directory might already exist or be inaccessible
+      this.logger.debug(
+        `mkdir failed (may be normal): ${error instanceof Error ? error.message : String(error)}`,
+        true
+      );
+    }
 
     this.logger.info(`Running ${depth} verification...`);
 
@@ -72,12 +92,45 @@ export class VerificationService {
       depth
     );
 
-    // Execute verification
-    await client.executeNonInteractive(prompt, systemPrompt);
+    // Execute verification with diagnostic capture
+    let claudeOutput = '';
+    try {
+      this.logger.debug(`Expecting report at: ${reportPath}`, true);
+      claudeOutput = await client.executeNonInteractive(
+        prompt,
+        systemPrompt,
+        undefined,
+        {
+          onStdout: (chunk) => {
+            this.logger.debug(chunk, true);
+          },
+          onStderr: (chunk) => {
+            this.logger.debug(`Claude stderr: ${chunk}`, true);
+          },
+        }
+      );
+      this.logger.debug(`Claude completed successfully`, true);
+    } catch (error) {
+      this.logger.error('Claude execution failed', error as Error);
+      throw error;
+    }
 
-    // Read generated report
+    // Read generated report with improved error message
     if (!(await fileExists(reportPath))) {
-      throw new Error('Verification report not generated');
+      const errorMsg = [
+        'Verification report not generated',
+        `Expected location: ${reportPath}`,
+        '',
+        'This may indicate:',
+        '  1. Permission prompts blocked execution',
+        '     Try: --dangerously-skip-permissions',
+        '  2. Claude failed to understand instructions',
+        '  3. Path or permission issues preventing file write',
+        '',
+        'Claude output:',
+        claudeOutput || '(no output captured)',
+      ].join('\n');
+      throw new Error(errorMsg);
     }
 
     const fullReport = await readText(reportPath);

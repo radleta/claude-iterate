@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Verification command failure**: Fixed critical bug where `verify` command consistently failed with "Verification report not generated" error across all depth levels (quick, standard, deep)
+  - Root cause: Missing permission handling prevented Claude from writing verification reports in non-interactive mode
+  - Added `--dangerously-skip-permissions` option to verify command for autonomous operation
+  - Improved error diagnostics with detailed failure information including expected path and Claude output
+  - Fixed path resolution to consistently use absolute paths
+  - Added automatic parent directory creation for report files
+  - Added comprehensive error messages with actionable troubleshooting steps
+  - **Impact**: Verification feature now works correctly - users can verify task completion and get quality feedback
+  - **Compatibility**: 100% compatible - only fixes broken functionality, adds new optional flags
+
+### Added
+
+- **Verification UX improvements**:
+  - Output level support for verify command: `-v, --verbose` and `-q, --quiet` flags
+  - ConsoleReporter integration for consistent output formatting across commands
+  - Better error messages showing expected report path and potential causes
+  - Runtime override support for permission flags (consistent with run command)
+  - Debug logging for troubleshooting verification issues
+  - Comprehensive test coverage for VerificationService (20 unit tests)
+
 ## [2.1.1] - 2025-10-25
 
 ### Fixed

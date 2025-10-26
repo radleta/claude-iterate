@@ -190,6 +190,9 @@ claude-iterate config --global notifyUrl https://ntfy.sh/my-topic
 - `--report-path <path>` - Custom report path
 - `--json` - Output JSON results
 - `--show-report` - Show full report in console
+- `-v, --verbose` - Show full Claude output
+- `-q, --quiet` - Silent execution, errors only
+- `--dangerously-skip-permissions` - Skip permission prompts (runtime only)
 
 **Depth Levels:**
 
@@ -198,6 +201,24 @@ claude-iterate config --global notifyUrl https://ntfy.sh/my-topic
 - `deep` (~5-10K tokens): Comprehensive code quality, edge cases, and documentation analysis
 
 **Exit codes:** 0 = verified complete, 1 = incomplete/needs review
+
+**Usage Examples:**
+
+```bash
+# Basic verification (may prompt for permissions)
+claude-iterate verify my-workspace
+
+# Autonomous verification (no prompts)
+claude-iterate verify my-workspace --dangerously-skip-permissions
+
+# Deep verification with verbose output
+claude-iterate verify my-workspace --depth deep --verbose --dangerously-skip-permissions
+
+# Quick verification with custom report location
+claude-iterate verify my-workspace --depth quick --report-path ./reports/verify.md
+```
+
+**Note:** Verification requires Claude CLI to read workspace files and write reports. For autonomous operation without permission prompts, use `--dangerously-skip-permissions` or configure `claude.args` in your project/user config. See [Security: Permission Prompts](#security-permission-prompts) for details.
 
 ### Execution
 
