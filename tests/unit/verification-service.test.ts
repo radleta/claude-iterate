@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { isAbsolute } from 'path';
 import { VerificationService } from '../../src/core/verification-service.js';
 import { Workspace } from '../../src/core/workspace.js';
 import { Logger } from '../../src/utils/logger.js';
@@ -240,10 +241,10 @@ Comprehensive verification complete.
 
       await service.verify(mockWorkspace);
 
-      // Check that absolute path was used (starts with /)
+      // Check that absolute path was used
       const calls = (fileExists as any).mock.calls;
       expect(calls.length).toBeGreaterThan(0);
-      expect(calls[0][0]).toMatch(/^\//); // Starts with /
+      expect(isAbsolute(calls[0][0])).toBe(true); // Should be absolute path (cross-platform)
     });
 
     it('should respect config depth setting', async () => {
