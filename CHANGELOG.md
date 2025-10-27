@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Archives now stored as compressed tarballs**: Changed archive format from directories to `.tar.gz` tarballs with backwards compatibility for legacy archives
+  - Root cause: Documentation stated `.tar.gz` format but implementation used directories
+  - New archives created as compressed `.tar.gz` files (smaller size, better portability)
+  - Legacy directory archives still fully supported (read, restore, list, delete)
+  - Added `tar` package dependency for tarball creation/extraction
+  - Archive operations use temporary directories for safe extraction/creation
+  - **Impact**: Reduced disk usage through compression, improved portability (single file vs directory), documentation now matches implementation
+  - **Migration**: No action required - old directory archives continue to work, new archives use tarball format
+
+- **System prompt terminology clarification**: Updated all system prompts to clarify "working directory" terminology and provide explicit file location guidance
+  - Root cause: Ambiguous "working directory" term caused Claude to place files inconsistently between project root and workspace subdirectories
+  - Updated `workspace-system.md` with decision tree for file placement (project deliverables vs task management vs scratch files)
+  - Updated `loop/iteration-system.md` and `iterative/iteration-system.md` with clear file location table
+  - Added explicit path examples and directory reference table
+  - **Impact**: Consistent file placement across loop and iterative modes, clearer guidance reduces user confusion
+  - Templates: Users may want to regenerate templates with updated prompts for clarity
+
+### Fixed
+
+- **Zombie process timeout in verify --json**: Fixed `verify --json` command hanging indefinitely when Claude process becomes zombie
+  - Root cause: Claude CLI process completes successfully but becomes zombie (`<defunct>`), preventing Node.js `exit` event from firing
+  - Added 5-minute timeout to `ClaudeClient.executeNonInteractive()` with zombie process detection
+  - When timeout fires: checks if process is zombie/killed (exitCode set or killed=true) and resolves with stdout, otherwise kills process and rejects with timeout error
+  - Timeout includes diagnostic info (stdout/stderr length) to aid debugging
+  - **Impact**: `verify --json` now completes successfully instead of hanging forever, enabling automation/CI/CD usage
+  - Added 6 comprehensive unit tests covering zombie detection, real timeouts, and normal exit scenarios
+
 ## [2.2.0] - 2025-10-27
 
 ### Changed
