@@ -21,8 +21,8 @@ import { getDescriptions } from '../config/key-descriptions.js';
  * Config command - git-style configuration management
  *
  * Examples:
- *   claude-iterate config --list
- *   claude-iterate config --global --list
+ *   claude-iterate config --keys
+ *   claude-iterate config --global --keys
  *   claude-iterate config claude.args
  *   claude-iterate config claude.args --add --dangerously-skip-permissions
  *   claude-iterate config --global claude.args --add --dangerously-skip-permissions
@@ -38,7 +38,6 @@ export function configCommand(): Command {
     .argument('[value]', 'Value to set (omit to get current value)')
     .option('-g, --global', 'Use global user config instead of project config')
     .option('-w, --workspace <name>', 'Manage workspace-level config')
-    .option('-l, --list', 'List all configuration values')
     .option('-k, --keys', 'Show available configuration keys')
     .option('--json', 'Output as JSON (for use with --keys)')
     .option('--add <value>', 'Add value to array (for array-type configs)')
@@ -54,7 +53,6 @@ export function configCommand(): Command {
         options: {
           global?: boolean;
           workspace?: string;
-          list?: boolean;
           keys?: boolean;
           json?: boolean;
           add?: string;
@@ -90,16 +88,10 @@ export function configCommand(): Command {
             : getProjectConfigPath();
           const scope = isGlobal ? 'global' : 'project';
 
-          // List all configs
-          if (options.list) {
-            await handleList(configPath, scope, logger);
-            return;
-          }
-
-          // Key is required for non-list operations
+          // Key is required
           if (!key) {
             logger.error(
-              'Configuration key required. Use --list to see all values.'
+              'Configuration key required. Use --keys to see all available keys.'
             );
             process.exit(1);
           }
@@ -194,9 +186,11 @@ async function handleWorkspaceConfig(
     return;
   }
 
-  // Key is required for non-list operations
+  // Key is required
   if (!key) {
-    logger.error('Configuration key required. Use --list to see all values.');
+    logger.error(
+      'Configuration key required. Use --keys to see all available keys.'
+    );
     process.exit(1);
   }
 
@@ -390,41 +384,6 @@ async function handleWorkspaceArrayRemove(
   logger.success(`Removed from workspace config: ${key} -= ${value}`);
   logger.log(`Workspace: ${workspaceName}`);
   logger.log(`Current value: ${JSON.stringify(array)}`);
-}
-
-/**
- * List all configuration values
- */
-async function handleList(
-  configPath: string,
-  scope: string,
-  logger: Logger
-): Promise<void> {
-  const exists = await fileExists(configPath);
-
-  if (!exists) {
-    logger.warn(`No ${scope} configuration file found`);
-    logger.log(`Path: ${configPath}`);
-    logger.log('');
-    logger.log('To create a config file, set a value:');
-    if (scope === 'global') {
-      logger.log(
-        '  claude-iterate config --global claude.args --add --dangerously-skip-permissions'
-      );
-    } else {
-      logger.log('  claude-iterate config defaultMaxIterations 100');
-    }
-    return;
-  }
-
-  const config = await readJson<unknown>(configPath);
-
-  logger.info(
-    `${scope.charAt(0).toUpperCase() + scope.slice(1)} Configuration`
-  );
-  logger.log(`Path: ${configPath}`);
-  logger.log('');
-  logger.log(JSON.stringify(config, null, 2));
 }
 
 /**

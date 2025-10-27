@@ -84,18 +84,18 @@ export class ConfigKeysFormatter {
         '  Unset:  claude-iterate config --workspace <name> <key> --unset'
       );
       this.logger.log(
-        '  List:   claude-iterate config --workspace <name> --list'
+        '  Keys:   claude-iterate config --workspace <name> --keys'
       );
     } else if (scope === 'user') {
       this.logger.log('  Get:    claude-iterate config --global <key>');
       this.logger.log('  Set:    claude-iterate config --global <key> <value>');
       this.logger.log('  Unset:  claude-iterate config --global <key> --unset');
-      this.logger.log('  List:   claude-iterate config --global --list');
+      this.logger.log('  Keys:   claude-iterate config --global --keys');
     } else {
       this.logger.log('  Get:    claude-iterate config <key>');
       this.logger.log('  Set:    claude-iterate config <key> <value>');
       this.logger.log('  Unset:  claude-iterate config <key> --unset');
-      this.logger.log('  List:   claude-iterate config --list');
+      this.logger.log('  Keys:   claude-iterate config --keys');
     }
   }
 

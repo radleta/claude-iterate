@@ -89,7 +89,7 @@ export function setupCommand(): Command {
           const updatedRuntimeConfig = updatedConfig.getConfig();
           const notificationService = new NotificationService(
             logger,
-            updatedRuntimeConfig.verbose
+            updatedRuntimeConfig.outputLevel === 'verbose'
           );
 
           if (

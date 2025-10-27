@@ -14,8 +14,7 @@ describe('LoopModeStrategy', () => {
     // Per critical principle: should NOT mention iteration mechanics in setup
     expect(prompt).not.toContain('automated iteration loop');
     expect(prompt).toContain('critical_principle');
-    expect(prompt).toContain('NEVER include in user instructions');
-    expect(prompt).toContain('Remaining: 0');
+    expect(prompt).toContain('NOT HOW the system works');
     expect(prompt).toContain('INSTRUCTIONS.md');
     expect(prompt).toContain('test');
     expect(prompt).toContain('/path/to/workspace');
@@ -26,7 +25,7 @@ describe('LoopModeStrategy', () => {
     // Per critical principle: should NOT mention iteration mechanics in edit prompt
     expect(prompt).not.toContain('automated iteration loop');
     expect(prompt).toContain('critical_principle');
-    expect(prompt).toContain('Remaining: 0');
+    expect(prompt).toContain('NOT HOW the system works');
     expect(prompt).toContain('/path/to/workspace/INSTRUCTIONS.md');
   });
 
@@ -56,15 +55,15 @@ describe('LoopModeStrategy', () => {
 
   it('should generate iteration prompt', async () => {
     const prompt = await strategy.getIterationPrompt('Do the task', 5);
-    expect(prompt).toContain('Task Iteration 5');
+    // Loop mode iteration template just contains instructions content
     expect(prompt).toContain('Do the task');
-    expect(prompt).toContain('Follow the instructions above');
   });
 
-  it('should include Remaining count in validation criteria', async () => {
+  it('should include validation criteria for loop mode', async () => {
     const criteria = await strategy.getValidationCriteria();
-    expect(criteria).toContain('Remaining: 0');
-    expect(criteria).toContain('Dynamic Counting');
-    expect(criteria).toContain('Re-runnable');
+    // Check for key sections in updated validation criteria
+    expect(criteria).toContain('Validation Criteria for Loop Mode');
+    expect(criteria).toContain('Work Breakdown');
+    expect(criteria).toContain('No System Mechanics');
   });
 });

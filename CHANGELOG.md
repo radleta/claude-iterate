@@ -7,7 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Config system refactoring**: Removed deprecated `verbose` field and `--list` command in favor of `outputLevel` and `--keys`
+  - BREAKING: Removed `verbose: boolean` from config schemas (use `outputLevel: 'verbose'` instead)
+  - BREAKING: Removed `config --list` command (use `config --keys` instead)
+  - Changed `verification` and `claude` objects from `.optional()` to `.default({})` in Zod schemas
+  - This ensures nested defaults are always available and improves config inheritance behavior
+  - **Impact**: Existing configs with `verbose: true` will be ignored; use `outputLevel: "verbose"` instead
+  - **Migration**: Replace `"verbose": true` with `"outputLevel": "verbose"` in config files
+
 ### Fixed
+
+- **Config inheritance source tracking**: Fixed `resolveEffectiveValues` to correctly collect nested default values
+  - Root cause: Schema objects marked as `.optional()` were not included when parsing empty configs
+  - Changed `verification` and `claude` objects to use `.default({})` instead of `.optional()`
+  - Now all config keys appear in `resolveEffectiveValues`, even when using defaults
+  - **Impact**: `config --keys` now shows complete config with accurate source attribution
+  - Added 69 new tests covering config inheritance, workspace overrides, and source tracking
 
 - **Instruction prompts were overly prescriptive**: Fixed setup/edit/validation prompts that incorrectly prescribed specific state management formats (TODO.md, Remaining: N, checkboxes) instead of letting user/agent decide
   - Root cause: Prompts conflated two separate concerns - (1) removing system mechanics explanations vs (2) prescribing state management formats

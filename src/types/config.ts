@@ -31,7 +31,7 @@ export const ProjectConfigSchema = z.object({
       command: z.string().default('claude'),
       args: z.array(z.string()).default([]),
     })
-    .optional(),
+    .default({}),
   verification: z
     .object({
       autoVerify: z.boolean().default(true),
@@ -41,7 +41,7 @@ export const ProjectConfigSchema = z.object({
       depth: z.enum(['quick', 'standard', 'deep']).default('standard'),
       notifyOnVerification: z.boolean().default(true),
     })
-    .optional(),
+    .default({}),
 });
 
 export type ProjectConfig = z.infer<typeof ProjectConfigSchema>;
@@ -63,7 +63,6 @@ export const UserConfigSchema = z.object({
     })
     .default({}),
   colors: z.boolean().default(true),
-  verbose: z.boolean().default(false), // Deprecated - use outputLevel instead
   verification: z
     .object({
       autoVerify: z.boolean().default(true),
@@ -73,7 +72,7 @@ export const UserConfigSchema = z.object({
       depth: z.enum(['quick', 'standard', 'deep']).default('standard'),
       notifyOnVerification: z.boolean().default(true),
     })
-    .optional(),
+    .default({}),
 });
 
 export type UserConfig = z.infer<typeof UserConfigSchema>;
@@ -102,7 +101,6 @@ export interface RuntimeConfig {
   claudeCommand: string;
   claudeArgs: string[];
   colors: boolean;
-  verbose: boolean; // Deprecated - use outputLevel instead
   verification: {
     autoVerify: boolean;
     resumeOnFail: boolean;
@@ -129,7 +127,6 @@ export const DEFAULT_CONFIG: RuntimeConfig = {
   claudeCommand: 'claude',
   claudeArgs: [],
   colors: true,
-  verbose: false, // Deprecated - use outputLevel instead
   verification: {
     autoVerify: true,
     resumeOnFail: true,

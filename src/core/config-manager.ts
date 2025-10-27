@@ -40,7 +40,6 @@ export class ConfigManager {
       maxIterations?: number;
       delay?: number;
       notifyUrl?: string;
-      verbose?: boolean;
       quiet?: boolean;
       output?: string;
       colors?: boolean;
@@ -128,26 +127,17 @@ export class ConfigManager {
     config: RuntimeConfig,
     userConfig: UserConfig
   ): RuntimeConfig {
-    // Handle backward compatibility: map verbose boolean to outputLevel
-    let outputLevel = userConfig.outputLevel;
-    if (userConfig.verbose && !userConfig.outputLevel) {
-      outputLevel = 'verbose';
-    } else if (userConfig.verbose === false && !userConfig.outputLevel) {
-      outputLevel = 'progress';
-    }
-
     const merged: RuntimeConfig = {
       ...config,
       globalTemplatesDir: userConfig.globalTemplatesDir,
       maxIterations: userConfig.defaultMaxIterations,
       delay: userConfig.defaultDelay,
       stagnationThreshold: userConfig.defaultStagnationThreshold,
-      outputLevel,
+      outputLevel: userConfig.outputLevel,
       notifyUrl: userConfig.notifyUrl,
       claudeCommand: userConfig.claude.command,
       claudeArgs: userConfig.claude.args,
       colors: userConfig.colors,
-      verbose: userConfig.verbose,
     };
 
     // Merge verification config if present
@@ -264,7 +254,6 @@ export class ConfigManager {
       // Output level override
       if (metadata.config.outputLevel) {
         merged.outputLevel = metadata.config.outputLevel;
-        merged.verbose = metadata.config.outputLevel === 'verbose';
       }
 
       // Claude settings override
@@ -350,15 +339,11 @@ export class ConfigManager {
           | 'quiet'
           | 'progress'
           | 'verbose';
-        // Also set verbose for backward compatibility
-        merged.verbose = cliOptions.output === 'verbose';
       }
     } else if (cliOptions.verbose !== undefined) {
       merged.outputLevel = 'verbose';
-      merged.verbose = true;
     } else if (cliOptions.quiet !== undefined) {
       merged.outputLevel = 'quiet';
-      merged.verbose = false;
     }
 
     if (cliOptions.colors !== undefined) {

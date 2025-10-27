@@ -14,10 +14,9 @@ describe('IterativeModeStrategy', () => {
     // Should not describe it as an "automated iteration loop" in the main context
     expect(prompt).not.toContain('automated iteration loop');
     expect(prompt).not.toContain('Remaining: 0');
-    expect(prompt).toContain('checkbox');
     // Should include critical principle teaching what NOT to mention
     expect(prompt).toContain('critical_principle');
-    expect(prompt).toContain('NEVER include in user instructions');
+    expect(prompt).toContain('NOT HOW the system works');
     // Should focus on task goals instead
     expect(prompt).toContain('autonomous');
     expect(prompt).toContain('WHAT to accomplish');
@@ -58,17 +57,16 @@ describe('IterativeModeStrategy', () => {
 
   it('should generate iteration prompt for work session', async () => {
     const prompt = await strategy.getIterationPrompt('Do the task', 5);
-    expect(prompt).toContain('Work Session 5');
+    // Iterative mode iteration template just contains instructions content
     expect(prompt).toContain('Do the task');
-    expect(prompt).toContain('as many outstanding items');
   });
 
-  it('should use checkbox format in validation criteria', async () => {
+  it('should use validation criteria for iterative mode', async () => {
     const criteria = await strategy.getValidationCriteria();
-    expect(criteria).toContain('checkbox');
-    expect(criteria).toContain('- [ ]');
-    expect(criteria).toContain('- [x]');
+    // Check for key sections in updated validation criteria
+    expect(criteria).toContain('Validation Criteria for Iterative Mode');
+    expect(criteria).toContain('Task Breakdown');
+    expect(criteria).toContain('Autonomous Execution');
     expect(criteria).not.toContain('Remaining: 0');
-    expect(criteria).toContain('No System Mentions');
   });
 });

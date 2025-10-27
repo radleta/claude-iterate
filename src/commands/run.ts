@@ -200,7 +200,7 @@ export function runCommand(): Command {
           // Create notification service
           const notificationService = new NotificationService(
             logger,
-            runtimeConfig.verbose
+            runtimeConfig.outputLevel === 'verbose'
           );
 
           // Create file logger with timestamped filename

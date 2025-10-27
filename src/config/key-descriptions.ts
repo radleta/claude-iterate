@@ -235,13 +235,6 @@ export const USER_CONFIG_DESCRIPTIONS: DescriptionMap = {
     category: 'display',
   },
 
-  verbose: {
-    description: '(Deprecated) Use outputLevel instead',
-    example: 'true',
-    notes: 'This setting is deprecated. Use outputLevel: "verbose" instead',
-    category: 'display',
-  },
-
   // === NOTIFICATIONS ===
   notifyUrl: {
     description: 'HTTP POST endpoint for notifications (ntfy.sh compatible)',
