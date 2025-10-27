@@ -3,29 +3,66 @@
 <task>Create a comprehensive INSTRUCTIONS.md file at {{workspacePath}}/INSTRUCTIONS.md for workspace: {{workspaceName}}</task>
 
 <context>
-These instructions guide Claude in autonomous task execution. The system provides your instructions to Claude each iteration, who then completes work and tracks progress until the task is complete.
+**What is claude-iterate?**
+
+claude-iterate is a CLI tool that enables autonomous task execution by repeatedly calling an AI agent with user-provided instructions until a task is complete.
+
+**How it works (loop mode):**
+
+1. User creates INSTRUCTIONS.md describing a task
+2. User runs `claude-iterate run <workspace>`
+3. The system calls the agent with the instructions
+4. The agent reads the instructions, does work, updates progress
+5. The agent updates `.status.json` with completion status (complete: true/false)
+6. Steps 3-5 repeat until `.status.json` shows complete: true
+7. Default max: 50 iterations
+
+**Your job:**
+
+Help the user create INSTRUCTIONS.md that an AI agent can follow autonomously. The instructions will be provided to the agent during each iteration as a prompt.
+
+**Key insight:**
+
+The instructions are a prompt FOR the agent (during execution), not documentation ABOUT the system. They should focus on WHAT to accomplish, not HOW the system works.
 </context>
 
 <critical_principle>
-Instructions must describe WHAT to accomplish (the task), NOT HOW the system works (iteration mechanics).
+Instructions must describe WHAT to accomplish (the task), NOT HOW the system works.
 
-❌ NEVER include in user instructions:
+❌ NEVER include system mechanics explanations:
 
-- "You'll be called in a loop"
-- "Update Remaining count each iteration"
+- How many times the agent will be called
+- When the system stops calling the agent
+- How the agent is re-invoked or looped
+- State persistence between system calls
+
+Examples of FORBIDDEN content:
+
+- "On each iteration, the system will call you..."
+- "Loop stops when Remaining: 0" or "task completes when Remaining: 0"
+- "You will be re-invoked until complete"
 - "You have no memory between iterations"
-- "Read TODO.md each time"
+- "TODO.md persists between iterations as your only state"
+- "After each iteration, check if..." or "between iterations"
 
-✅ ALWAYS focus on:
+✅ FOCUS on the task itself:
 
-- Clear task goals and deliverables
-- Work breakdown and approach
-- Progress tracking in TODO.md
-- Completion criteria
+- Clear goal: what needs to be accomplished
+- Approach: how to break down the work
+- Completion criteria: when the work is done (however the user wants to define it)
+- Quality standards: what "done" means
+- Error handling: what to do if something fails
+
+Let the agent decide during execution:
+
+- How to track progress (TODO.md, .status.json, checkboxes, lists, whatever works)
+- What format to use for state management
+- Where to store work artifacts
+- How to organize and prioritize work
 
 Example:
 ❌ BAD: "On each iteration, read TODO.md, complete one endpoint, update Remaining: N, repeat until Remaining: 0"
-✅ GOOD: "Build REST API with /users, /auth, /posts endpoints. Update TODO.md as you complete each. Task complete when all endpoints are tested and documented."
+✅ GOOD: "Build REST API with /users, /auth, /posts endpoints. Track your progress however works best. Task complete when all endpoints are implemented, tested, and documented."
 </critical_principle>
 
 {{validationCriteria}}
@@ -36,21 +73,20 @@ Example:
 3. Avoid rigid Q&A formats—adapt to the user's communication style
 </approach>
 
-<output_format>
-Create INSTRUCTIONS.md containing:
+<guidance>
+Create INSTRUCTIONS.md that an AI agent can follow autonomously to complete the task.
 
-**## Goal**
-[Clear 1-2 sentence statement of what to accomplish]
+Consider including (adapt as needed):
 
-**## Approach**
-[Step-by-step breakdown or strategy]
+- **Goal**: What needs to be accomplished and why
+- **Approach**: How to break down and tackle the work
+- **Completion Criteria**: When the work is done (user-defined)
+- **Quality Standards**: What "done" means (tests pass, documented, etc.)
+- **Error Handling**: What to do if something fails
 
-**## TODO.md Format**
-[Explicit template showing exactly what to track]
+The user/agent will decide during execution:
 
-**## Completion Criteria**
-[Unambiguous conditions indicating task is done]
-
-**## Error Handling**
-[Guidance for dealing with failures or blockers]
-</output_format>
+- How to track progress
+- What format to use for state management
+- How to organize work artifacts
+  </guidance>

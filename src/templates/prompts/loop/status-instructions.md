@@ -1,23 +1,10 @@
-**IMPORTANT: Status Tracking**
+**Progress Tracking**
 
-After completing work this iteration, you MUST update the status file.
+Update your progress in the status file as you work.
 
-**Status File Location:** `{{workspacePath}}/.status.json`
+**Status File:** `{{workspacePath}}/.status.json`
 
-**Your Current Directory:** `{{projectRoot}}`
-
-**Example Update Command:**
-
-```bash
-cat > {{workspacePath}}/.status.json <<'EOF'
-{
-  "complete": false,
-  "progress": { "completed": 35, "total": 60 },
-  "summary": "Brief status update",
-  "lastUpdated": "2025-10-16T14:30:00Z"
-}
-EOF
-```
+**Current Directory:** `{{projectRoot}}`
 
 **Required Format:**
 
@@ -35,33 +22,25 @@ EOF
 
 **Required Fields:**
 
-- `complete` (boolean): Set to `true` ONLY when ALL work is finished
+- `complete` (boolean): Set to `true` when ALL work is finished, `false` otherwise
 - `progress.completed` (number): Count of items you've completed so far
 - `progress.total` (number): Total count of items to complete
 
-**Loop Mode Tracking:**
-
-- Increment `progress.completed` by 1 each iteration as you complete items
-- Keep `progress.total` constant (the full scope)
-- Update `summary` with what you just completed
-- Update any tracking files your instructions specify (e.g., TODO.md if mentioned)
-
 **Optional Fields:**
 
-- `summary` (string): Brief human-readable status - RECOMMENDED for loop mode
+- `summary` (string): Brief human-readable status
 - `lastUpdated` (string): ISO 8601 timestamp
 - `phase` (string): Current phase/stage if working in phases
-- `blockers` (string[]): List of blocking issues preventing progress
-- `notes` (string): Additional context about current state
+- `blockers` (string[]): List of blocking issues
+- `notes` (string): Additional context
 
-**Completion Criteria:**
-Set `complete: true` when:
+**When to set complete: true:**
 
 - All tasks from your instructions are finished
 - `progress.completed === progress.total`
-- No remaining work or blockers
+- No remaining work
 
-**Example - In Progress (Loop Mode):**
+**Example - Work in Progress:**
 
 ```json
 {
@@ -90,4 +69,15 @@ Set `complete: true` when:
 }
 ```
 
-**CRITICAL:** The system uses `.status.json` to detect completion. If you don't update this file correctly, the iteration loop will not recognize task completion.
+**Update Command Example:**
+
+```bash
+cat > {{workspacePath}}/.status.json <<'EOF'
+{
+  "complete": false,
+  "progress": { "completed": 35, "total": 60 },
+  "summary": "Brief status update",
+  "lastUpdated": "2025-10-16T14:30:00Z"
+}
+EOF
+```

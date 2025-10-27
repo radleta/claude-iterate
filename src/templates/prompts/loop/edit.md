@@ -4,19 +4,52 @@
 
 <instructions_location>{{workspacePath}}/INSTRUCTIONS.md</instructions_location>
 
+<context>
+**What is claude-iterate?**
+
+claude-iterate is a CLI tool that enables autonomous task execution by repeatedly calling an AI agent with user-provided instructions until a task is complete.
+
+**How it works (loop mode):**
+
+1. The system calls the agent with INSTRUCTIONS.md as a prompt
+2. The agent does work and updates `.status.json` with completion status
+3. This repeats until `.status.json` shows complete: true (max 50 iterations)
+
+**Your job:**
+
+Review the existing INSTRUCTIONS.md and help the user improve it. The instructions are provided to the agent during each iteration as a prompt.
+
+**Key insight:**
+
+The instructions are a prompt FOR the agent (during execution), not documentation ABOUT the system. They should focus on WHAT to accomplish, not HOW the system works.
+</context>
+
 <critical_principle>
-Instructions must describe WHAT to accomplish (the task), NOT HOW the system works (iteration mechanics).
+Instructions must describe WHAT to accomplish (the task), NOT HOW the system works.
 
-❌ REMOVE from instructions:
-- References to iteration loops or cycles
-- Explanations of completion detection ("when Remaining: 0 is found, the loop stops")
-- System architecture details ("TODO.md is your only state between iterations")
+❌ REMOVE system mechanics explanations:
 
-✅ ENSURE instructions contain:
+- How many times the agent will be called
+- When the system stops calling the agent
+- How the agent is re-invoked or looped
+- State persistence between system calls
+- References like: "each iteration", "between iterations", "loop stops when..."
+
+Examples of content to REMOVE:
+
+- "Loop stops when Remaining: 0" or "task completes when Remaining: 0"
+- "You will be re-invoked until complete"
+- "TODO.md persists between iterations as your only state"
+- "After each iteration, check if..." or "between iterations"
+
+✅ ENSURE instructions focus on the task:
+
 - Clear task goals and deliverables
 - Work breakdown and approach
-- Progress tracking in TODO.md using "Remaining: N"
-- Unambiguous completion criteria
+- Completion criteria (user-defined, any format)
+- Quality standards and error handling
+
+Let the user define how to track progress - don't prescribe TODO.md format, Remaining: N, or any specific state management approach.
 </critical_principle>
 
 {{validationCriteria}}

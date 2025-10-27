@@ -9,6 +9,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Instruction prompts were overly prescriptive**: Fixed setup/edit/validation prompts that incorrectly prescribed specific state management formats (TODO.md, Remaining: N, checkboxes) instead of letting user/agent decide
+  - Root cause: Prompts conflated two separate concerns - (1) removing system mechanics explanations vs (2) prescribing state management formats
+  - Instructions are prompts FOR an AI agent during `run`, not documentation ABOUT the system - they should focus on WHAT to accomplish, not HOW to track it
+  - Removed all prescriptive content requiring specific formats (TODO.md, "Remaining: N" countdown, checkbox formats, file locations)
+  - Updated validation criteria to be format-agnostic (removed criteria like "Does TODO.md use Remaining: N format?")
+  - Changed from prescriptive output_format to suggestive guidance sections
+  - Kept ONLY the removal of system mechanics explanations ("loop stops when...", "you will be re-invoked...", "between iterations...")
+  - Added comprehensive context sections explaining what claude-iterate is and how it works (so the instruction designer can help users write effective instructions)
+  - Updated all language from "Claude" to "agent" (tool is agent-agnostic, not Claude-specific)
+  - Removed outdated "file markers" references (system uses .status.json for completion detection only)
+  - **Impact**: Users can now define state management however they want - instructions focus purely on task goals, completion criteria, and quality standards
+  - **Note**: System uses .status.json for completion detection, not TODO.md parsing - prescribing TODO.md format was outdated
+  - **Compatibility**: 100% compatible - removes unnecessary restrictions, no API changes
+
+- **Runtime templates exposed system mechanics**: Fixed iteration.md and status-instructions.md templates that were injecting system mechanics into every agent execution, violating the principle that instructions should focus on WHAT to accomplish, not HOW the system works
+  - Root cause: Templates were adding iteration headers ("Task Iteration {{iterationNumber}}") and referencing iteration mechanics ("this iteration", "each iteration", "Loop Mode Tracking", "the iteration loop will not recognize")
+  - Simplified iteration.md templates to only pass through user instructions (removed all wrapper content and headers)
+  - Cleaned status-instructions.md templates to remove all references to iterations, loops, sessions, and system mechanics
+  - Templates now only provide essential information agents need: user's instructions and .status.json format
+  - **Impact**: Agents receive cleaner, more focused prompts without confusing system implementation details
+  - **Compatibility**: 100% compatible - removes confusing content, no behavioral changes
+
 - **Verification command failure**: Fixed critical bug where `verify` command consistently failed with "Verification report not generated" error across all depth levels (quick, standard, deep)
   - Root cause: Missing permission handling prevented Claude from writing verification reports in non-interactive mode
   - Added `--dangerously-skip-permissions` option to verify command for autonomous operation

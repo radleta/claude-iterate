@@ -4,19 +4,52 @@
 
 <instructions_location>{{workspacePath}}/INSTRUCTIONS.md</instructions_location>
 
+<context>
+**What is claude-iterate?**
+
+claude-iterate is a CLI tool that enables autonomous task execution by repeatedly calling an AI agent with user-provided instructions until a task is complete.
+
+**How it works (iterative mode):**
+
+1. The system calls the agent with INSTRUCTIONS.md as a prompt
+2. The agent does work and updates `.status.json` with completion status
+3. This repeats until `.status.json` shows complete: true (max 20 iterations)
+
+**Your job:**
+
+Review the existing INSTRUCTIONS.md and help the user improve it. The instructions are provided to the agent during each iteration as a prompt.
+
+**Key insight:**
+
+The instructions are a prompt FOR the agent (during execution), not documentation ABOUT the system. They should focus on WHAT to accomplish, not HOW the system works.
+</context>
+
 <critical_principle>
 Instructions must describe WHAT to accomplish (the task), NOT HOW the system works.
 
-❌ REMOVE from instructions:
-- References to work sessions or iteration cycles
-- Explanations of how often Claude will run
-- System architecture details ("TODO.md persists between sessions")
+❌ REMOVE system mechanics explanations:
 
-✅ ENSURE instructions contain:
+- How many times the agent will be called
+- When the system stops calling the agent
+- How the agent is re-invoked or run in sessions
+- State persistence between system calls
+- References like: "each session", "between sessions", "session stops when..."
+
+Examples of content to REMOVE:
+
+- "Session stops when..." or "work ends when..."
+- "You will be re-invoked until complete"
+- "TODO.md persists between sessions as your only state"
+- "After each session, check if..." or "between sessions"
+
+✅ ENSURE instructions focus on the task:
+
 - Clear task goals and deliverables
-- Work breakdown into completable items
-- Progress tracking in TODO.md using checkboxes (- [ ] / - [x])
-- Unambiguous completion criteria
+- Work breakdown and approach
+- Completion criteria (user-defined, any format)
+- Quality standards and error handling
+
+Let the user define how to track progress - don't prescribe TODO.md format, checkboxes, or any specific state management approach.
 </critical_principle>
 
 {{validationCriteria}}
