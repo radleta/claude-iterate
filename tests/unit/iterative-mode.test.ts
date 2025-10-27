@@ -48,7 +48,8 @@ describe('IterativeModeStrategy', () => {
       '/path/to/project'
     );
     expect(prompt).toContain('Complete as much');
-    expect(prompt).toContain('stop early');
+    expect(prompt).toContain('Stop when:');
+    expect(prompt).toContain('Completion Criteria');
     expect(prompt).not.toContain('NO memory of previous iterations');
     expect(prompt).toContain('INSTRUCTIONS.md');
     expect(prompt).toContain('.status.json');

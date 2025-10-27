@@ -9,9 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **Config system refactoring**: Removed deprecated `verbose` field and `--list` command in favor of `outputLevel` and `--keys`
+- **Config system refactoring**: Removed deprecated `verbose` field in favor of `outputLevel`
   - BREAKING: Removed `verbose: boolean` from config schemas (use `outputLevel: 'verbose'` instead)
-  - BREAKING: Removed `config --list` command (use `config --keys` instead)
   - Changed `verification` and `claude` objects from `.optional()` to `.default({})` in Zod schemas
   - This ensures nested defaults are always available and improves config inheritance behavior
   - **Impact**: Existing configs with `verbose: true` will be ignored; use `outputLevel: "verbose"` instead
@@ -25,6 +24,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Now all config keys appear in `resolveEffectiveValues`, even when using defaults
   - **Impact**: `config --keys` now shows complete config with accurate source attribution
   - Added 69 new tests covering config inheritance, workspace overrides, and source tracking
+
+- **Missing config --list flag**: Implemented `config --list` flag to display all configuration values as documented in README
+  - Root cause: Flag was documented but not implemented in Commander options
+  - Added `.option('-l, --list', 'List all configuration values')` to config command
+  - Added handler logic to display project/user/workspace config as JSON
+  - Works with `--global` and `--workspace` flags for different config scopes
+  - **Impact**: `config --list` command now works as documented instead of throwing "unknown option" error
+
+- **Show command stack trace on missing workspace**: Improved error handling to show user-friendly message instead of stack trace
+  - Root cause: Generic catch block displayed full stack trace for WorkspaceNotFoundError
+  - Added specific catch for WorkspaceNotFoundError before generic error handler
+  - Now displays clean message: "Workspace not found: <name>" without stack trace
+  - Added test coverage for error handling scenarios
+  - **Impact**: Better user experience when querying non-existent workspaces
+
+- **Iterative mode test expectations outdated**: Updated test to match refactored prompt content
+  - Root cause: Test checked for old "stop early" text that was removed during prompt refactoring
+  - Updated test to check for new "Stop when:" and "Completion Criteria" sections
+  - **Impact**: All 440 tests now pass (was 439/440 passing)
 
 - **Instruction prompts were overly prescriptive**: Fixed setup/edit/validation prompts that incorrectly prescribed specific state management formats (TODO.md, Remaining: N, checkboxes) instead of letting user/agent decide
   - Root cause: Prompts conflated two separate concerns - (1) removing system mechanics explanations vs (2) prescribing state management formats

@@ -39,6 +39,7 @@ export function configCommand(): Command {
     .option('-g, --global', 'Use global user config instead of project config')
     .option('-w, --workspace <name>', 'Manage workspace-level config')
     .option('-k, --keys', 'Show available configuration keys')
+    .option('-l, --list', 'List all configuration values')
     .option('--json', 'Output as JSON (for use with --keys)')
     .option('--add <value>', 'Add value to array (for array-type configs)')
     .option(
@@ -54,6 +55,7 @@ export function configCommand(): Command {
           global?: boolean;
           workspace?: string;
           keys?: boolean;
+          list?: boolean;
           json?: boolean;
           add?: string;
           remove?: string;
@@ -67,6 +69,37 @@ export function configCommand(): Command {
           // Handle --keys flag
           if (options.keys) {
             await handleShowKeys(options, logger);
+            return;
+          }
+
+          // Handle --list flag
+          if (options.list) {
+            const isGlobal = options.global ?? false;
+            const configPath = isGlobal
+              ? getUserConfigPath()
+              : getProjectConfigPath();
+            const scope = isGlobal ? 'user' : 'project';
+
+            logger.info(
+              `${scope.charAt(0).toUpperCase() + scope.slice(1)} Configuration`
+            );
+            logger.log(`Path: ${configPath}`);
+            logger.log('');
+
+            const exists = await fileExists(configPath);
+            if (!exists) {
+              logger.log(
+                `No ${scope} configuration file found (using defaults)`
+              );
+            } else {
+              const config =
+                await readJson<Record<string, unknown>>(configPath);
+              if (Object.keys(config).length > 0) {
+                logger.log(JSON.stringify(config, null, 2));
+              } else {
+                logger.log(`No ${scope} configuration set (using defaults)`);
+              }
+            }
             return;
           }
 

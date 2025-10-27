@@ -3,6 +3,7 @@ import { Workspace } from '../core/workspace.js';
 import { ConfigManager } from '../core/config-manager.js';
 import { Logger } from '../utils/logger.js';
 import { getWorkspacePath } from '../utils/paths.js';
+import { WorkspaceNotFoundError } from '../utils/errors.js';
 
 /**
  * Show detailed workspace information
@@ -20,7 +21,10 @@ export function showCommand(): Command {
         const runtimeConfig = config.getConfig();
 
         // Get workspace path
-        const workspacePath = getWorkspacePath(name, runtimeConfig.workspacesDir);
+        const workspacePath = getWorkspacePath(
+          name,
+          runtimeConfig.workspacesDir
+        );
 
         // Load workspace
         const workspace = await Workspace.load(name, workspacePath);
@@ -31,7 +35,11 @@ export function showCommand(): Command {
         logger.line();
 
         // Status
-        const statusIcon = info.isComplete ? '✅' : info.status === 'error' ? '❌' : '🔄';
+        const statusIcon = info.isComplete
+          ? '✅'
+          : info.status === 'error'
+            ? '❌'
+            : '🔄';
         logger.log(`${statusIcon} Status: ${info.status}`);
 
         if (info.isComplete) {
@@ -56,7 +64,9 @@ export function showCommand(): Command {
 
         // Loop mode: show progress counts
         if (status.progress && status.progress.total > 0) {
-          logger.log(`   Status file progress: ${status.progress.completed}/${status.progress.total}`);
+          logger.log(
+            `   Status file progress: ${status.progress.completed}/${status.progress.total}`
+          );
         }
 
         // Iterative mode: show work flag
@@ -77,7 +87,7 @@ export function showCommand(): Command {
 
         if (validation.warnings && validation.warnings.length > 0) {
           logger.warn('   ⚠️  Status warnings:');
-          validation.warnings.forEach(w => logger.log(`      - ${w}`));
+          validation.warnings.forEach((w) => logger.log(`      - ${w}`));
         }
 
         logger.line();
@@ -94,7 +104,9 @@ export function showCommand(): Command {
         logger.log(`   Mode: ${metadata.mode}`);
         logger.log(`   Max iterations: ${metadata.maxIterations}`);
         logger.log(`   Delay: ${metadata.delay}s`);
-        logger.log(`   Stagnation threshold: ${metadata.stagnationThreshold} (iterative mode)`);
+        logger.log(
+          `   Stagnation threshold: ${metadata.stagnationThreshold} (iterative mode)`
+        );
         if (metadata.notifyUrl) {
           logger.log(`   Notify URL: ${metadata.notifyUrl}`);
         }
@@ -105,8 +117,12 @@ export function showCommand(): Command {
         logger.log(`   Command: ${runtimeConfig.claudeCommand}`);
         if (runtimeConfig.claudeArgs.length > 0) {
           logger.log(`   Args: ${runtimeConfig.claudeArgs.join(' ')}`);
-          if (runtimeConfig.claudeArgs.includes('--dangerously-skip-permissions')) {
-            logger.warn('   ⚠️  Permission prompts disabled (--dangerously-skip-permissions)');
+          if (
+            runtimeConfig.claudeArgs.includes('--dangerously-skip-permissions')
+          ) {
+            logger.warn(
+              '   ⚠️  Permission prompts disabled (--dangerously-skip-permissions)'
+            );
           }
         } else {
           logger.log('   Args: (none - will prompt for permissions)');
@@ -131,10 +147,15 @@ export function showCommand(): Command {
           logger.log(`  • Run: claude-iterate run ${name}`);
         } else {
           logger.log(`  • View TODO: cat ${workspace.getTodoPath()}`);
-          logger.log(`  • Save template: claude-iterate template save ${name} <template-name>`);
+          logger.log(
+            `  • Save template: claude-iterate template save ${name} <template-name>`
+          );
         }
-
       } catch (error) {
+        if (error instanceof WorkspaceNotFoundError) {
+          logger.error(`Workspace not found: ${name}`);
+          process.exit(1);
+        }
         logger.error('Failed to show workspace info', error as Error);
         process.exit(1);
       }
