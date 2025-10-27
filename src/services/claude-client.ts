@@ -136,6 +136,37 @@ export class ClaudeClient {
       let stdout = '';
       let stderr = '';
 
+      // Add timeout for zombie process detection (5 minutes)
+      const TIMEOUT_MS = 5 * 60 * 1000;
+      const timeoutId = setTimeout(() => {
+        // Check if process is done but zombied
+        if (child.exitCode !== null || child.killed) {
+          // Process finished but exit event didn't fire (zombie)
+          this.logger.debug(
+            'Timeout: Process is zombie/killed, resolving with output',
+            true
+          );
+          cleanup();
+          resolve(stdout);
+        } else {
+          // Process still running - real timeout
+          cleanup();
+          child.kill('SIGTERM');
+          reject(
+            new ClaudeExecutionError(
+              `Claude execution timed out after ${TIMEOUT_MS / 1000}s\n` +
+                `Stdout length: ${stdout.length}\n` +
+                `Stderr length: ${stderr.length}`
+            )
+          );
+        }
+      }, TIMEOUT_MS);
+
+      const cleanup = () => {
+        clearTimeout(timeoutId);
+        this.currentChild = null;
+      };
+
       child.stdout?.on('data', (data) => {
         const chunk = data.toString();
         stdout += chunk;
@@ -149,10 +180,6 @@ export class ClaudeClient {
         // Call streaming callback if provided
         callbacks?.onStderr?.(chunk);
       });
-
-      const cleanup = () => {
-        this.currentChild = null;
-      };
 
       child.on('error', (error) => {
         cleanup();

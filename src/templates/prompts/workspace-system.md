@@ -1,29 +1,76 @@
 **Execution Context:**
 
-You execute from the project root directory. The workspace is a subdirectory for task management files only.
+You run from the project root. Your current working directory (cwd) is the project root. The workspace directory is for task management only.
 
-**Project Root Directory:** `{{projectRoot}}`
+**File Location Guidelines:**
 
-- This is your current working directory (cwd)
-- Contains source code, docs, config files you'll be editing
-- Access files here with relative paths (e.g., `./src/utils/foo.ts`)
-- All bash commands execute from this directory
+When deciding where to create files, use this decision tree:
 
-**Workspace Directory:** `{{workspacePath}}`
+1. **Project deliverables** (source code, docs, tests, config files) → **Project root** `{{projectRoot}}`
+   - Examples: `./src/components/Login.tsx`, `./docs/api.md`, `./tests/login.test.ts`
+   - Use relative paths from project root: `./path/to/file`
 
-- Subdirectory for task management files only
-- System files: INSTRUCTIONS.md, .status.json, .metadata.json
-- Optional directories: working/, reports/
-- May contain other files your instructions specify
-- Access files here with the full path shown above
+2. **Task management files** (status, metadata, iteration logs) → **Workspace directory** `{{workspacePath}}`
+   - Examples: `.status.json`, `.metadata.json`, `iterate-*.log`
+   - Required files - always in workspace directory
+   - Use full path: `{{workspacePath}}/.status.json`
 
-**File Access Examples:**
-✅ Edit project file: Edit `./src/components/Login.tsx` (relative to {{projectRoot}})
-✅ Run project command: `npm test` (runs from {{projectRoot}})
-✅ Update status: Write to `{{workspacePath}}/.status.json`
-✅ Create workspace report: `mkdir -p {{workspacePath}}/reports && echo "Report" > {{workspacePath}}/reports/batch-1.md`
+3. **Optional reports/summaries** (for user review) → **Workspace reports** `{{workspacePath}}/reports/`
+   - Examples: `summary.md`, `batch-results.md`, `migration-log.md`
+   - Use full path: `{{workspacePath}}/reports/summary.md`
 
-**Path Navigation:**
+4. **Temporary/scratch files** (experiments, drafts, working notes) → **Workspace scratch** `{{workspacePath}}/working/`
+   - Examples: Draft code, test output, debugging files
+   - Use full path: `{{workspacePath}}/working/draft.txt`
 
-- From project root to workspace: `cd {{workspacePath}}`
-- You start in: `{{projectRoot}}`
+**Path Examples:**
+
+✅ **Project deliverables go in project root:**
+
+```bash
+# Edit existing project file
+Edit ./src/components/Login.tsx
+
+# Create new project file
+Write ./docs/api-guide.md
+
+# Run project commands from project root
+Bash: cd {{projectRoot}} && npm test
+```
+
+✅ **Task tracking goes in workspace directory:**
+
+```bash
+# Update status (required every iteration)
+Write {{workspacePath}}/.status.json
+
+# Create optional summary report
+Write {{workspacePath}}/reports/summary.md
+```
+
+✅ **Scratch work goes in workspace scratch space:**
+
+```bash
+# Create temporary test file
+Write {{workspacePath}}/working/test-output.txt
+
+# Save experimental code
+Write {{workspacePath}}/working/draft-implementation.ts
+```
+
+❌ **Avoid ambiguous terms:**
+
+- Don't say "working directory" without clarifying which one
+- Don't use relative paths for workspace files
+- Don't put project deliverables in workspace directories
+
+**Directory Reference:**
+
+| Directory             | Path                         | Purpose                          | Example Files                         |
+| --------------------- | ---------------------------- | -------------------------------- | ------------------------------------- |
+| **Project root**      | `{{projectRoot}}`            | Your cwd, contains project files | `./src/`, `./docs/`, `./package.json` |
+| **Workspace**         | `{{workspacePath}}`          | Task management files            | `INSTRUCTIONS.md`, `.status.json`     |
+| **Workspace reports** | `{{workspacePath}}/reports/` | Optional reports (if needed)     | `summary.md`, `results.md`            |
+| **Workspace scratch** | `{{workspacePath}}/working/` | Temporary files                  | Drafts, experiments, test output      |
+
+**When in doubt:** Put project deliverables in project root, task tracking in workspace directory.

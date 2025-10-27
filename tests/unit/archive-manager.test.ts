@@ -35,16 +35,19 @@ describe('ArchiveManager', () => {
 
       const archiveName = await manager.archive('test-workspace');
 
-      expect(archiveName).toMatch(/^test-workspace-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}$/);
+      expect(archiveName).toMatch(
+        /^test-workspace-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}$/
+      );
 
-      const archivePath = path.join(archiveDir, archiveName);
-      expect(await pathExists(archivePath)).toBe(true);
-      expect(await pathExists(path.join(archivePath, 'TODO.md'))).toBe(true);
-      expect(await pathExists(path.join(archivePath, '.archived.json'))).toBe(true);
+      // Check that .tar.gz file exists
+      const tarballPath = path.join(archiveDir, `${archiveName}.tar.gz`);
+      expect(await pathExists(tarballPath)).toBe(true);
     });
 
     it('should throw if workspace does not exist', async () => {
-      await expect(manager.archive('nonexistent')).rejects.toThrow('Workspace not found');
+      await expect(manager.archive('nonexistent')).rejects.toThrow(
+        'Workspace not found'
+      );
     });
 
     it('should create archive metadata', async () => {
@@ -53,14 +56,14 @@ describe('ArchiveManager', () => {
       await writeText(path.join(wsPath, 'TODO.md'), '# Test');
 
       const archiveName = await manager.archive('test-ws');
-      const metadataPath = path.join(archiveDir, archiveName, '.archived.json');
 
-      const metadata = JSON.parse(await fs.readFile(metadataPath, 'utf-8'));
+      // Get archive details (which extracts and reads metadata)
+      const archive = await manager.getArchive(archiveName);
 
-      expect(metadata.originalName).toBe('test-ws');
-      expect(metadata.archiveName).toBe(archiveName);
-      expect(metadata.archivedAt).toBeDefined();
-      expect(metadata.archivedFrom).toBeDefined();
+      expect(archive.metadata.originalName).toBe('test-ws');
+      expect(archive.metadata.archiveName).toBe(archiveName);
+      expect(archive.metadata.archivedAt).toBeDefined();
+      expect(archive.metadata.archivedFrom).toBeDefined();
     });
   });
 
@@ -101,7 +104,7 @@ describe('ArchiveManager', () => {
 
       const archive1 = await manager.archive('ws1');
       // Small delay to ensure different timestamps
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
       const archive2 = await manager.archive('ws2');
 
       const archives = await manager.listArchives();
@@ -141,8 +144,12 @@ describe('ArchiveManager', () => {
       const restoredName = await manager.restore(archiveName);
 
       expect(restoredName).toBe('original');
-      expect(await pathExists(path.join(workspacesDir, 'original', 'TODO.md'))).toBe(true);
-      expect(await pathExists(path.join(workspacesDir, 'original', '.archived.json'))).toBe(false);
+      expect(
+        await pathExists(path.join(workspacesDir, 'original', 'TODO.md'))
+      ).toBe(true);
+      expect(
+        await pathExists(path.join(workspacesDir, 'original', '.archived.json'))
+      ).toBe(false);
     });
 
     it('should restore to different name', async () => {
@@ -157,7 +164,9 @@ describe('ArchiveManager', () => {
     });
 
     it('should throw if archive does not exist', async () => {
-      await expect(manager.restore('nonexistent')).rejects.toThrow('Archive not found');
+      await expect(manager.restore('nonexistent')).rejects.toThrow(
+        'Archive not found'
+      );
     });
 
     it('should throw if workspace already exists', async () => {
@@ -165,7 +174,9 @@ describe('ArchiveManager', () => {
       await ensureDir(wsPath);
       const archiveName = await manager.archive('test');
 
-      await expect(manager.restore(archiveName)).rejects.toThrow('Workspace already exists');
+      await expect(manager.restore(archiveName)).rejects.toThrow(
+        'Workspace already exists'
+      );
     });
 
     it('should preserve workspace content', async () => {
@@ -179,8 +190,14 @@ describe('ArchiveManager', () => {
 
       await manager.restore(archiveName);
 
-      const todoContent = await fs.readFile(path.join(wsPath, 'TODO.md'), 'utf-8');
-      const instructionsContent = await fs.readFile(path.join(wsPath, 'INSTRUCTIONS.md'), 'utf-8');
+      const todoContent = await fs.readFile(
+        path.join(wsPath, 'TODO.md'),
+        'utf-8'
+      );
+      const instructionsContent = await fs.readFile(
+        path.join(wsPath, 'INSTRUCTIONS.md'),
+        'utf-8'
+      );
 
       expect(todoContent).toBe('# Test Content');
       expect(instructionsContent).toBe('# Instructions');
@@ -198,11 +215,13 @@ describe('ArchiveManager', () => {
       expect(archive.name).toBe(archiveName);
       expect(archive.metadata.originalName).toBe('test');
       expect(archive.metadata.archiveName).toBe(archiveName);
-      expect(archive.path).toBe(path.join(archiveDir, archiveName));
+      expect(archive.path).toBe(path.join(archiveDir, `${archiveName}.tar.gz`));
     });
 
     it('should throw if archive does not exist', async () => {
-      await expect(manager.getArchive('nonexistent')).rejects.toThrow('Archive not found');
+      await expect(manager.getArchive('nonexistent')).rejects.toThrow(
+        'Archive not found'
+      );
     });
   });
 
@@ -218,7 +237,9 @@ describe('ArchiveManager', () => {
     });
 
     it('should throw if archive does not exist', async () => {
-      await expect(manager.delete('nonexistent')).rejects.toThrow('Archive not found');
+      await expect(manager.delete('nonexistent')).rejects.toThrow(
+        'Archive not found'
+      );
     });
   });
 
