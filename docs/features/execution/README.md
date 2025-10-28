@@ -99,6 +99,10 @@ This feature provides the following command:
 
 For full command reference, see [Commands Reference](../../../README.md#commands-reference).
 
+## Sub-Features
+
+- **[Enhanced Output](./features/enhanced-output/README.md)** - Beautiful terminal UI with real-time statistics and graceful stop controls (Status: Planning)
+
 ## Document Links
 
 - [Technical Specification](./SPEC.md)

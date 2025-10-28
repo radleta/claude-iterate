@@ -4,12 +4,25 @@ import chalk from 'chalk';
  * Logger utility with colored output
  */
 export class Logger {
-  constructor(private colors: boolean = true) {}
+  constructor(
+    private colors: boolean = true,
+    private suppressConsole: boolean = false
+  ) {}
+
+  /**
+   * Enable or disable console output suppression
+   * Used when enhanced UI (log-update) is active to prevent interference
+   */
+  setSuppressConsole(suppress: boolean): void {
+    this.suppressConsole = suppress;
+  }
 
   /**
    * Log info message (blue)
    */
   info(message: string): void {
+    if (this.suppressConsole) return;
+
     if (this.colors) {
       console.log(chalk.blue('ℹ'), message);
     } else {
@@ -21,6 +34,8 @@ export class Logger {
    * Log success message (green)
    */
   success(message: string): void {
+    if (this.suppressConsole) return;
+
     if (this.colors) {
       console.log(chalk.green('✓'), message);
     } else {
@@ -60,7 +75,7 @@ export class Logger {
    * Log debug message (gray) - only in verbose mode
    */
   debug(message: string, verbose: boolean = false): void {
-    if (!verbose) return;
+    if (!verbose || this.suppressConsole) return;
 
     if (this.colors) {
       console.log(chalk.gray('⚙'), chalk.gray(message));
@@ -73,6 +88,8 @@ export class Logger {
    * Log section header
    */
   header(message: string): void {
+    if (this.suppressConsole) return;
+
     if (this.colors) {
       console.log(chalk.bold.cyan(`\n━━━ ${message} ━━━\n`));
     } else {
@@ -84,6 +101,8 @@ export class Logger {
    * Log plain message (no formatting)
    */
   log(message: string): void {
+    if (this.suppressConsole) return;
+
     console.log(message);
   }
 
@@ -91,6 +110,8 @@ export class Logger {
    * Log empty line
    */
   line(): void {
+    if (this.suppressConsole) return;
+
     console.log();
   }
 
@@ -98,6 +119,8 @@ export class Logger {
    * Create table output
    */
   table(data: Record<string, string>[]): void {
+    if (this.suppressConsole) return;
+
     console.table(data);
   }
 }

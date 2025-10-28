@@ -14,6 +14,8 @@ import {
   getIterationSystemPrompt,
 } from '../templates/system-prompt.js';
 import { StatusChangedEvent } from '../types/notification.js';
+import type { BaseStats } from '../types/iteration-stats.js';
+import { calculateStats } from '../types/iteration-stats.js';
 
 /**
  * Run workspace iteration loop
@@ -128,16 +130,26 @@ export function runCommand(): Command {
               : (options.delay ?? runtimeConfig.delay);
 
           // Show initial run info using reporter (respects output level)
-          reporter.progress(
-            `Starting claude-iterate run for workspace: ${name}`
-          );
-          reporter.progress(
-            `Mode: ${metadata.mode} | Max iterations: ${maxIterations} | Delay: ${delay}s`
-          );
-          if (options.dryRun) {
-            reporter.progress(`🧪 DRY RUN: Using mock Claude`);
+          // Skip if enhanced mode will be used (log-update handles all output)
+          // Note: Enhanced UI is ONLY used in progress mode with TTY (use === true to match initEnhanced check)
+          const useEnhancedUI =
+            reporter.getLevel() === 'progress' && process.stdout.isTTY === true;
+
+          // Suppress logger console output when enhanced UI is active (prevents interference with log-update)
+          logger.setSuppressConsole(useEnhancedUI);
+
+          if (!useEnhancedUI) {
+            reporter.progress(
+              `Starting claude-iterate run for workspace: ${name}`
+            );
+            reporter.progress(
+              `Mode: ${metadata.mode} | Max iterations: ${maxIterations} | Delay: ${delay}s`
+            );
+            if (options.dryRun) {
+              reporter.progress(`🧪 DRY RUN: Using mock Claude`);
+            }
+            reporter.progress('');
           }
-          reporter.progress('');
 
           // Create Claude client (use mock if --dry-run)
           let claudeCommand = runtimeConfig.claudeCommand;
@@ -347,12 +359,44 @@ export function runCommand(): Command {
             metadata.stagnationThreshold ??
             runtimeConfig.stagnationThreshold;
 
+          // Initialize statistics tracking for enhanced UI
+          const startTime = new Date();
+          const stats: BaseStats = {
+            currentIteration: 0,
+            maxIterations,
+            tasksCompleted: null,
+            tasksTotal: null,
+            startTime,
+            lastUpdateTime: startTime,
+            iterationDurations: [],
+            mode: metadata.mode,
+            status: 'starting',
+            stagnationCount:
+              metadata.mode === 'iterative' ? noWorkCount : undefined,
+            stopRequested: false,
+            stopSource: null,
+          };
+
+          // Initialize enhanced reporter if progress mode + TTY
+          if (
+            reporter.getLevel() === 'progress' &&
+            process.stdout.isTTY === true
+          ) {
+            reporter.initEnhanced(calculateStats(stats));
+          }
+
           try {
             while (iterationCount < maxIterations && !isComplete) {
               iterationCount++;
               currentIteration = iterationCount;
 
-              reporter.progress(`\nRunning iteration ${iterationCount}...`);
+              // Track iteration start time
+              const iterationStartTime = Date.now();
+
+              // Only show iteration message if NOT using enhanced UI
+              if (!useEnhancedUI) {
+                reporter.progress(`\nRunning iteration ${iterationCount}...`);
+              }
 
               // Generate prompts (mode-aware) with status instructions
               // Note: System prompt already logged once at start
@@ -465,6 +509,41 @@ export function runCommand(): Command {
                   remainingCount
                 );
 
+                // Update statistics for enhanced UI
+                const iterationDuration = Date.now() - iterationStartTime;
+                stats.iterationDurations.push(iterationDuration);
+                // Keep only last 10 durations for memory efficiency
+                if (stats.iterationDurations.length > 10) {
+                  stats.iterationDurations =
+                    stats.iterationDurations.slice(-10);
+                }
+                stats.currentIteration = iterationCount;
+                stats.lastUpdateTime = new Date();
+                stats.stagnationCount =
+                  metadata.mode === 'iterative' ? noWorkCount : undefined;
+
+                // Read .status.json for task progress
+                const workspaceStatus = await workspace.getStatus();
+                if (workspaceStatus.progress) {
+                  stats.tasksCompleted = workspaceStatus.progress.completed;
+                  stats.tasksTotal = workspaceStatus.progress.total;
+                }
+
+                // Update status based on completion and progress
+                if (isComplete) {
+                  stats.status = 'completing';
+                } else if (iterationCount > 1) {
+                  stats.status = 'running';
+                }
+
+                // Update enhanced UI if enabled
+                if (
+                  reporter.getLevel() === 'progress' &&
+                  process.stdout.isTTY
+                ) {
+                  reporter.updateStats(calculateStats(stats));
+                }
+
                 if (isComplete) {
                   reporter.status(
                     '\n✓ Task completed successfully after ' +
@@ -508,28 +587,31 @@ export function runCommand(): Command {
 
                 // Show progress from .status.json (loop mode) or summary (iterative mode)
                 const status = await workspace.getStatus();
-                if (status.progress && status.progress.total > 0) {
-                  // Loop mode: show progress counts
-                  const remaining =
-                    status.progress.total - status.progress.completed;
-                  reporter.status(
-                    `✓ Iteration ${iterationCount} complete (${remaining} items remaining)`
-                  );
-                } else if (status.worked !== undefined) {
-                  // Iterative mode: show work status
-                  if (status.summary) {
-                    reporter.status(`✓ Iteration ${iterationCount} complete`);
-                    reporter.status(`   ${status.summary}`);
+                // Only show completion status if NOT using enhanced UI
+                if (!useEnhancedUI) {
+                  if (status.progress && status.progress.total > 0) {
+                    // Loop mode: show progress counts
+                    const remaining =
+                      status.progress.total - status.progress.completed;
+                    reporter.status(
+                      `✓ Iteration ${iterationCount} complete (${remaining} items remaining)`
+                    );
+                  } else if (status.worked !== undefined) {
+                    // Iterative mode: show work status
+                    if (status.summary) {
+                      reporter.status(`✓ Iteration ${iterationCount} complete`);
+                      reporter.status(`   ${status.summary}`);
+                    } else {
+                      reporter.status(`✓ Iteration ${iterationCount} complete`);
+                    }
+                  } else if (remainingCount !== null) {
+                    // Fallback to legacy remaining count
+                    reporter.status(
+                      `✓ Iteration ${iterationCount} complete (${remainingCount} items remaining)`
+                    );
                   } else {
                     reporter.status(`✓ Iteration ${iterationCount} complete`);
                   }
-                } else if (remainingCount !== null) {
-                  // Fallback to legacy remaining count
-                  reporter.status(
-                    `✓ Iteration ${iterationCount} complete (${remainingCount} items remaining)`
-                  );
-                } else {
-                  reporter.status(`✓ Iteration ${iterationCount} complete`);
                 }
 
                 // Send iteration notification (after each iteration)
@@ -638,6 +720,11 @@ export function runCommand(): Command {
           } finally {
             // Always stop the status watcher
             statusWatcher.stop();
+
+            // Clean up enhanced reporter
+            if (reporter.getLevel() === 'progress' && process.stdout.isTTY) {
+              reporter.cleanup();
+            }
           }
         } catch (error) {
           logger.error('Run failed', error as Error);
