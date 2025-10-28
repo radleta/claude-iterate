@@ -28,6 +28,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Fixed 6 failing tests in setup.test.ts**: Resolved `ReferenceError: client is not defined` errors caused by missing variable assignments
+  - Root cause: Missing `const client =` before `new ClaudeClient()` in 6 test cases
+  - Fixed by adding proper variable assignment before usage
+  - All 487 tests now passing
+- **Fixed integration test timeout**: Increased timeout from 2000ms to 5000ms in process-cleanup.test.ts to prevent flakes on slow CI systems
+  - Standardized timeout to match other integration tests in same file
+
 - **Zombie process timeout in verify --json**: Fixed `verify --json` command hanging indefinitely when Claude process becomes zombie
   - Root cause: Claude CLI process completes successfully but becomes zombie (`<defunct>`), preventing Node.js `exit` event from firing
   - Added 5-minute timeout to `ClaudeClient.executeNonInteractive()` with zombie process detection

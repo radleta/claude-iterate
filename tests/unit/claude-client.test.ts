@@ -505,6 +505,15 @@ describe('ClaudeClient - Process Cleanup', () => {
       // Start process
       const promise = client.executeNonInteractive('test');
 
+      // Attach error handler immediately to prevent unhandled rejection warning
+      // Validate it's the expected timeout error, otherwise rethrow
+      promise.catch((error) => {
+        if (!error.message?.includes('Claude execution timed out')) {
+          throw error; // Unexpected error - let test fail
+        }
+        // Expected timeout error - silently handle (we'll test it properly below)
+      });
+
       // Advance timers to allow child registration
       await vi.advanceTimersByTimeAsync(50);
 
@@ -599,6 +608,15 @@ describe('ClaudeClient - Process Cleanup', () => {
 
       // Start process
       const promise = client.executeNonInteractive('test');
+
+      // Attach error handler immediately to prevent unhandled rejection warning
+      // Validate it's the expected timeout error, otherwise rethrow
+      promise.catch((error) => {
+        if (!error.message?.includes('Claude execution timed out')) {
+          throw error; // Unexpected error - let test fail
+        }
+        // Expected timeout error - silently handle (we'll test it properly below)
+      });
 
       // Advance timers to allow child registration
       await vi.advanceTimersByTimeAsync(50);

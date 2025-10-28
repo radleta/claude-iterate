@@ -112,7 +112,10 @@ describe('setup command', () => {
     // First setup
     const config = await ConfigManager.load({});
     const runtimeConfig = config.getConfig();
-    new ClaudeClient(runtimeConfig.claudeCommand, runtimeConfig.claudeArgs);
+    const client = new ClaudeClient(
+      runtimeConfig.claudeCommand,
+      runtimeConfig.claudeArgs
+    );
     await client.executeInteractive('Setup prompt', workspacePath);
     await workspace.incrementIterations('setup');
 
@@ -150,10 +153,6 @@ describe('setup command', () => {
         '# Instructions'
       );
     });
-
-    const config = await ConfigManager.load({});
-    const runtimeConfig = config.getConfig();
-    new ClaudeClient(runtimeConfig.claudeCommand, runtimeConfig.claudeArgs);
 
     // Get mode strategy to verify prompt generation
     const { ModeFactory } = await import(
@@ -274,7 +273,10 @@ describe('setup command', () => {
 
     const config = await ConfigManager.load({});
     const runtimeConfig = config.getConfig();
-    new ClaudeClient(runtimeConfig.claudeCommand, runtimeConfig.claudeArgs);
+    const client = new ClaudeClient(
+      runtimeConfig.claudeCommand,
+      runtimeConfig.claudeArgs
+    );
 
     const isAvailable = await client.isAvailable();
     expect(isAvailable).toBe(false);
@@ -309,7 +311,10 @@ describe('setup command', () => {
 
     const config = await ConfigManager.load({});
     const runtimeConfig = config.getConfig();
-    new ClaudeClient(runtimeConfig.claudeCommand, runtimeConfig.claudeArgs);
+    const client = new ClaudeClient(
+      runtimeConfig.claudeCommand,
+      runtimeConfig.claudeArgs
+    );
 
     await client.executeInteractive('Setup prompt', workspacePath);
     await workspace.incrementIterations('setup');
@@ -342,7 +347,10 @@ describe('setup command', () => {
 
     const config = await ConfigManager.load({});
     const runtimeConfig = config.getConfig();
-    new ClaudeClient(runtimeConfig.claudeCommand, runtimeConfig.claudeArgs);
+    const client = new ClaudeClient(
+      runtimeConfig.claudeCommand,
+      runtimeConfig.claudeArgs
+    );
 
     await client.executeInteractive('Setup prompt', workspacePath);
     await workspace.incrementIterations('setup');
@@ -383,7 +391,10 @@ describe('setup command', () => {
 
     const config = await ConfigManager.load({});
     const runtimeConfig = config.getConfig();
-    new ClaudeClient(runtimeConfig.claudeCommand, runtimeConfig.claudeArgs);
+    const client = new ClaudeClient(
+      runtimeConfig.claudeCommand,
+      runtimeConfig.claudeArgs
+    );
 
     await client.executeInteractive('Setup prompt', workspacePath);
     await workspace.incrementIterations('setup');
