@@ -48,6 +48,7 @@ export class Workspace {
         | 'iteration_milestone'
         | 'completion'
         | 'error'
+        | 'status_update'
         | 'all'
       >;
     }
