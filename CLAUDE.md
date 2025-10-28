@@ -122,6 +122,15 @@ Prompts are `.md` files in `src/templates/prompts/` using `{{token}}` replacemen
 
 See @README.md for user guide, CHANGELOG.md for history, `scratch/release-ready/` for release planning.
 
+## Feature Documentation
+
+For detailed technical specifications and architecture of individual features:
+
+- **[Feature Registry](docs/features/README.md)** - All 8 features with SPEC/PLAN/TEST/TODO
+- **[Agent SDD Guide](docs/features/CLAUDE.md)** - How to work with feature documentation as an AI agent
+
+Each feature has implementation details beyond this high-level guide.
+
 ---
 
 **Remember:** This is developer context for building claude-iterate. For usage docs, see README.md.

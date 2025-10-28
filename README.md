@@ -91,6 +91,8 @@ Claude tracks progress in two complementary files:
 
 Claude updates `.status.json` each iteration. When `complete: true`, the task is finished. This prevents false positives from completion markers appearing in instructions or examples.
 
+**📚 Deep Dive:** For implementation details and architecture, see [Workspace Management](docs/features/workspace-management/README.md).
+
 ### Execution Modes
 
 **Loop Mode (Default)**
@@ -118,6 +120,8 @@ claude-iterate init my-task --mode iterative --stagnation-threshold 5
 # Disable stagnation detection (trust Claude completely)
 claude-iterate init my-task --mode iterative --stagnation-threshold 0
 ```
+
+**📚 Deep Dive:** For execution engine architecture and prompt system, see [Execution](docs/features/execution/README.md).
 
 ### Templates
 
@@ -743,6 +747,7 @@ The hook blocks commits of `claude-iterate/workspaces/` and `scratch/` directori
 ## Documentation
 
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** - Development guide
+- **[Feature Documentation](docs/features/README.md)** - Technical specifications and implementation details for all features
 - **[CHANGELOG.md](CHANGELOG.md)** - Version history
 - **[GitHub Issues](https://github.com/radleta/claude-iterate/issues)** - Report bugs or request features
 - **[GitHub Discussions](https://github.com/radleta/claude-iterate/discussions)** - Ask questions

@@ -1,0 +1,230 @@
+<!--
+TEMPLATE USAGE GUIDE
+
+1. Copy this file to your feature directory as PLAN.md
+2. Choose MODE A (Checklist) or MODE B (Roadmap) and DELETE the other
+3. Replace all [placeholder] values with your tasks
+4. Order tasks by dependencies (what must happen first)
+5. Update frontmatter as you progress (total_tasks, completed_tasks)
+6. Use the validation checklist at bottom before marking tasks complete
+
+PLAN QUALITY RULES:
+- Each task must have clear "done" criteria
+- Tasks ordered by logical dependencies
+- No vague tasks like "implement feature" - break into specific actions
+- Reference SPEC.md sections for each task
+
+REMEMBER: This documents an APPLICATION FEATURE - a discrete unit of functionality
+that delivers value to end users or enables core business capabilities. Features are
+what the application *does*, not how it's organized internally. See CONTRIBUTING.md
+"What is a Feature?" section for full definition and examples.
+-->
+
+---
+# Plan Status
+status: planning
+status_summary: Implementation plan ready for implementation
+summary: Implementation plan for [Feature Name]
+plan_mode: checklist
+total_tasks: 0
+completed_tasks: 0
+---
+
+# Implementation Plan: Feature Name
+
+<!--
+  This document is the TASK LIST for implementing this feature.
+  It is generated from SPEC.md.
+
+  There are TWO modes for this file:
+
+  MODE A: CODING CHECKLIST (for simple features)
+  - List specific coding tasks to be completed
+  - Check off items as you complete them
+
+  MODE B: ROADMAP (for complex features / "epics")
+  - List sub-features to be implemented
+  - Link to each sub-feature's README.md
+  - The actual coding tasks are in each sub-feature's PLAN.md
+
+  Choose the appropriate mode below and DELETE the other one.
+
+  FRONTMATTER GUIDANCE:
+  - status: One of [planning, approved, in-progress, complete]
+  - status_summary: Current state of the plan
+  - summary: Brief description for quick context
+  - plan_mode: "checklist" or "roadmap"
+  - total_tasks: Count of all tasks (update as you add/remove tasks)
+  - completed_tasks: Count of completed tasks (update as you progress)
+-->
+
+---
+
+## MODE A: Coding Checklist
+
+<!--
+  Use this mode for simple features that can be implemented directly.
+  List all tasks needed to implement the feature.
+  Order tasks by logical dependencies (what must be done first?).
+-->
+
+### Phase 1: Database & Data Layer
+
+- [ ] Create database migration for `table_name` table
+- [ ] Add indexes: `idx_table_user_id`, `idx_table_expires_at`
+- [ ] Create database model/entity for `TableName`
+- [ ] Write database queries: `createRecord()`, `findById()`, `deleteExpired()`
+- [ ] Write unit tests for database layer
+
+### Phase 2: Business Logic
+
+- [ ] Create service: `FeatureService.ts`
+- [ ] Implement function: `performAction(params): Promise<Result>`
+- [ ] Implement function: `validateInput(data): ValidationResult`
+- [ ] Add error handling for all edge cases
+- [ ] Write unit tests for business logic
+
+### Phase 3: API Layer
+
+- [ ] Create API route: `POST /api/v1/feature/action`
+- [ ] Create API route: `GET /api/v1/feature/:id`
+- [ ] Add request validation middleware
+- [ ] Add authentication middleware
+- [ ] Add rate limiting (3 requests per hour per user)
+- [ ] Write integration tests for API endpoints
+
+### Phase 4: Integration & Dependencies
+
+- [ ] Integrate with [Dependency Name] service
+- [ ] Add event emitters: `event.name`
+- [ ] Add event listeners for external events (if needed)
+- [ ] Write integration tests for external dependencies
+
+### Phase 5: Security & Monitoring
+
+- [ ] Add audit logging for all actions
+- [ ] Add security headers to API responses
+- [ ] Implement rate limiting alerts
+- [ ] Add monitoring metrics (e.g., action count, error rate)
+
+### Phase 6: Documentation & Deployment
+
+- [ ] Update API documentation
+- [ ] Add code comments for complex logic
+- [ ] Update environment variable documentation (if new vars added)
+- [ ] Create deployment checklist
+- [ ] Run full test suite
+- [ ] Update CHANGELOG.md
+
+---
+
+## MODE B: Roadmap
+
+<!--
+  Use this mode for complex features that need to be broken into sub-features.
+  List the sub-features in implementation order.
+  Link to each sub-feature's README.md.
+  The actual coding tasks are in each sub-feature's PLAN.md file.
+-->
+
+This feature is complex and will be implemented as a series of sub-features.
+
+### Phase 1: Core Functionality
+1. **[Sub-feature Name](./features/sub-feature-1/README.md)** - Description of what this sub-feature does
+   - Status: Not started
+   - Dependencies: None
+
+### Phase 2: Extended Features
+2. **[Sub-feature Name](./features/sub-feature-2/README.md)** - Description of what this sub-feature does
+   - Status: Not started
+   - Dependencies: Sub-feature 1
+
+3. **[Sub-feature Name](./features/sub-feature-3/README.md)** - Description of what this sub-feature does
+   - Status: Not started
+   - Dependencies: Sub-feature 1
+
+### Implementation Notes
+
+<!--
+  Add any notes about the implementation order, dependencies between phases, or coordination required.
+-->
+
+- Sub-features can be developed in parallel within the same phase
+- Phase 2 cannot start until Phase 1 is complete
+- All sub-features must maintain backward compatibility
+
+---
+
+## Notes
+
+<!--
+  Optional section for additional context, decisions, or considerations.
+-->
+
+### Key Decisions
+
+- [Decision made during planning] - Rationale: [why this was chosen]
+
+### Potential Risks
+
+- [Risk]: [mitigation strategy]
+
+### Testing Strategy
+
+- Unit tests: All business logic and data layer
+- Integration tests: API endpoints and external service integration
+- End-to-end tests: Critical user flows
+- Performance tests: Rate limiting and database query performance
+
+---
+
+## Implementation Validation
+
+<!--
+  Use this checklist to validate each task before marking it complete.
+  This ensures quality and completeness at every step.
+-->
+
+Before marking any task as complete, verify:
+
+- [ ] **Code Quality**
+  - Code compiles without errors or warnings
+  - Follows project coding conventions and style guide
+  - No code smells or obvious refactoring needs
+  - Proper error handling in place
+
+- [ ] **Testing**
+  - Unit tests written and passing
+  - Integration tests written (if applicable) and passing
+  - Test coverage meets minimum thresholds
+  - Edge cases covered
+
+- [ ] **Documentation**
+  - Code comments added for complex logic
+  - API documentation updated (if applicable)
+  - README/SPEC updated if behavior changed
+
+- [ ] **Security**
+  - No security vulnerabilities introduced
+  - Input validation in place
+  - Authentication/authorization checked
+  - Sensitive data protected
+
+- [ ] **Performance**
+  - Performance benchmarks met (if defined in TEST.md)
+  - No obvious performance regressions
+  - Database queries optimized (use indexes)
+
+- [ ] **Integration**
+  - Works correctly with dependent features
+  - External service integrations tested
+  - Breaking changes communicated
+
+Before marking the ENTIRE feature as complete:
+
+- [ ] All tasks in this plan are completed
+- [ ] Full test suite passes
+- [ ] Code reviewed (if applicable)
+- [ ] Deployment checklist completed
+- [ ] Documentation is up to date
+- [ ] TODO.md updated to status: complete (KEPT for audit trail)

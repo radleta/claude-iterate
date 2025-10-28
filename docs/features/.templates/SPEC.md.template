@@ -1,0 +1,344 @@
+<!--
+TEMPLATE USAGE GUIDE
+
+1. Copy this file to your feature directory as SPEC.md
+2. Replace all [placeholder] values with your specifications
+3. Complete ALL sections - use "None" or "Not applicable" rather than deleting
+4. Run the "No Ambiguity Check" before calling it done (see CONTRIBUTING.md)
+5. Use the completion checklist at bottom to verify quality
+6. Add Mermaid diagrams for any complex flows
+
+SPEC QUALITY RULES:
+- Every validation rule must have: format, length, pattern, or range
+- Every error must have: HTTP code, message, and action taken
+- Every performance requirement must have: specific number with unit (ms, %, MB)
+- No subjective terms: "good", "fast", "appropriate", "sufficient"
+- All dependencies must link to their SPEC.md files
+
+REMEMBER: This documents an APPLICATION FEATURE - a discrete unit of functionality
+that delivers value to end users or enables core business capabilities. Features are
+what the application *does*, not how it's organized internally. See CONTRIBUTING.md
+"What is a Feature?" section for full definition and examples.
+-->
+
+# Technical Specification: Feature Name
+
+<!--
+  This document is the CONTRACT for this feature.
+  It must be detailed, unambiguous, and complete.
+-->
+
+## Specification Layers
+
+<!--
+  This spec is organized into three layers for clarity:
+
+  Layer 1: Functional Requirements (What)
+  - What the feature does from a business/user perspective
+  - User stories, acceptance criteria, business logic
+
+  Layer 2: Architecture & Design (How - Language Agnostic)
+  - How the system is structured at a high level
+  - APIs, data schemas, integration patterns, error handling
+
+  Layer 3: Implementation Standards (How - Language Specific)
+  - Specific technologies, versions, frameworks
+  - Documentation standards, security implementation
+  - Note: Testing requirements go in TEST.md, not here
+
+  This layering helps both humans and AI understand the feature at different levels of abstraction.
+-->
+
+## Public Contract / API
+
+<!--
+  REQUIRED: Define the stable, public-facing interface this feature provides.
+
+  This is what OTHER features can depend on. Once published, changes here are BREAKING CHANGES.
+
+  Examples:
+  - API Endpoints: POST /api/v1/auth/reset-password
+  - Public Functions: generateResetToken(email: string): Promise<string>
+  - Events Emitted: password.reset.requested, password.reset.completed
+  - Database Tables (if queried by other features): password_reset_tokens table schema
+
+  If this feature is internal-only and not consumed by other features, write "None - Internal feature only."
+-->
+
+### API Endpoints
+
+<!--
+  List all public HTTP endpoints this feature exposes.
+  Format: METHOD /path - Description
+-->
+
+- `POST /api/v1/feature/action` - Description of what this endpoint does
+- `GET /api/v1/feature/:id` - Description of what this endpoint does
+
+### Public Functions
+
+<!--
+  List any functions/methods that other features may import and use.
+  Include function signatures with types.
+-->
+
+```typescript
+export function publicFunction(param: Type): ReturnType
+```
+
+### Events
+
+<!--
+  List any events this feature emits that other features can listen to.
+  Delete this section if not applicable.
+-->
+
+- `event.name` - Emitted when [condition]. Payload: `{ field: type }`
+
+## Dependencies
+
+<!--
+  REQUIRED: List all features this feature depends on.
+  Each dependency MUST be a markdown link to its SPEC.md file.
+
+  Example:
+  - [Auth Service](../auth/SPEC.md) - Used for user authentication
+  - [Email Service](../email/SPEC.md) - Used to send reset emails
+
+  If there are no dependencies, write "None."
+
+  RULES:
+  - Circular dependencies should be avoided. For new features, design to avoid circular dependencies.
+  - For brownfield codebases: If documenting existing circular dependencies, document them explicitly with a note about resolution plans.
+  - Resolution approach: Extract shared logic into a third feature that both can depend on.
+-->
+
+- [Dependency Name](../dependency-name/SPEC.md) - Why this is needed
+
+## API Endpoints (Detailed)
+
+<!--
+  Provide detailed specifications for INTERNAL endpoints (not part of public contract).
+  For each endpoint, include:
+  - Route and method
+  - Request body schema (with validation rules)
+  - Response schema (success and error cases)
+  - Authentication/authorization requirements
+  - Rate limiting
+-->
+
+### `POST /api/v1/feature/action`
+
+**Description:** [What this endpoint does]
+
+**Authentication:** Required / Not Required
+
+**Request Body:**
+```json
+{
+  "field": "string (required, min 3 chars, max 100 chars)",
+  "anotherField": "number (optional, must be positive)"
+}
+```
+
+**Success Response (200):**
+```json
+{
+  "id": "string",
+  "status": "success",
+  "data": {
+    "field": "value"
+  }
+}
+```
+
+**Error Responses:**
+- `400 Bad Request` - Invalid input (e.g., missing required field)
+- `401 Unauthorized` - User not authenticated
+- `404 Not Found` - Resource not found
+- `500 Internal Server Error` - Server error
+
+## Data Schemas
+
+<!--
+  Define any new database tables or modifications to existing tables.
+  Include field names, types, constraints, indexes, and relationships.
+-->
+
+### New Tables
+
+#### `table_name`
+
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| id | UUID | PRIMARY KEY | Unique identifier |
+| user_id | UUID | FOREIGN KEY (users.id), NOT NULL | Reference to user |
+| created_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | Creation timestamp |
+| expires_at | TIMESTAMP | NOT NULL | Expiration timestamp |
+
+**Indexes:**
+- `idx_table_user_id` on `user_id`
+- `idx_table_expires_at` on `expires_at`
+
+**Relationships:**
+- Belongs to `users` (many-to-one)
+
+### Modified Tables
+
+<!--
+  List any changes to existing tables.
+  Delete this section if not applicable.
+-->
+
+#### `existing_table`
+
+**Changes:**
+- Add column: `new_field VARCHAR(255) NOT NULL DEFAULT ''`
+- Add index: `idx_existing_new_field` on `new_field`
+
+## Validation Rules
+
+<!--
+  Define explicit validation rules for all inputs.
+  Be specific about formats, ranges, patterns, etc.
+-->
+
+### Field: `email`
+- Required: Yes
+- Format: Valid email address (RFC 5322)
+- Max length: 255 characters
+- Normalized: Convert to lowercase before processing
+
+### Field: `password`
+- Required: Yes
+- Min length: 8 characters
+- Max length: 128 characters
+- Must contain: 1 uppercase, 1 lowercase, 1 number, 1 special character
+
+## Error Handling & Edge Cases
+
+<!--
+  Document ALL possible error conditions and edge cases.
+  How should the system behave in each case?
+-->
+
+### Error Cases
+
+1. **User not found**
+   - Return: `404 Not Found`
+   - Message: "User with this email does not exist"
+   - Action: Log attempt (for security monitoring)
+
+2. **Token expired**
+   - Return: `400 Bad Request`
+   - Message: "Reset token has expired. Please request a new one."
+   - Action: Delete expired token from database
+
+3. **Rate limit exceeded**
+   - Return: `429 Too Many Requests`
+   - Message: "Too many reset attempts. Please try again in [time]."
+   - Action: Block further requests for [duration]
+
+### Edge Cases
+
+1. **Multiple simultaneous requests**
+   - Behavior: Use database transaction to ensure only one token is active
+   - Previous tokens are invalidated when a new one is created
+
+2. **User deleted during reset process**
+   - Behavior: Token becomes invalid, return 404 on reset attempt
+
+## Security & Non-Functional Requirements
+
+<!--
+  Document security requirements, performance targets, and other non-functional requirements.
+-->
+
+### Security
+
+- Reset tokens must be generated using `crypto.randomBytes(32)` and hashed before storage
+- Tokens expire after 1 hour (configurable via environment variable)
+- Maximum 3 reset attempts per email per hour (rate limiting)
+- All password reset events must be logged for audit trail
+- Email must not reveal whether user exists (always return success to prevent enumeration)
+
+### Performance
+
+- Token generation must complete within 100ms
+- Database queries must use indexes (no full table scans)
+- Email sending must be asynchronous (non-blocking)
+
+### Monitoring
+
+- Log all password reset requests (with user ID, timestamp, IP address)
+- Alert on unusual patterns (e.g., >100 resets/hour for single user)
+
+## Visual Aids
+
+<!--
+  Use Mermaid diagrams to clarify complex flows and relationships.
+
+  Common diagram types:
+  - Sequence diagrams for API interactions and request flows
+  - Flowcharts for business logic and decision trees
+  - ER diagrams for data relationships
+  - State diagrams for status transitions
+
+  Example:
+-->
+
+### Data Flow
+
+```mermaid
+sequenceDiagram
+    Client->>API: POST /api/v1/feature/action
+    API->>Validator: Validate input
+    Validator-->>API: Valid
+    API->>Service: Process request
+    Service->>Database: Store data
+    Database-->>Service: Success
+    Service-->>API: Result
+    API-->>Client: 200 OK
+```
+
+<!--
+  Add more diagrams as needed to clarify architecture, workflows, etc.
+  Delete this section if no visual aids are needed.
+-->
+
+## Implementation Notes
+
+<!--
+  Any additional notes, considerations, or context for implementers.
+  This is optional but can be helpful for complex features.
+-->
+
+- Use existing email templates from `templates/email/` directory
+- Integrate with audit logging service for security events
+- Consider adding CAPTCHA if abuse is detected
+
+---
+
+<!--
+  If this specification is too large, use the "index and directory" pattern:
+  1. Create a spec/ subdirectory
+  2. Move detailed sections into separate files (e.g., 01_api_endpoints.md, 02_data_schemas.md)
+  3. Keep Public Contract and Dependencies in this main SPEC.md file
+  4. Link to the detailed files from this main SPEC.md file
+-->
+
+---
+
+## Specification Completeness Checklist
+
+Before marking this spec as complete, verify:
+
+- [ ] **Public Contract** - Clearly defined OR explicitly marked "None - Internal feature only"
+- [ ] **Dependencies** - Listed with markdown links OR "None" stated
+- [ ] **Validation Rules** - All rules have numbers, formats, or patterns (no "good", "appropriate", "sufficient")
+- [ ] **Error Cases** - All error conditions documented with HTTP codes and messages
+- [ ] **Security Requirements** - Explicit algorithms, timeouts, and rate limits specified
+- [ ] **Performance Targets** - Specific numbers (<200ms, ≥80%, etc.) not subjective terms
+- [ ] **Edge Cases** - Unusual conditions documented with expected behavior
+- [ ] **No Ambiguity** - Search for subjective terms and replace with specific criteria
+- [ ] **Visual Aids** - Diagrams added for complex flows (if applicable)

@@ -1,0 +1,279 @@
+---
+# Status Snapshot
+status: planning
+status_summary: Feature setup and validation
+summary: Implementation tracking and validation for [Feature Name]
+progress_percentage: 0
+blockers_count: 0
+---
+
+# TODO: Feature Name
+
+<!--
+  This is a REQUIRED file for tracking implementation and validating feature setup.
+
+  Purpose:
+  - Validate that all required files exist and are properly structured
+  - Track progress on PLAN.md tasks
+  - Validate code quality, testing, and documentation
+  - Document blockers and decisions
+
+  REMEMBER: This documents an APPLICATION FEATURE - a discrete unit of functionality
+  that delivers value to end users or enables core business capabilities. Features are
+  what the application *does*, not how it's organized internally. See CONTRIBUTING.md
+  "What is a Feature?" section for full definition and examples.
+
+  Lifecycle:
+  - Created at the same time as all other feature files
+  - Updated throughout implementation
+  - KEPT after feature is complete (provides audit trail)
+
+  This file should be linked from README.md.
+
+  FRONTMATTER GUIDANCE:
+  - status: Should match README.md status (planning, in-progress, blocked, complete)
+  - status_summary: What's currently being worked on
+  - summary: Brief description for quick context
+  - progress_percentage: 0-100 estimate of completion
+  - blockers_count: Number of active blockers
+-->
+
+## Feature Setup Validation
+
+<!--
+  This checklist validates that the feature is set up correctly.
+  Complete this BEFORE starting implementation.
+-->
+
+### Required Files
+- [ ] README.md exists and is complete
+- [ ] SPEC.md exists and is complete
+- [ ] PLAN.md exists and is complete
+- [ ] TEST.md exists and is complete
+- [ ] TODO.md exists (this file)
+
+### README.md Validation
+- [ ] YAML frontmatter present with: status, owner, summary
+- [ ] Purpose is exactly one sentence
+- [ ] At least 1 user story in "As a [role], I want [action], so that [benefit]" format
+- [ ] Core Business Logic has specific rules (not vague)
+- [ ] Links to SPEC.md, PLAN.md, TEST.md, TODO.md
+
+### SPEC.md Validation
+- [ ] Public Contract section defines API (or states "internal only")
+- [ ] Dependencies section lists all dependencies as markdown links
+- [ ] No circular dependencies (verified by checking dependency SPEC.md files)
+- [ ] All validation rules are specific (Type, Min/Max, Pattern, Examples)
+- [ ] All error handling documented (Condition, HTTP Code, Message, Action)
+- [ ] All criteria are measurable (no "good", "appropriate", "sufficient", "should")
+- [ ] Implementation Notes section documents investigation findings
+- [ ] NO testing details (all testing is in TEST.md)
+
+### PLAN.md Validation
+- [ ] Mode selected: Checklist (1-30 tasks) or Roadmap (30+ tasks)
+- [ ] If Checklist: Each task is specific and actionable
+- [ ] If Roadmap: Links to sub-feature README.md files
+- [ ] Dependencies match SPEC.md dependencies
+- [ ] No [PLACEHOLDERS] remain
+- [ ] NO testing details (all testing is in TEST.md)
+
+### TEST.md Validation
+- [ ] Coverage targets specified with exact percentages (e.g., ">=80% line coverage")
+- [ ] Test scenarios documented for each testing layer
+- [ ] Error scenarios and edge cases listed
+- [ ] Performance benchmarks measurable (e.g., "<200ms at 95th percentile")
+- [ ] Test data requirements specified
+- [ ] Security testing checklist included
+
+### Cross-File Validation
+- [ ] All markdown links resolve (tested by reading each path)
+- [ ] README.md links to all 4 other files
+- [ ] SPEC.md dependencies link to other features' SPEC.md files
+- [ ] No broken links
+
+---
+
+## Implementation Progress
+
+<!--
+  Track which tasks from PLAN.md are complete.
+  Update this as you work through implementation.
+-->
+
+**Current Status:** [Describe what phase/task you're on]
+**Progress:** [X/Y tasks completed] ([progress_percentage]%)
+
+### Tasks from PLAN.md
+
+<!--
+  Copy tasks from PLAN.md and track completion here.
+  Link back to PLAN.md for full context.
+-->
+
+#### Phase 1: [Phase Name]
+- [ ] [Task 1 from PLAN.md]
+  - Started: [Date or "Not started"]
+  - Status: [Not started / In progress / Complete]
+  - Notes: [Any relevant notes]
+
+- [ ] [Task 2 from PLAN.md]
+  - Started: [Date or "Not started"]
+  - Status: [Not started / In progress / Complete]
+  - Notes: [Any relevant notes]
+
+#### Phase 2: [Phase Name]
+- [ ] [Task 3 from PLAN.md]
+- [ ] [Task 4 from PLAN.md]
+
+---
+
+## Quality Validation
+
+<!--
+  Validate code quality, testing, and documentation as you implement.
+  Complete this BEFORE marking feature as "complete".
+-->
+
+### Code Quality
+- [ ] Linter passes with 0 warnings
+- [ ] TypeScript compiles without errors (if applicable)
+- [ ] No duplicate code
+- [ ] All functions have docstrings
+- [ ] Code follows project conventions (per SPEC.md Implementation Notes)
+
+### Testing
+- [ ] All unit tests pass
+- [ ] All integration tests pass
+- [ ] All e2e tests pass (if applicable)
+- [ ] Coverage targets met (per TEST.md)
+- [ ] Performance benchmarks met (per TEST.md)
+- [ ] Security tests pass (per TEST.md)
+
+### Documentation
+- [ ] README.md updated with accurate information
+- [ ] SPEC.md reflects actual implementation
+- [ ] API documentation complete (if applicable)
+- [ ] Code comments explain "why" not "what"
+- [ ] CHANGELOG.md updated (if project has one)
+
+---
+
+## Blockers
+
+<!--
+  Document anything preventing progress.
+  Update blockers_count in frontmatter when you add/remove blockers.
+-->
+
+**Current Blockers:** [blockers_count from frontmatter]
+
+### Blocker: [Short description]
+
+**Issue:** [Detailed description of the blocker]
+**Impact:** [What tasks are blocked?]
+**Possible Solutions:**
+- [Solution option 1]
+- [Solution option 2]
+
+**Status:** Waiting on [person/thing]
+**Date Added:** [YYYY-MM-DD]
+
+---
+
+## Decisions Made
+
+<!--
+  Record important decisions made during implementation.
+  This provides context for future maintainers.
+-->
+
+### Decision: [Short title]
+
+**Date:** [YYYY-MM-DD]
+**Context:** [What problem were we solving?]
+**Decision:** [What we decided to do]
+**Rationale:** [Why we chose this approach]
+**Alternatives Considered:** [What else we looked at and why we didn't choose it]
+
+---
+
+**Example:**
+
+### Decision: Use Redis for token storage
+
+**Date:** 2025-10-27
+**Context:** Need to store short-lived password reset tokens with automatic expiration.
+**Decision:** Use Redis with TTL instead of PostgreSQL with a cleanup job.
+**Rationale:** Redis provides native TTL support, reducing complexity and ensuring tokens are automatically cleaned up. Performance is better for high-frequency read/write operations.
+**Alternatives Considered:**
+- PostgreSQL with scheduled cleanup job - More complex, requires additional cron job
+- In-memory storage - Doesn't survive restarts, not suitable for production
+
+---
+
+## Open Questions
+
+<!--
+  Questions that need answers before proceeding.
+  Mark questions as resolved when answered.
+-->
+
+1. **[Question]** - @reviewer
+   - Context: [Why this question matters]
+   - Blocking: [What task this blocks, if any]
+   - Status: [Open / Answered]
+
+---
+
+## Implementation Notes
+
+<!--
+  Scratchpad for notes, links, snippets - anything useful during implementation.
+-->
+
+### Useful References
+- [Link to relevant documentation]
+- [Link to similar implementation in codebase]
+- [Stack Overflow answer that helped]
+
+### Testing Notes
+- Test environment URL: [URL]
+- Test credentials: [Where to find them]
+- Known issues in test environment: [List]
+
+---
+
+## Completion Checklist
+
+<!--
+  Final validation before marking feature as "complete".
+  ALL items must be checked.
+-->
+
+### Before Marking Feature Complete:
+
+**Feature Setup:**
+- [ ] All 5 required files exist (README, SPEC, PLAN, TEST, TODO)
+- [ ] All files are complete and accurate
+
+**Implementation:**
+- [ ] All tasks in PLAN.md are complete
+- [ ] All quality validation items checked (above)
+- [ ] No open blockers
+
+**Testing:**
+- [ ] All tests pass
+- [ ] Coverage targets met
+- [ ] Performance benchmarks met
+
+**Documentation:**
+- [ ] All documentation updated
+- [ ] README.md reflects final state
+- [ ] This TODO.md documents what was done
+
+**Status Update:**
+- [ ] README.md status updated to "complete"
+- [ ] This TODO.md status updated to "complete"
+- [ ] progress_percentage set to 100
+
+**Note:** This TODO.md file is KEPT after completion as an audit trail.

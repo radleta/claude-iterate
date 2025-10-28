@@ -1,0 +1,149 @@
+<!--
+TEMPLATE USAGE GUIDE
+
+1. Copy this file to your feature directory as README.md
+2. Replace all [placeholder] values with your content
+3. Delete sections marked "Delete if not applicable"
+4. Keep HTML comments - they guide both humans and AI agents
+5. Use the completion checklist at bottom to verify you're done
+6. Update frontmatter status as you progress
+
+TIPS FOR SUCCESS:
+- Keep Purpose to ONE sentence (not "and" or compound statements)
+- Write 1-3 user stories minimum
+- Be specific, not vague (see examples in CONTRIBUTING.md)
+- Link all related documents
+
+REMEMBER: This documents an APPLICATION FEATURE - a discrete unit of functionality
+that delivers value to end users or enables core business capabilities. Features are
+what the application *does*, not how it's organized internally. See CONTRIBUTING.md
+"What is a Feature?" section for full definition and examples.
+-->
+
+---
+# Status Tracking
+status: planning
+status_summary: Feature is being planned and specified
+
+# Ownership
+owner: your-username
+
+# Blocking Issues
+blocked_by:
+
+# Summary (for AI and quick scanning)
+summary: One-sentence description of what this feature does
+---
+
+# Feature Name
+
+<!--
+  Replace "Feature Name" with your feature's name.
+  This should match the directory name.
+
+  FRONTMATTER GUIDANCE:
+  - summary: One-sentence overview for quick understanding (same as Purpose section)
+  - status: One of [planning, in-progress, blocked, complete]
+  - status_summary: Human-readable explanation of current status
+  - owner: Username or "agent" or team name
+  - blocked_by: Link to blocking issue/feature (if status is "blocked")
+
+  The frontmatter makes it easy to get a snapshot of the feature at a glance,
+  both for humans scanning the directory and for AI agents understanding context.
+-->
+
+## Purpose
+
+<!--
+  Write a ONE-SENTENCE summary of what this feature does.
+  Examples:
+  - "Allow users to reset their password via email."
+  - "Provide real-time notifications for system events."
+  - "Enable administrators to bulk import users from CSV files."
+-->
+
+[Your one-sentence purpose here]
+
+## User Stories
+
+<!--
+  List the user stories that drive this feature.
+  Use the format: "As a [role], I want [capability], so that [benefit]."
+
+  Examples:
+  - As a user, I want to reset my password via email, so that I can regain access to my account.
+  - As an admin, I want to see failed login attempts, so that I can identify security threats.
+-->
+
+- As a [role], I want [capability], so that [benefit].
+- As a [role], I want [capability], so that [benefit].
+
+## Core Business Logic
+
+<!--
+  Describe the main rules and acceptance criteria for this feature.
+  What are the key behaviors? What are the success conditions?
+
+  Examples:
+  - Password reset tokens expire after 1 hour.
+  - Users can only have one active reset token at a time.
+  - Successfully resetting a password logs the user in automatically.
+-->
+
+- [Key rule or acceptance criterion]
+- [Key rule or acceptance criterion]
+- [Key rule or acceptance criterion]
+
+## Key Constraints
+
+<!--
+  List any technical or business constraints that must be followed.
+
+  Examples:
+  - Must comply with GDPR requirements for password reset emails.
+  - Reset tokens must be cryptographically secure (use crypto.randomBytes).
+  - Must work with existing authentication system without breaking changes.
+-->
+
+- [Constraint]
+- [Constraint]
+
+## Document Links
+
+<!--
+  Link to all core documents for this feature.
+  All 5 documents are required for every feature.
+-->
+
+- [Technical Specification](./SPEC.md)
+- [Implementation Plan](./PLAN.md)
+- [Testing Specification](./TEST.md)
+- [Implementation Progress](./TODO.md)
+
+## Sub-Features
+
+<!--
+  If this is a complex feature with sub-features, list them here.
+  Link to each sub-feature's README.md.
+
+  Example:
+  - [Email-based Reset](./features/email-reset/README.md)
+  - [SMS-based Reset](./features/sms-reset/README.md)
+
+  Delete this section if not applicable.
+-->
+
+- [Sub-feature Name](./features/sub-feature-name/README.md)
+
+---
+
+## Completion Checklist
+
+Before considering this README complete, verify:
+
+- [ ] **Purpose** - Exactly one sentence, no compound statements
+- [ ] **User Stories** - At least one story in "As a [role], I want [capability], so that [benefit]" format
+- [ ] **Business Logic** - At least 3 specific rules documented with examples
+- [ ] **Constraints** - Technical/business constraints listed (or explicitly state "None")
+- [ ] **Links** - All 4 other core documents linked (SPEC.md, PLAN.md, TEST.md, TODO.md)
+- [ ] **Frontmatter** - Status, owner, and summary filled in

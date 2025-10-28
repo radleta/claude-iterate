@@ -1,0 +1,22 @@
+{
+  "//": "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+  "//": "remark Configuration for SDD Frontmatter Validation",
+  "//": "IMPORTANT: Place this file in your documentation root directory",
+  "//": "           (the directory containing README.md and .templates/)",
+  "//": "           Schema path is relative to this directory",
+  "//": "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+  "plugins": [
+    "remark-frontmatter",
+    [
+      "remark-lint-frontmatter-schema",
+      {
+        "schemas": {
+          "./.templates/readme-frontmatter-schema.json": [
+            "**/README.md",
+            "!.templates/**"
+          ]
+        }
+      }
+    ]
+  ]
+}

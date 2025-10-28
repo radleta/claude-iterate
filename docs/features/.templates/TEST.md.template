@@ -1,0 +1,308 @@
+# Testing Specification: Feature Name
+
+<!--
+  This document defines the testing requirements and strategy for this feature.
+  It complements SPEC.md by detailing how the feature will be verified.
+
+  Create this file when:
+  - Testing requirements are complex and warrant separate documentation
+  - Multiple testing strategies are needed (unit, integration, e2e, performance)
+  - Testing needs to be coordinated across teams
+
+  For simple features, testing requirements can remain in SPEC.md.
+
+  REMEMBER: This documents an APPLICATION FEATURE - a discrete unit of functionality
+  that delivers value to end users or enables core business capabilities. Features are
+  what the application *does*, not how it's organized internally. See CONTRIBUTING.md
+  "What is a Feature?" section for full definition and examples.
+-->
+
+## Test Coverage Targets
+
+<!--
+  Define minimum coverage requirements.
+  Be specific about what needs to be tested and to what degree.
+-->
+
+- **Unit Test Coverage**: 80% minimum for business logic
+- **Integration Test Coverage**: All API endpoints and external service integrations
+- **End-to-End Test Coverage**: All critical user flows
+- **Performance Test Coverage**: Key performance-sensitive operations
+
+## Testing Layers
+
+### Layer 1: Unit Tests
+
+<!--
+  Test individual functions, methods, and components in isolation.
+  Focus on business logic, validation, and edge cases.
+-->
+
+**Scope:**
+- All business logic functions
+- Validation functions
+- Utility functions
+- Error handling logic
+
+**Key Test Scenarios:**
+1. **[Function/Component Name]**
+   - Valid input: [expected behavior]
+   - Invalid input: [expected error]
+   - Edge case: [specific edge case and expected behavior]
+
+2. **[Another Function/Component]**
+   - [Scenario]: [Expected outcome]
+
+**Example Test:**
+```typescript
+describe('generateResetToken', () => {
+  it('should generate a 32-byte token', async () => {
+    const token = await generateResetToken('user@example.com');
+    expect(token).toHaveLength(64); // 32 bytes = 64 hex chars
+  });
+
+  it('should throw error for invalid email', async () => {
+    await expect(generateResetToken('invalid')).rejects.toThrow('Invalid email');
+  });
+});
+```
+
+### Layer 2: Integration Tests
+
+<!--
+  Test how components work together and with external systems.
+  Focus on API endpoints, database interactions, and service integrations.
+-->
+
+**Scope:**
+- All API endpoints (request/response validation)
+- Database operations (CRUD, transactions)
+- External service integrations (email, payment, etc.)
+- Authentication and authorization flows
+
+**Key Test Scenarios:**
+1. **POST /api/v1/feature/action**
+   - Success case: Valid request returns 200
+   - Validation: Invalid input returns 400
+   - Auth: Unauthorized request returns 401
+   - Rate limiting: Exceeded limit returns 429
+
+2. **Database Integration**
+   - Create: Record is stored correctly
+   - Read: Queries return expected results
+   - Update: Changes are persisted
+   - Delete: Records are removed or soft-deleted
+
+**Example Test:**
+```typescript
+describe('POST /api/v1/feature/action', () => {
+  it('should create a new record', async () => {
+    const response = await request(app)
+      .post('/api/v1/feature/action')
+      .send({ field: 'value' })
+      .expect(200);
+
+    expect(response.body.id).toBeDefined();
+    expect(response.body.field).toBe('value');
+  });
+});
+```
+
+### Layer 3: End-to-End Tests
+
+<!--
+  Test complete user flows from start to finish.
+  Focus on critical paths and user journeys.
+-->
+
+**Scope:**
+- Critical user workflows
+- Multi-step processes
+- Cross-feature interactions
+
+**Key User Flows:**
+1. **[User Flow Name]**
+   - Step 1: [Action] → [Expected result]
+   - Step 2: [Action] → [Expected result]
+   - Step 3: [Action] → [Expected result]
+   - Validation: [Final state check]
+
+**Example Flow:**
+```
+Password Reset Flow:
+1. User requests reset → Email sent
+2. User clicks email link → Token validated
+3. User enters new password → Password updated and user logged in
+4. Validation: Old password no longer works, new password works
+```
+
+### Layer 4: Performance Tests
+
+<!--
+  Test performance, scalability, and resource usage.
+  Define benchmarks and acceptance criteria.
+-->
+
+**Performance Benchmarks:**
+
+| Operation | Target | Acceptable | Unacceptable |
+|-----------|--------|------------|--------------|
+| API response time | < 100ms | < 200ms | > 500ms |
+| Database query time | < 50ms | < 100ms | > 200ms |
+| Concurrent users | 1000+ | 500+ | < 100 |
+| Memory usage | < 256MB | < 512MB | > 1GB |
+
+**Load Test Scenarios:**
+1. **Normal Load**: [X] requests/second for [Y] minutes
+2. **Peak Load**: [X] requests/second for [Y] minutes
+3. **Stress Test**: Gradually increase load until system degrades
+
+## Error Scenarios
+
+<!--
+  Explicitly test all error conditions defined in SPEC.md.
+  Ensure error handling is robust and user-friendly.
+-->
+
+### Error Test Cases
+
+1. **Invalid Input**
+   - Missing required fields
+   - Invalid data format
+   - Out-of-range values
+   - Expected: 400 Bad Request with descriptive error message
+
+2. **Authentication Failures**
+   - No auth token provided
+   - Invalid or expired token
+   - Expected: 401 Unauthorized
+
+3. **Authorization Failures**
+   - User lacks required permissions
+   - Expected: 403 Forbidden
+
+4. **Resource Not Found**
+   - Non-existent resource ID
+   - Expected: 404 Not Found
+
+5. **Rate Limiting**
+   - Exceeded request limit
+   - Expected: 429 Too Many Requests with retry-after header
+
+6. **Server Errors**
+   - Database connection failure
+   - External service unavailable
+   - Expected: 500 Internal Server Error (error logged, user gets generic message)
+
+## Edge Cases
+
+<!--
+  Document and test unusual or boundary conditions.
+-->
+
+1. **[Edge Case Description]**
+   - Condition: [When does this occur?]
+   - Expected Behavior: [What should happen?]
+   - Test: [How to verify?]
+
+**Example Edge Cases:**
+- Concurrent requests for same resource
+- Very large input (boundary testing)
+- Empty/null values in optional fields
+- Unicode and special characters in text fields
+- Timezone edge cases (midnight, DST transitions)
+
+## Test Data Requirements
+
+<!--
+  Define what test data is needed and how to set it up.
+-->
+
+### Test Database
+- Use separate test database
+- Seed with known test data before each test suite
+- Clean up after tests complete
+
+### Test Users
+- Standard user: [description and permissions]
+- Admin user: [description and permissions]
+- Restricted user: [description and limitations]
+
+### Test Fixtures
+```typescript
+// Example fixture
+const testUser = {
+  id: 'test-user-123',
+  email: 'test@example.com',
+  role: 'user'
+};
+```
+
+## Security Testing
+
+<!--
+  Define security-focused test cases.
+-->
+
+**Security Test Cases:**
+- [ ] SQL injection attempts are blocked
+- [ ] XSS attacks are prevented
+- [ ] CSRF protection is active
+- [ ] Sensitive data is not leaked in error messages
+- [ ] Authentication cannot be bypassed
+- [ ] Rate limiting prevents abuse
+- [ ] Input validation prevents malicious payloads
+
+## Testing Strategy
+
+<!--
+  Define when and how tests should be run.
+-->
+
+### Local Development
+- Run unit tests on every file save (watch mode)
+- Run integration tests before committing
+- Run full test suite before pushing
+
+### CI/CD Pipeline
+- Run all tests on every pull request
+- Block merge if tests fail
+- Run performance tests on staging before production deploy
+- Run security scans on dependencies
+
+### Test Environments
+- **Local**: Developer machines with mock external services
+- **CI**: Automated test environment with test database
+- **Staging**: Production-like environment for integration/e2e tests
+- **Production**: Monitoring and synthetic tests (not full test suite)
+
+## Test Maintenance
+
+<!--
+  Guidelines for keeping tests up to date.
+-->
+
+- Update tests whenever SPEC.md changes
+- Remove obsolete tests when features are deprecated
+- Refactor tests to reduce duplication
+- Keep test data fixtures synchronized with schema changes
+- Review and update performance benchmarks quarterly
+
+---
+
+## Test Checklist
+
+<!--
+  Use this checklist to verify testing is complete before marking feature as done.
+-->
+
+- [ ] All unit tests written and passing
+- [ ] All integration tests written and passing
+- [ ] All e2e tests written and passing
+- [ ] Performance benchmarks met
+- [ ] All error scenarios tested
+- [ ] All edge cases covered
+- [ ] Security tests passing
+- [ ] Test coverage meets minimum thresholds
+- [ ] Tests documented and maintainable
+- [ ] CI/CD pipeline configured correctly

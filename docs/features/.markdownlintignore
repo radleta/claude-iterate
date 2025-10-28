@@ -1,0 +1,22 @@
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# markdownlint Ignore Patterns for SDD
+# IMPORTANT: Place this file in your documentation root directory
+#            (the directory containing README.md and .templates/)
+#            All patterns are relative to this directory
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Temporary work directories (relative to this directory)
+scratch/
+claude-iterate/
+
+# Dependencies
+node_modules/
+
+# Template files
+.templates/
+**/.templates/
+
+# Build output
+dist/
+build/
+out/

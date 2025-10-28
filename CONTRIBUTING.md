@@ -177,6 +177,23 @@ git push origin feature/my-awesome-feature
 - Ensure all CI checks pass
 - Respond to review feedback promptly
 
+## Contributing Features
+
+When adding new features to claude-iterate, follow the Spec-Driven Development (SDD) workflow:
+
+- **[Feature Documentation Guide](docs/features/CONTRIBUTING.md)** - SDD workflow, SPEC/PLAN/TEST/TODO process
+- **[Feature Registry](docs/features/README.md)** - Browse existing features for examples
+
+All features must include:
+
+- SPEC.md - Technical specification
+- PLAN.md - Implementation plan
+- TEST.md - Testing strategy
+- TODO.md - Work tracking
+- README.md - Overview with metadata
+
+See existing features in `docs/features/` for reference.
+
 ## Project Structure
 
 ```

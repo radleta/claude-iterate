@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/readme-frontmatter-schema.json",
+  "title": "SDD README.md Frontmatter Schema",
+  "description": "JSON Schema for validating YAML frontmatter in Spec-Driven Development README.md files",
+  "type": "object",
+  "required": ["status", "status_summary", "owner", "summary"],
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": ["planning", "in-progress", "blocked", "complete"],
+      "description": "Current status of the feature"
+    },
+    "status_summary": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Brief summary of current status"
+    },
+    "owner": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Owner or team responsible for this feature"
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Brief summary of what this feature does"
+    },
+    "blocked_by": {
+      "type": "string",
+      "description": "Optional: What is blocking this feature (if status is 'blocked')"
+    }
+  },
+  "additionalProperties": false,
+  "if": {
+    "properties": {
+      "status": {
+        "const": "blocked"
+      }
+    }
+  },
+  "then": {
+    "required": ["status", "status_summary", "owner", "summary", "blocked_by"]
+  }
+}
