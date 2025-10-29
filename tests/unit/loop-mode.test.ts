@@ -48,7 +48,8 @@ describe('LoopModeStrategy', () => {
     expect(prompt).toContain('NO memory of previous iterations');
     expect(prompt).toContain('INSTRUCTIONS.md');
     expect(prompt).toContain('.status.json');
-    expect(prompt).toContain('Iteration Protocol');
+    expect(prompt).toContain('Session Pacing');
+    expect(prompt).toContain('Budget Purpose');
     expect(prompt).toContain('/path/to/workspace');
     expect(prompt).toContain('/path/to/project');
   });

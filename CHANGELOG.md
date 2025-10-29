@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Reframe token budget language in prompts to prevent agents from prematurely stopping work. Budget now explained as reserve for output quality preservation (deliverables complete, requirements met) and state management (comprehensive .status.json updates) rather than stop threshold. Introduced Phase 1 (work phase using ~50-60% context) and Phase 2 (wrap-up phase reserving ~30-40% for status updates) structure. Agents no longer cite 'budget percentage' as blocking justification and understand budget exists for session quality and clean resumption, not as arbitrary stop signal. All prompt language generalized to be task-agnostic (works for coding, documentation, research, planning, data analysis, or any task type).
 - **Fixed 6 failing tests in setup.test.ts**: Resolved `ReferenceError: client is not defined` errors caused by missing variable assignments
   - Root cause: Missing `const client =` before `new ClaudeClient()` in 6 test cases
   - Fixed by adding proper variable assignment before usage
