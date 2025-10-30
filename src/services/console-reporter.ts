@@ -152,7 +152,6 @@ export class ConsoleReporter {
    */
   private renderEnhancedUI(stats: IterationStats): string {
     const width = process.stdout.columns || 80;
-    const halfWidth = Math.floor(width / 2);
     const table = new TextTable({
       width: width,
       padding: 1,
@@ -161,25 +160,25 @@ export class ConsoleReporter {
 
     // Title row
     const title = `${chalk.bold('claude-iterate')} ${chalk.dim('→')} ${stats.mode} mode`;
-    table.addRow([{ content: title, width: 74 }], 'header');
+    table.addRow([{ content: title }], 'header');
     table.addDivider();
 
     // Status row
     const statusColor = this.getStatusColor(stats.status);
     const statusIcon = this.getStatusIcon(stats.status);
     const statusText = `${statusIcon} ${stats.status.toUpperCase()}`;
-    table.addRow([{ content: statusColor(statusText), width: width }]);
+    table.addRow([{ content: statusColor(statusText) }]);
 
     // Progress bar row
     const progressBar = this.renderProgressBar(stats);
-    table.addRow([{ content: progressBar, width: width }]);
+    table.addRow([{ content: progressBar }]);
 
     // Statistics grid (2 columns)
     const statsRows = this.getStatsRows(stats);
     for (const [left, right] of statsRows) {
       table.addRow([
-        { content: left, width: halfWidth, align: 'left' },
-        { content: right, width: halfWidth, align: 'left' },
+        { content: left, align: 'left' },
+        { content: right, align: 'left' },
       ]);
     }
 
@@ -191,7 +190,7 @@ export class ConsoleReporter {
           : 'Delete .stop file to cancel';
       const stopText =
         chalk.yellow('[STOP] Stop requested') + chalk.dim(` (${source})`);
-      table.addRow([{ content: stopText, width: width }]);
+      table.addRow([{ content: stopText }]);
     }
 
     // Footer
@@ -199,7 +198,7 @@ export class ConsoleReporter {
     const footerText = chalk.dim(
       '[Stop controls reserved for graceful-stop sub-feature]'
     );
-    table.addRow([{ content: footerText, width: width }], 'footer');
+    table.addRow([{ content: footerText }], 'footer');
 
     return table.render().join('\n');
   }

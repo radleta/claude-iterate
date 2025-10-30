@@ -47,6 +47,10 @@
  */
 
 import { BorderStyle, getLine } from './border-styles.js';
+import {
+  calculateOverhead,
+  calculateAvailableWidth,
+} from './text-table-layout.js';
 
 /**
  * Table-level configuration.
@@ -121,6 +125,7 @@ export class TextTable {
   private readonly config: Required<TableConfig>;
   private readonly rows: RowData[] = [];
   private readonly dividers: Set<number> = new Set();
+  private measuredWidths: number[] | null = null;
 
   /**
    * Create a new TextTable.
@@ -189,6 +194,21 @@ export class TextTable {
    */
   render(): string[] {
     const output: string[] = [];
+
+    // Measure content once for all rows (auto-width calculation)
+    const rawMeasuredWidths = this.measureContent();
+
+    // Scale measured widths to fit table width (proportional distribution)
+    // This ensures consistent column widths across all rows
+    if (rawMeasuredWidths.length > 0) {
+      // Adjust widths proportionally to fit available space
+      this.measuredWidths = this.adjustCellWidths(
+        this.getEffectiveWidth(),
+        rawMeasuredWidths
+      );
+    } else {
+      this.measuredWidths = [];
+    }
 
     // Add top border if configured
     if (this.hasBorder()) {
@@ -270,6 +290,86 @@ export class TextTable {
    */
   private measureWidth(text: string): number {
     return this.stripAnsi(text).length;
+  }
+
+  /**
+   * Measure the maximum content width for each column across all rows.
+   *
+   * Scans all rows, evaluates dynamic content functions, measures visible width
+   * (stripping ANSI codes), and tracks the maximum width needed for each column.
+   * Only measures rows with actual columns (ignores colspan cells to avoid inflation).
+   *
+   * @returns Array of maximum widths per column (e.g., [25, 40, 15] for 3 columns)
+   *
+   * @example
+   * ```typescript
+   * // For rows: [[{content: 'hi'}, {content: 'world'}], [{content: 'hello'}, {content: 'x'}]]
+   * // Returns: [5, 5] (max of [2,5] from row 1 and [5,1] from row 2)
+   * ```
+   */
+  private measureContent(): number[] {
+    if (this.rows.length === 0) {
+      return [];
+    }
+
+    // Determine maximum column count across all rows (accounting for colspan)
+    let maxColumns = 0;
+    for (const row of this.rows) {
+      let columnCount = 0;
+      for (const cell of row.cells) {
+        columnCount += cell.colspan ?? 1;
+      }
+      maxColumns = Math.max(maxColumns, columnCount);
+    }
+
+    // Initialize column widths array
+    const columnWidths = new Array(maxColumns).fill(0);
+
+    // Measure each row and update maximum widths
+    // Skip single-cell rows in multi-column tables (they'll auto-span)
+    // Measure colspan cells by distributing their width
+    for (const row of this.rows) {
+      // Skip single-cell rows with no explicit colspan in multi-column tables
+      // These are headers, footers, etc. that should span the full width
+      if (
+        maxColumns > 1 &&
+        row.cells.length === 1 &&
+        (row.cells[0]?.colspan ?? 1) === 1
+      ) {
+        continue;
+      }
+
+      // Measure cells in this row
+      let columnIndex = 0;
+      for (const cell of row.cells) {
+        const evaluatedContent = this.normalizeContent(
+          this.evaluateContent(cell.content)
+        );
+        const contentWidth = this.measureWidth(evaluatedContent);
+        const colspan = cell.colspan ?? 1;
+
+        if (colspan === 1) {
+          // Single column cell - measure directly
+          columnWidths[columnIndex] = Math.max(
+            columnWidths[columnIndex],
+            contentWidth
+          );
+          columnIndex += 1;
+        } else {
+          // Colspan cell - distribute width across spanned columns
+          const widthPerColumn = Math.ceil(contentWidth / colspan);
+          for (let i = 0; i < colspan; i++) {
+            columnWidths[columnIndex + i] = Math.max(
+              columnWidths[columnIndex + i] ?? 0,
+              widthPerColumn
+            );
+          }
+          columnIndex += colspan;
+        }
+      }
+    }
+
+    return columnWidths;
   }
 
   /**
@@ -358,33 +458,79 @@ export class TextTable {
       ),
     }));
 
-    // Extract requested widths (use equal distribution if not specified)
-    const cellCount = evaluatedCells.length;
-    const requestedWidths = evaluatedCells.map((cell) => {
+    // Determine cell count (accounting for colspan)
+    let cellCount = 0;
+    for (const cell of evaluatedCells) {
+      cellCount += cell.colspan ?? 1;
+    }
+
+    // Build cell widths: manual override or pre-calculated auto width
+    const cellWidths: number[] = [];
+    let columnIndex = 0;
+    let hasManualWidths = false;
+
+    // Detect if this is a single-cell row in a multi-column table
+    const maxColumns = this.measuredWidths?.length ?? 0;
+    const isSingleCellRow = evaluatedCells.length === 1 && maxColumns > 1;
+
+    for (const cell of evaluatedCells) {
       if (cell.width !== undefined) {
-        return cell.width;
+        // Manual width override
+        cellWidths.push(cell.width);
+        hasManualWidths = true;
+      } else if (isSingleCellRow) {
+        // Single-cell row in multi-column table: use full available width
+        const overhead = calculateOverhead(
+          1,
+          this.config.padding,
+          this.hasBorder()
+        );
+        const fullWidth = calculateAvailableWidth(
+          this.getEffectiveWidth(),
+          overhead
+        );
+        cellWidths.push(fullWidth);
+      } else {
+        // Multi-cell row or single-column table: use measured/calculated widths
+        const colspan = cell.colspan ?? 1;
+
+        if (colspan === 1) {
+          // Single column - use measured width directly (already scaled in render())
+          const width =
+            this.measuredWidths?.[columnIndex] ?? this.fallbackWidth(cellCount);
+          cellWidths.push(width);
+        } else {
+          // Multi-column cell - sum measured widths across spanned columns
+          // Also need to add separators between columns
+          let totalWidth = 0;
+          for (let i = 0; i < colspan; i++) {
+            const colWidth =
+              this.measuredWidths?.[columnIndex + i] ??
+              this.fallbackWidth(cellCount);
+            totalWidth += colWidth;
+          }
+          // Add separator widths (padding on both sides + separator char)
+          if (this.hasBorder() && colspan > 1) {
+            totalWidth += (colspan - 1) * (2 * this.config.padding + 1);
+          }
+          cellWidths.push(totalWidth);
+        }
       }
-      // Auto-calculate equal distribution
-      const borders = this.hasBorder() ? 2 : 0;
-      const totalPadding = cellCount * 2 * this.config.padding;
-      const separators = this.hasBorder() ? cellCount - 1 : 0;
-      const overhead = borders + totalPadding + separators;
-      const availableForContent = this.getEffectiveWidth() - overhead;
-      return Math.floor(availableForContent / cellCount);
-    });
+      columnIndex += cell.colspan ?? 1;
+    }
 
-    // Auto-adjust widths if they exceed table width (proportional scaling)
-    const adjustedWidths = this.adjustCellWidths(
-      this.getEffectiveWidth(),
-      requestedWidths
-    );
+    // Only adjust widths if there are manual overrides
+    // Auto widths are already scaled in render()
+    const finalWidths = hasManualWidths
+      ? this.adjustCellWidths(this.getEffectiveWidth(), cellWidths)
+      : cellWidths;
 
-    // Render cells with adjusted widths
+    // Render cells with final widths
     const cellContents = evaluatedCells.map((cell, index) => {
       const content = cell.trim
         ? cell.evaluatedContent.trim()
         : cell.evaluatedContent;
-      const width = adjustedWidths[index] ?? 20; // Use adjusted width
+      const width = finalWidths[index] ?? 20;
       const align = cell.align ?? 'left';
 
       return this.alignText(content, width, align);
@@ -405,6 +551,23 @@ export class TextTable {
     }
 
     return [cellsWithPadding];
+  }
+
+  /**
+   * Calculate fallback width when measured widths are not available.
+   * Uses equal distribution based on table width and overhead.
+   */
+  private fallbackWidth(cellCount: number): number {
+    const overhead = calculateOverhead(
+      cellCount,
+      this.config.padding,
+      this.hasBorder()
+    );
+    const available = calculateAvailableWidth(
+      this.getEffectiveWidth(),
+      overhead
+    );
+    return Math.floor(available / cellCount);
   }
 
   /**
@@ -541,10 +704,12 @@ export class TextTable {
     const overhead = borders + totalPadding + separators;
     const availableForContent = targetWidth - overhead;
 
-    // If already fits, return as-is
+    // Always scale proportionally to fill available space
     const currentTotal = cellWidths.reduce((sum, w) => sum + w, 0);
-    if (currentTotal <= availableForContent) {
-      return cellWidths;
+    if (currentTotal === 0) {
+      // Avoid division by zero - distribute equally
+      const equalWidth = Math.floor(availableForContent / cellCount);
+      return new Array(cellCount).fill(equalWidth);
     }
 
     // Proportional scaling: newWidth[i] = Math.floor(cellWidths[i] * availableForContent / currentTotal)
@@ -602,5 +767,13 @@ export class TextTable {
     cellWidths: number[]
   ): number[] {
     return this.adjustCellWidths(targetWidth, cellWidths);
+  }
+
+  /**
+   * Expose measureContent for testing purposes.
+   * @internal
+   */
+  public _testMeasureContent(): number[] {
+    return this.measureContent();
   }
 }

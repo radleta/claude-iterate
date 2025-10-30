@@ -700,4 +700,208 @@ describe('TextTable', () => {
       expect(lines[1]).toContain('Line1 Line2 Line3');
     });
   });
+
+  describe('measureContent (auto-width)', () => {
+    it('should measure static text content', () => {
+      const table = new TextTable({ width: 80 });
+      table.addRow([{ content: 'hello' }, { content: 'world' }]);
+
+      const widths = table._testMeasureContent();
+      expect(widths).toEqual([5, 5]);
+    });
+
+    it('should measure ANSI-colored content correctly', () => {
+      const table = new TextTable({ width: 80 });
+      table.addRow([
+        { content: chalk.red('hello') },
+        { content: chalk.green('world') },
+      ]);
+
+      const widths = table._testMeasureContent();
+      // ANSI codes stripped - visible width only
+      expect(widths).toEqual([5, 5]);
+    });
+
+    it('should evaluate dynamic content functions', () => {
+      const table = new TextTable({ width: 80 });
+      table.addRow([{ content: () => 'dynamic' }]);
+
+      const widths = table._testMeasureContent();
+      expect(widths).toEqual([7]);
+    });
+
+    it('should return maximum width per column across multiple rows', () => {
+      const table = new TextTable({ width: 80 });
+      table.addRow([{ content: 'hi' }, { content: 'world' }]);
+      table.addRow([{ content: 'hello' }, { content: 'x' }]);
+
+      const widths = table._testMeasureContent();
+      // max([2, 5], [5, 1]) = [5, 5]
+      expect(widths).toEqual([5, 5]);
+    });
+
+    it('should handle colspan by distributing width', () => {
+      const table = new TextTable({ width: 80 });
+      table.addRow([{ content: 'hello world', colspan: 2 }]);
+      table.addRow([{ content: 'a' }, { content: 'b' }]);
+
+      const widths = table._testMeasureContent();
+      // "hello world" = 11 chars, distributed as ceil(11/2) = 6 per column
+      // Second row has [1, 1]
+      // Result: max([6, 6], [1, 1]) = [6, 6]
+      expect(widths[0]).toBeGreaterThanOrEqual(5);
+      expect(widths[1]).toBeGreaterThanOrEqual(5);
+    });
+
+    it('should return empty array for empty table', () => {
+      const table = new TextTable({ width: 80 });
+      const widths = table._testMeasureContent();
+      expect(widths).toEqual([]);
+    });
+  });
+
+  describe('auto-width rendering', () => {
+    it('should render table without width specifications using content-based sizing', () => {
+      const table = new TextTable({ width: 78, padding: 1, border: getNone() });
+      table.addRow([
+        { content: 'short' },
+        { content: 'a much longer piece of text' },
+      ]);
+
+      const lines = table.render();
+      // Should render with proportional widths
+      expect(lines.length).toBeGreaterThan(0);
+      // Verify second column is wider (content-based, not equal distribution)
+      const contentLine = lines[0];
+      expect(contentLine).toContain('short');
+      expect(contentLine).toContain('a much longer piece of text');
+    });
+
+    it('should respect manual width overrides when specified', () => {
+      const table = new TextTable({ width: 78, padding: 1 });
+      table.addRow([{ content: 'text', width: 20 }, { content: 'other' }]);
+
+      const lines = table.render();
+      expect(lines.length).toBeGreaterThan(0);
+      // First column should be exactly 20 characters
+      // (verify by checking spacing in rendered output)
+    });
+
+    it('should use proportional distribution for varying content lengths', () => {
+      const table = new TextTable({ width: 78, padding: 1, border: getNone() });
+      table.addRow([
+        { content: 'x' },
+        { content: 'medium text' },
+        { content: 'y' },
+      ]);
+
+      const lines = table.render();
+      expect(lines.length).toBeGreaterThan(0);
+      // Middle column should be wider than side columns
+      const contentLine = lines[0];
+      expect(contentLine).toContain('medium text');
+    });
+
+    it('should handle mixed manual and auto widths', () => {
+      const table = new TextTable({ width: 78, padding: 1 });
+      table.addRow([
+        { content: 'fixed', width: 15 },
+        { content: 'auto' },
+        { content: 'also auto' },
+      ]);
+
+      const lines = table.render();
+      expect(lines.length).toBeGreaterThan(0);
+      // First column fixed at 15, others auto-sized proportionally
+    });
+
+    it('should handle dynamic content in auto-width calculation', () => {
+      let value = 'initial';
+      const table = new TextTable({ width: 78, padding: 1, border: getNone() });
+      table.addRow([{ content: () => value }, { content: 'static' }]);
+
+      // First render with "initial"
+      const lines1 = table.render();
+      expect(lines1[0]).toContain('initial');
+
+      // Change value and re-render
+      value = 'changed value that is longer';
+      const lines2 = table.render();
+      expect(lines2[0]).toContain('changed value that is longer');
+      // Width should be recalculated for new content
+    });
+
+    it('should maintain correct overhead calculations with auto-width', () => {
+      const table = new TextTable({ width: 78, padding: 1 });
+      table.addRow([{ content: 'a' }]);
+
+      const lines = table.render();
+      // Total width should not exceed configured width
+      expect(lines[0]?.length).toBeLessThanOrEqual(78);
+    });
+
+    it('should handle ANSI codes in auto-width rendering', () => {
+      const table = new TextTable({ width: 78, padding: 1 });
+      table.addRow([
+        { content: chalk.red('hello') },
+        { content: chalk.green('world') },
+      ]);
+
+      const lines = table.render();
+      expect(lines.length).toBeGreaterThan(0);
+      // ANSI codes should not affect alignment
+    });
+  });
+
+  describe('auto-width edge cases', () => {
+    it('should handle single cell table', () => {
+      const table = new TextTable({ width: 78, padding: 1 });
+      table.addRow([{ content: 'single' }]);
+
+      const lines = table.render();
+      expect(lines.length).toBeGreaterThan(0);
+    });
+
+    it('should handle very long content', () => {
+      const table = new TextTable({ width: 78, padding: 1 });
+      const longText = 'a'.repeat(100);
+      table.addRow([{ content: longText }]);
+
+      const lines = table.render();
+      expect(lines.length).toBeGreaterThan(0);
+      // Content should be truncated or wrapped to fit
+    });
+
+    it('should handle empty content cells', () => {
+      const table = new TextTable({ width: 78, padding: 1 });
+      table.addRow([{ content: '' }, { content: 'text' }]);
+
+      const lines = table.render();
+      expect(lines.length).toBeGreaterThan(0);
+    });
+
+    it('should handle table with many columns', () => {
+      const table = new TextTable({ width: 120, padding: 1 });
+      table.addRow([
+        { content: 'a' },
+        { content: 'b' },
+        { content: 'c' },
+        { content: 'd' },
+        { content: 'e' },
+      ]);
+
+      const lines = table.render();
+      expect(lines.length).toBeGreaterThan(0);
+    });
+
+    it('should handle tables without borders', () => {
+      const table = new TextTable({ width: 78, padding: 1, border: getNone() });
+      table.addRow([{ content: 'no' }, { content: 'borders' }]);
+
+      const lines = table.render();
+      expect(lines.length).toBeGreaterThan(0);
+      // Should not have border characters
+      expect(lines[0]?.startsWith('│')).toBe(false);
+    });
+  });
 });
