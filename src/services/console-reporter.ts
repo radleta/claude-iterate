@@ -5,7 +5,7 @@ import {
   formatDuration,
   formatRelativeTime,
 } from '../types/iteration-stats.js';
-import { getBoxCharacters } from '../utils/box-characters.js';
+import { TextTable } from '../utils/text-table.js';
 
 /**
  * Output levels for console reporting
@@ -148,103 +148,60 @@ export class ConsoleReporter {
   /**
    * Render enhanced UI panel with in-place updates
    * log-update handles cursor positioning automatically
+   * Uses TextTable for all layout calculations
    */
   private renderEnhancedUI(stats: IterationStats): string {
-    const lines: string[] = [];
+    const width = process.stdout.columns || 80;
+    const halfWidth = Math.floor(width / 2);
+    const table = new TextTable({
+      width: width,
+      padding: 1,
+      borderColor: chalk.cyan,
+    });
 
-    // Box characters (platform-aware)
-    const box = getBoxCharacters();
+    // Title row
+    const title = `${chalk.bold('claude-iterate')} ${chalk.dim('→')} ${stats.mode} mode`;
+    table.addRow([{ content: title, width: 74 }], 'header');
+    table.addDivider();
 
-    // Box top
-    lines.push(
-      chalk.cyan(box.topLeft + box.horizontal.repeat(76) + box.topRight)
-    );
-
-    // Title
-    const title = ` ${chalk.bold('claude-iterate')} ${chalk.dim('→')} ${stats.mode} mode`;
-    const titlePadding = 78 - this.stripAnsi(title).length;
-    lines.push(
-      chalk.cyan(box.vertical) +
-        title +
-        ' '.repeat(titlePadding) +
-        chalk.cyan(box.vertical)
-    );
-
-    // Divider
-    lines.push(chalk.cyan(box.leftT + box.horizontal.repeat(76) + box.rightT));
-
-    // Status indicator with color
+    // Status row
     const statusColor = this.getStatusColor(stats.status);
     const statusIcon = this.getStatusIcon(stats.status);
     const statusText = `${statusIcon} ${stats.status.toUpperCase()}`;
-    const statusPadding = 78 - this.stripAnsi(statusText).length - 2;
-    lines.push(
-      chalk.cyan(box.vertical) +
-        ' ' +
-        statusColor(statusText) +
-        ' '.repeat(statusPadding) +
-        chalk.cyan(box.vertical)
-    );
+    table.addRow([{ content: statusColor(statusText), width: width }]);
 
-    // Progress bar
+    // Progress bar row
     const progressBar = this.renderProgressBar(stats);
-    const barPadding = 78 - this.stripAnsi(progressBar).length - 2;
-    lines.push(
-      chalk.cyan(box.vertical) +
-        ' ' +
-        progressBar +
-        ' '.repeat(barPadding) +
-        chalk.cyan(box.vertical)
-    );
+    table.addRow([{ content: progressBar, width: width }]);
 
     // Statistics grid (2 columns)
-    const gridLines = this.renderStatsGrid(stats);
-    for (const gridLine of gridLines) {
-      const gridPadding = 78 - this.stripAnsi(gridLine).length - 2;
-      lines.push(
-        chalk.cyan(box.vertical) +
-          ' ' +
-          gridLine +
-          ' '.repeat(gridPadding) +
-          chalk.cyan(box.vertical)
-      );
+    const statsRows = this.getStatsRows(stats);
+    for (const [left, right] of statsRows) {
+      table.addRow([
+        { content: left, width: halfWidth, align: 'left' },
+        { content: right, width: halfWidth, align: 'left' },
+      ]);
     }
 
-    // Stop signal indicator (if requested) - managed by graceful-stop sub-feature
+    // Stop signal indicator (if requested)
     if (stats.stopRequested) {
       const source =
         stats.stopSource === 'keyboard'
           ? "Press 's' to cancel"
           : 'Delete .stop file to cancel';
       const stopText =
-        chalk.yellow('🛑 Stop requested') + chalk.dim(` (${source})`);
-      const stopPadding = 78 - this.stripAnsi(stopText).length - 2;
-      lines.push(
-        chalk.cyan(box.vertical) +
-          ' ' +
-          stopText +
-          ' '.repeat(stopPadding) +
-          chalk.cyan(box.vertical)
-      );
+        chalk.yellow('[STOP] Stop requested') + chalk.dim(` (${source})`);
+      table.addRow([{ content: stopText, width: width }]);
     }
 
-    // Box bottom (footer reserved for graceful-stop sub-feature)
-    lines.push(chalk.cyan(box.leftT + box.horizontal.repeat(76) + box.rightT));
+    // Footer
+    table.addDivider();
     const footerText = chalk.dim(
-      ' [Stop controls reserved for graceful-stop sub-feature]'
+      '[Stop controls reserved for graceful-stop sub-feature]'
     );
-    const footerPadding = 78 - this.stripAnsi(footerText).length - 2;
-    lines.push(
-      chalk.cyan(box.vertical) +
-        footerText +
-        ' '.repeat(footerPadding) +
-        chalk.cyan(box.vertical)
-    );
-    lines.push(
-      chalk.cyan(box.bottomLeft + box.horizontal.repeat(76) + box.bottomRight)
-    );
+    table.addRow([{ content: footerText, width: width }], 'footer');
 
-    return lines.join('\n');
+    return table.render().join('\n');
   }
 
   /**
@@ -264,37 +221,36 @@ export class ConsoleReporter {
   }
 
   /**
-   * Render two-column statistics grid
-   * Returns array of formatted lines
+   * Get statistics rows for two-column layout
+   * Returns array of [left, right] tuples
    */
-  private renderStatsGrid(stats: IterationStats): string[] {
+  private getStatsRows(stats: IterationStats): Array<[string, string]> {
     const col1 = [
-      `⏱️  Elapsed: ${formatDuration(stats.elapsedSeconds)}`,
-      `⚡ Avg/iter: ${stats.avgIterationSeconds}s`,
-      `🎯 Tasks: ${stats.tasksCompleted ?? '-'} / ${stats.tasksTotal ?? '-'}`,
+      `Elapsed: ${formatDuration(stats.elapsedSeconds)}`,
+      `Avg/iter: ${stats.avgIterationSeconds}s`,
+      `Tasks: ${stats.tasksCompleted ?? '-'} / ${stats.tasksTotal ?? '-'}`,
       stats.stagnationCount !== undefined
-        ? `⚠️  Stagnation: ${stats.stagnationCount}`
+        ? `[!] Stagnation: ${stats.stagnationCount}`
         : null,
     ].filter((item): item is string => item !== null);
 
     const col2 = [
-      `🔮 ETA: ${stats.etaSeconds ? formatDuration(stats.etaSeconds) : 'calculating...'}`,
-      `📊 Mode: ${stats.mode}`,
-      `🕐 Updated: ${formatRelativeTime(stats.lastUpdateTime)}`,
+      `ETA: ${stats.etaSeconds ? formatDuration(stats.etaSeconds) : 'calculating...'}`,
+      `Mode: ${stats.mode}`,
+      `Updated: ${formatRelativeTime(stats.lastUpdateTime)}`,
     ];
 
-    // Render two columns side-by-side
-    const col1Width = 38;
-    const lines: string[] = [];
-
+    // Pair up columns into rows and normalize content
+    // Normalization prevents embedded newlines from breaking table layout
+    const rows: Array<[string, string]> = [];
     const maxRows = Math.max(col1.length, col2.length);
     for (let i = 0; i < maxRows; i++) {
-      const left = (col1[i] ?? '').padEnd(col1Width);
-      const right = col2[i] ?? '';
-      lines.push(`${left}${right}`);
+      const left = (col1[i] ?? '').replace(/\s+/g, ' ').trim();
+      const right = (col2[i] ?? '').replace(/\s+/g, ' ').trim();
+      rows.push([left, right]);
     }
 
-    return lines;
+    return rows;
   }
 
   /**
@@ -316,27 +272,21 @@ export class ConsoleReporter {
   }
 
   /**
-   * Get icon for status
+   * Get ASCII icon for status
+   * No emojis - ASCII only for consistent cross-platform alignment
    */
   private getStatusIcon(status: string): string {
     switch (status) {
       case 'starting':
-        return '⏳';
+        return '[...]';
       case 'running':
-        return '🔄';
+        return '[>]';
       case 'completing':
-        return '✅';
+        return '[OK]';
       case 'stopped':
-        return '🛑';
+        return '[X]';
       default:
-        return '❓';
+        return '[?]';
     }
-  }
-
-  /**
-   * Strip ANSI codes to calculate actual string length
-   */
-  private stripAnsi(str: string): string {
-    return str.replace(/\x1b\[[0-9;]*m/g, '');
   }
 }
